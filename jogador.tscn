@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://btbeu0xdkpisq"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qc3e3"]
+radius = 16.0
+height = 74.0
+
+[node name="Jogador" type="CharacterBody2D"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_qc3e3")
