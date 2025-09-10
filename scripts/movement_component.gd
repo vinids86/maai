@@ -6,7 +6,8 @@ extends Node
 # By using @export, we can see and edit these values directly in the Godot Inspector.
 # This makes tweaking the game feel much faster.
 @export var speed = 300.0
-@export var jump_velocity = -400.0
+# Renamed for clarity, reflecting its purpose as a vertical dodge.
+@export var vertical_dodge_velocity = -400.0
 
 # This variable will hold a reference to the parent CharacterBody2D.
 var character_body: CharacterBody2D
@@ -24,18 +25,37 @@ func _ready():
 	character_body = get_parent()
 
 
-# We create our own physics function that will be called by the player script.
-func process_physics(delta, direction):
+# This function handles the continuous "walking" physics.
+func process_physics(delta, walk_direction):
 	# --- GRAVITY ---
+	# If the player is not on the floor, apply gravity.
 	if not character_body.is_on_floor():
 		character_body.velocity.y += gravity * delta
 
 	# --- HORIZONTAL MOVEMENT ---
-	if direction:
-		character_body.velocity.x = direction * speed
+	if walk_direction:
+		character_body.velocity.x = walk_direction * speed
 	else:
+		# If no key is pressed, slow the player down to a stop.
 		character_body.velocity.x = move_toward(character_body.velocity.x, 0, speed)
 
 	# --- APPLY MOVEMENT ---
 	# The component is responsible for calling the final move function.
 	character_body.move_and_slide()
+
+
+# This is our new, more flexible dodge function. It takes a direction vector.
+func execute_dodge(direction: Vector2):
+	# For now, we only allow dodging when on the floor.
+	if not character_body.is_on_floor():
+		return
+
+	# Check if the primary intent is a vertical dodge (upwards).
+	if direction.y < 0:
+		character_body.velocity.y = vertical_dodge_velocity
+	
+	# This is a placeholder for a future horizontal dodge (dash).
+	if direction.x != 0:
+		# We can implement a dash here later.
+		# For example: character_body.velocity.x = direction.x * 600
+		print("Horizontal dodge intent detected. Direction: ", direction.x)

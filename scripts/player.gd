@@ -7,15 +7,39 @@ extends CharacterBody2D
 @onready var movement_component = $MovementComponent
 
 
-# _physics_process is still the right place to handle input for physics actions.
+# _physics_process is the correct place to handle input for physics actions.
 func _physics_process(delta):
-	# 1. Get Input
-	# We now use the custom actions "move_left" and "move_right" we created
-	# in the Input Map. This works for both keyboard (A/D) and controller.
-	var direction = Input.get_axis("move_left", "move_right")
+	# --- DODGE HANDLING ---
+	# First, check if the main dodge action was just pressed.
+	if Input.is_action_just_pressed("dodge"):
+		# At the moment the dodge is pressed, get the directional input from the player.
+		var dodge_direction = get_dodge_direction()
+		
+		# If there is a directional input, delegate the dodge action.
+		# This prepares for a neutral dodge (no direction) in the future.
+		if dodge_direction != Vector2.ZERO:
+			movement_component.execute_dodge(dodge_direction)
+
+	# --- MOVEMENT HANDLING ---
+	# This runs every frame, independently of the dodge.
+	# Get horizontal movement direction for walking.
+	var walk_direction = Input.get_axis("move_left", "move_right")
 	
-	# 2. Delegate to Component
-	# We call a function on the component, passing the necessary information.
-	# The player script itself no longer knows anything about speed, gravity,
-	# or even move_and_slide().
-	movement_component.process_physics(delta, direction)
+	# Delegate movement physics to the component.
+	movement_component.process_physics(delta, walk_direction)
+
+
+# Gathers the directional input to determine the dodge's vector.
+func get_dodge_direction() -> Vector2:
+	# We use get_vector which is perfect for combining directional inputs
+	# from both keyboard (WASD) and controller joystick.
+	# Note: get_vector uses "ui_up" by default for the y-axis. We will create "move_up".
+	# For now, let's build it manually for clarity.
+	var horizontal_input = Input.get_axis("move_left", "move_right")
+	var vertical_input = 0.0
+	if Input.is_action_pressed("move_up"):
+		vertical_input = -1.0 # In Godot 2D, -Y is up.
+		
+	# .normalized() ensures the vector has a length of 1, which is crucial for
+	# consistent speed when moving diagonally in the future.
+	return Vector2(horizontal_input, vertical_input).normalized()
