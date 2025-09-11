@@ -11,18 +11,19 @@ enum Phases { ACTIVE, RECOVERY }
 var current_phase: Phases
 var time_left_in_phase: float = 0.0
 var current_profile: DodgeProfile
+var _dodge_direction: Vector2 = Vector2.ZERO
 
 func enter(args: Dictionary = {}):
-	var direction_vector = args.get("direction", Vector2.ZERO)
+	_dodge_direction = args.get("direction", Vector2.ZERO)
 	
-	current_profile = _select_profile_from_direction(direction_vector)
+	current_profile = _select_profile_from_direction(_dodge_direction)
 
 	if not current_profile:
 		push_warning("DodgeState: Nenhum perfil de esquiva encontrado. A abortar.")
 		state_machine.on_current_state_finished()
 		return
 		
-	movement_component.apply_dodge_velocity(direction_vector, current_profile)
+	movement_component.apply_dodge_velocity(_dodge_direction, current_profile)
 	_change_phase(Phases.ACTIVE)
 
 func process_physics(delta: float, is_running: bool = false):
@@ -36,7 +37,10 @@ func process_physics(delta: float, is_running: bool = false):
 				state_machine.on_current_state_finished()
 				return
 
-	movement_component.apply_gravity(delta)
+	# A gravidade só é aplicada se a esquiva não for puramente horizontal.
+	var is_horizontal_dash = _dodge_direction.y == 0 and _dodge_direction.x != 0
+	if not is_horizontal_dash:
+		movement_component.apply_gravity(delta)
 
 func allow_dodge() -> bool:
 	return false
