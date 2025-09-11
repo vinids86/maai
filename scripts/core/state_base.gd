@@ -19,15 +19,13 @@ func enter(args: Dictionary = {}):
 func exit():
 	pass
 	
-func process_physics(delta: float):
+# A função agora aceita o parâmetro is_running.
+func process_physics(delta: float, is_running: bool = false):
 	pass
 	
 func process_input(event: InputEvent):
 	pass
 
-# ESTA É A NOVA FUNÇÃO
-# Chamada pela StateMachine quando o seu ActionTimer termina.
-# Os estados que usam o timer (como o DodgeState) irão sobrescrever esta função.
 func on_timeout():
 	pass
 

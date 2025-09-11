@@ -37,10 +37,11 @@ func _ready():
 	else:
 		push_error("StateMachine Error: Initial state '%s' not found." % initial_state_key)
 
-
-func process_physics(delta: float):
+# A função agora aceita o parâmetro is_running do Player.
+func process_physics(delta: float, is_running: bool = false):
 	if current_state:
-		current_state.process_physics(delta)
+		# E retransmite-o para o estado atual.
+		current_state.process_physics(delta, is_running)
 
 func process_input(event: InputEvent):
 	if current_state:
@@ -48,10 +49,8 @@ func process_input(event: InputEvent):
 
 # --- INTENÇÕES DE INPUT ---
 
-# A função agora aceita o parâmetro de direção.
 func on_dodge_pressed(direction: Vector2):
 	if current_state.allow_dodge():
-		# Passamos a direção para a função de transição dentro de um dicionário.
 		transition_to("DodgeState", {"direction": direction})
 
 # --- LÓGICA DE TRANSIÇÃO ---

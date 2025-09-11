@@ -28,7 +28,9 @@ func enter(args: Dictionary = {}):
 	_change_phase(Phases.ACTIVE)
 
 
-func process_physics(delta: float):
+# A função agora aceita o parâmetro is_running para cumprir o contrato da classe base,
+# embora não o utilize diretamente.
+func process_physics(delta: float, is_running: bool = false):
 	movement_component.apply_gravity(delta)
 
 
@@ -57,8 +59,6 @@ func _change_phase(new_phase: Phases):
 		Phases.ACTIVE:
 			state_machine.action_timer.start(current_profile.active_duration)
 		Phases.RECOVERY:
-			# A linha que zerava a velocidade foi removida daqui.
-			# Agora o personagem manterá o seu momento horizontal.
 			state_machine.action_timer.start(current_profile.recovery_duration)
 
 
