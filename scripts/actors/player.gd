@@ -4,10 +4,13 @@ extends CharacterBody2D
 # --- REFERÊNCIAS ---
 @onready var state_machine: StateMachine = $StateMachine
 @onready var hold_input_timer: Timer = $HoldInputTimer
-@onready var run_cancel_timer: Timer = $RunCancelTimer # Novo timer para o cancelamento da corrida
+@onready var run_cancel_timer: Timer = $RunCancelTimer
 
 # --- ESTADO INTERNO ---
 var is_running: bool = false
+# ESTA É A NOVA VARIÁVEL
+# A direção para a qual o personagem está virado. 1.0 para a direita, -1.0 para a esquerda.
+var facing_sign: float = 1.0
 
 # --- CICLO DE VIDA DO GODOT ---
 

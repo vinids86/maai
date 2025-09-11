@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DodgeProfile" load_steps=2 format=3 uid="uid://cxtoyg6r5qy34"]
+
+[ext_resource type="Script" uid="uid://fxnxrf24bhpp" path="res://scripts/profiles/dodge_profile.gd" id="1_iiueb"]
+
+[resource]
+script = ExtResource("1_iiueb")
+active_duration = 0.25
+recovery_duration = 0.15
+speed = 400.0
+metadata/_custom_type_script = "uid://fxnxrf24bhpp"

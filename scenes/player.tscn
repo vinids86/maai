@@ -1,12 +1,16 @@
-[gd_scene load_steps=9 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=13 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="4_dqkch"]
-[ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://scripts/profiles/default_locomotion.tres" id="5_qlg0r"]
+[ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/default_locomotion.tres" id="5_qlg0r"]
 [ext_resource type="Script" uid="uid://mqtxcxisr6ph" path="res://scripts/states/dodge_state.gd" id="6_tuyoq"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="7_fjrip"]
+[ext_resource type="Resource" uid="uid://brr4qpn5yk0mn" path="res://resources/player/dodge/forward.tres" id="8_d2wvv"]
+[ext_resource type="Resource" uid="uid://h5j4chnrxexj" path="res://resources/player/dodge/back.tres" id="9_3v2ag"]
+[ext_resource type="Resource" uid="uid://cfu400oitmjxr" path="res://resources/player/dodge/up.tres" id="10_jej6c"]
+[ext_resource type="Resource" uid="uid://cxtoyg6r5qy34" path="res://resources/player/dodge/down.tres" id="11_f1ej7"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qc3e3"]
 radius = 16.0
@@ -45,7 +49,7 @@ locomotion_profile = ExtResource("5_qlg0r")
 [node name="DodgeState" type="Node" parent="StateMachine"]
 script = ExtResource("6_tuyoq")
 neutral_dodge_profile = ExtResource("7_fjrip")
-forward_dodge_profile = ExtResource("7_fjrip")
-back_dodge_profile = ExtResource("7_fjrip")
-up_dodge_profile = ExtResource("7_fjrip")
-down_dodge_profile = ExtResource("7_fjrip")
+forward_dodge_profile = ExtResource("8_d2wvv")
+back_dodge_profile = ExtResource("9_3v2ag")
+up_dodge_profile = ExtResource("10_jej6c")
+down_dodge_profile = ExtResource("11_f1ej7")
