@@ -20,20 +20,22 @@ func _physics_process(delta):
 		if dodge_direction != Vector2.ZERO:
 			movement_component.execute_dodge(dodge_direction)
 
-	# --- MOVEMENT HANDLING ---
+	# --- MOVEMENT & RUN HANDLING ---
 	# This runs every frame, independently of the dodge.
 	# Get horizontal movement direction for walking.
 	var walk_direction = Input.get_axis("move_left", "move_right")
 	
-	# Delegate movement physics to the component.
-	movement_component.process_physics(delta, walk_direction)
-
+	# Determine if the player intends to run.
+	# The player must hold the "run" button AND provide a direction.
+	var is_running = Input.is_action_pressed("run") and walk_direction != 0
+	
+	# Delegate movement physics to the component, now also passing the run state.
+	movement_component.process_physics(delta, walk_direction, is_running)
 
 # Gathers the directional input to determine the dodge's vector.
 func get_dodge_direction() -> Vector2:
 	# We use get_vector which is perfect for combining directional inputs
 	# from both keyboard (WASD) and controller joystick.
-	# Note: get_vector uses "ui_up" by default for the y-axis. We will create "move_up".
 	# For now, let's build it manually for clarity.
 	var horizontal_input = Input.get_axis("move_left", "move_right")
 	var vertical_input = 0.0
