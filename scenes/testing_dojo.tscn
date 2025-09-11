@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8jaed"]
-size = Vector2(769, 33)
+size = Vector2(763, 33)
 
 [node name="Node2D" type="Node2D"]
 
@@ -11,7 +11,7 @@ size = Vector2(769, 33)
 position = Vector2(96, 454)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
-position = Vector2(-439, 1)
+position = Vector2(-441, -1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
 position = Vector2(823.75, 631.5)
@@ -28,5 +28,5 @@ shape = SubResource("RectangleShape2D_8jaed")
 position = Vector2(1670, -75)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3"]
-position = Vector2(384.5, 631.5)
+position = Vector2(381.5, 631.5)
 shape = SubResource("RectangleShape2D_8jaed")

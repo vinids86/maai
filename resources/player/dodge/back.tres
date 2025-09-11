@@ -6,5 +6,5 @@
 script = ExtResource("1_urjtw")
 active_duration = 0.25
 recovery_duration = 0.15
-speed = 750.0
+speed = 200.0
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"

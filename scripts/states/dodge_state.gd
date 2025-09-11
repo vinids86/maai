@@ -14,6 +14,7 @@ var current_profile: DodgeProfile
 var _dodge_direction: Vector2 = Vector2.ZERO
 
 func enter(args: Dictionary = {}):
+	owner_node.facing_locked = true
 	_dodge_direction = args.get("direction", Vector2.ZERO)
 	
 	current_profile = _select_profile_from_direction(_dodge_direction)
@@ -26,18 +27,24 @@ func enter(args: Dictionary = {}):
 	movement_component.apply_dodge_velocity(_dodge_direction, current_profile)
 	_change_phase(Phases.ACTIVE)
 
+func exit():
+	owner_node.facing_locked = false
+
 func process_physics(delta: float, is_running: bool = false):
 	time_left_in_phase -= delta
 	
-	if time_left_in_phase <= 0:
+	while time_left_in_phase <= 0:
+		var previous_phase_duration = _get_duration_for_phase(current_phase)
+		var overshoot = -time_left_in_phase
+
 		match current_phase:
 			Phases.ACTIVE:
 				_change_phase(Phases.RECOVERY)
+				time_left_in_phase -= overshoot
 			Phases.RECOVERY:
 				state_machine.on_current_state_finished()
 				return
 
-	# A gravidade só é aplicada se a esquiva não for puramente horizontal.
 	var is_horizontal_dash = _dodge_direction.y == 0 and _dodge_direction.x != 0
 	if not is_horizontal_dash:
 		movement_component.apply_gravity(delta)
@@ -47,12 +54,18 @@ func allow_dodge() -> bool:
 
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
+	time_left_in_phase = _get_duration_for_phase(new_phase)
+
+func _get_duration_for_phase(phase: Phases) -> float:
+	if not current_profile:
+		return 0.0
 	
-	match current_phase:
+	match phase:
 		Phases.ACTIVE:
-			time_left_in_phase = current_profile.active_duration
+			return current_profile.active_duration
 		Phases.RECOVERY:
-			time_left_in_phase = current_profile.recovery_duration
+			return current_profile.recovery_duration
+	return 0.0
 
 func _select_profile_from_direction(direction: Vector2) -> DodgeProfile:
 	if direction.y < 0:
@@ -60,7 +73,7 @@ func _select_profile_from_direction(direction: Vector2) -> DodgeProfile:
 	elif direction.y > 0:
 		return down_dodge_profile
 	elif direction.x != 0:
-		if direction.x == owner_node.facing_sign:
+		if direction.x * owner_node.facing_sign > 0:
 			return forward_dodge_profile
 		else:
 			return back_dodge_profile

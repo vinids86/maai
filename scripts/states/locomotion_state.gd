@@ -15,9 +15,8 @@ func process_physics(delta: float, is_running: bool = false):
 
 	var walk_direction = Input.get_axis("move_left", "move_right")
 	
-	if walk_direction != 0:
-		owner_node.facing_sign = walk_direction
-
+	_update_facing_sign(walk_direction)
+	
 	movement_component.calculate_walk_velocity(walk_direction, is_running, locomotion_profile)
 
 func process_input(event: InputEvent):
@@ -25,3 +24,12 @@ func process_input(event: InputEvent):
 
 func allow_dodge() -> bool:
 	return owner_node.is_on_floor()
+
+func _update_facing_sign(direction: float):
+	if owner_node.facing_locked:
+		return
+		
+	if direction > 0:
+		owner_node.facing_sign = 1
+	elif direction < 0:
+		owner_node.facing_sign = -1
