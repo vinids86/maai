@@ -37,10 +37,6 @@ script = ExtResource("2_g2els")
 
 [node name="StateMachine" type="Node" parent="."]
 script = ExtResource("3_qhqgy")
-initial_state_key = null
-
-[node name="ActionTimer" type="Timer" parent="StateMachine"]
-one_shot = true
 
 [node name="LocomotionState" type="Node" parent="StateMachine"]
 script = ExtResource("4_dqkch")

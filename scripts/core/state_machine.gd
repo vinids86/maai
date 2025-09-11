@@ -12,18 +12,16 @@ var states: Dictionary = {}
 var current_state: State
 var owner_node: Node
 var movement_component: Node
-var action_timer: Timer
+# A referência ao ActionTimer foi REMOVIDA.
 
 func _ready():
 	owner_node = get_parent()
 	movement_component = owner_node.find_child("MovementComponent")
-	action_timer = $ActionTimer
 	
 	assert(owner_node != null, "StateMachine deve ser filha de um nó de ator (Player/Enemy).")
 	assert(movement_component != null, "Não foi encontrado um nó 'MovementComponent' como irmão da StateMachine.")
-	assert(action_timer != null, "Não foi encontrado um nó 'ActionTimer' como filho da StateMachine.")
 
-	action_timer.timeout.connect(_on_action_timer_timeout)
+	# A conexão do sinal do timer foi REMOVIDA.
 
 	for child in get_children():
 		if child is State:
@@ -37,10 +35,9 @@ func _ready():
 	else:
 		push_error("StateMachine Error: Initial state '%s' not found." % initial_state_key)
 
-# A função agora aceita o parâmetro is_running do Player.
+
 func process_physics(delta: float, is_running: bool = false):
 	if current_state:
-		# E retransmite-o para o estado atual.
 		current_state.process_physics(delta, is_running)
 
 func process_input(event: InputEvent):
@@ -80,9 +77,3 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 	current_state.enter(args)
 	
 	emit_signal("state_changed", previous_state, current_state)
-
-# --- HANDLER DO TIMER ---
-
-func _on_action_timer_timeout():
-	if current_state:
-		current_state.on_timeout()

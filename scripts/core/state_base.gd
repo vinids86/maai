@@ -19,14 +19,10 @@ func enter(args: Dictionary = {}):
 func exit():
 	pass
 	
-# A função agora aceita o parâmetro is_running.
 func process_physics(delta: float, is_running: bool = false):
 	pass
 	
 func process_input(event: InputEvent):
-	pass
-
-func on_timeout():
 	pass
 
 # --- FUNÇÕES DE PERMISSÃO ---

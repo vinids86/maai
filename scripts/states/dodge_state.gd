@@ -8,8 +8,11 @@ extends State
 @export var up_dodge_profile: DodgeProfile
 @export var down_dodge_profile: DodgeProfile
 
+# --- LÓGICA DO PHASECLOCK ---
 enum Phases { ACTIVE, RECOVERY }
 var current_phase: Phases
+var time_left_in_phase: float = 0.0
+
 var current_profile: DodgeProfile
 
 # --- FUNÇÕES DO CICLO DE VIDA DO ESTADO ---
@@ -28,22 +31,24 @@ func enter(args: Dictionary = {}):
 	_change_phase(Phases.ACTIVE)
 
 
-# A função agora aceita o parâmetro is_running para cumprir o contrato da classe base,
-# embora não o utilize diretamente.
 func process_physics(delta: float, is_running: bool = false):
+	# O PhaseClock é conduzido aqui.
+	time_left_in_phase -= delta
+	
+	if time_left_in_phase <= 0:
+		# O tempo da fase atual terminou. Avançamos para a próxima.
+		match current_phase:
+			Phases.ACTIVE:
+				_change_phase(Phases.RECOVERY)
+			Phases.RECOVERY:
+				state_machine.on_current_state_finished()
+				return # Retornamos para evitar que a gravidade seja aplicada desnecessariamente.
+
+	# A gravidade continua a ser aplicada durante a esquiva.
 	movement_component.apply_gravity(delta)
 
 
-func exit():
-	state_machine.action_timer.stop()
-
-
-func on_timeout():
-	match current_phase:
-		Phases.ACTIVE:
-			_change_phase(Phases.RECOVERY)
-		Phases.RECOVERY:
-			state_machine.on_current_state_finished()
+# A função on_timeout foi removida, pois já não é necessária.
 
 # --- FUNÇÕES DE PERMISSÃO ---
 
@@ -57,9 +62,9 @@ func _change_phase(new_phase: Phases):
 	
 	match current_phase:
 		Phases.ACTIVE:
-			state_machine.action_timer.start(current_profile.active_duration)
+			time_left_in_phase = current_profile.active_duration
 		Phases.RECOVERY:
-			state_machine.action_timer.start(current_profile.recovery_duration)
+			time_left_in_phase = current_profile.recovery_duration
 
 
 func _select_profile_from_direction(direction: Vector2) -> DodgeProfile:
