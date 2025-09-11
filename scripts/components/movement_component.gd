@@ -25,19 +25,29 @@ func calculate_walk_velocity(walk_direction: float, is_running: bool, profile: L
 	else:
 		owner_node.velocity.x = move_toward(owner_node.velocity.x, 0, profile.speed)
 
-# ESTA É A FUNÇÃO QUE FALTAVA
 func apply_dodge_velocity(direction: Vector2, profile: DodgeProfile):
 	if not profile:
 		push_warning("MovementComponent recebeu um DodgeProfile nulo.")
 		return
 	
-	# Resetamos a velocidade para garantir um dash limpo e consistente.
 	owner_node.velocity = Vector2.ZERO
 
-	if direction != Vector2.ZERO:
-		# Aplicamos a velocidade do perfil na direção normalizada da esquiva.
-		# Isto funciona para qualquer direção (vertical, horizontal ou diagonal).
-		owner_node.velocity = direction.normalized() * profile.speed
+	if direction == Vector2.ZERO:
+		return
+
+	var final_velocity: Vector2
+
+	# ESTA É A NOVA LÓGICA
+	# Se a esquiva tiver um componente vertical (um pulo ou esquiva para baixo),
+	# nós calculamos cada eixo de forma independente para garantir a força total.
+	if direction.y != 0:
+		final_velocity.x = direction.x * profile.speed
+		final_velocity.y = direction.y * profile.speed
+	else:
+		# Se for uma esquiva puramente horizontal, a normalização antiga ainda é a melhor.
+		final_velocity = direction.normalized() * profile.speed
+	
+	owner_node.velocity = final_velocity
 
 func apply_gravity(delta: float):
 	var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")

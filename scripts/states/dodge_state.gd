@@ -36,8 +36,6 @@ func exit():
 	state_machine.action_timer.stop()
 
 
-# ESTA É A FUNÇÃO CRUCIAL
-# Agora, esta função será chamada pela StateMachine quando o timer terminar.
 func on_timeout():
 	match current_phase:
 		Phases.ACTIVE:
@@ -59,8 +57,8 @@ func _change_phase(new_phase: Phases):
 		Phases.ACTIVE:
 			state_machine.action_timer.start(current_profile.active_duration)
 		Phases.RECOVERY:
-			# Zeramos a velocidade horizontal na fase de recuperação para um final de esquiva mais controlado.
-			owner_node.velocity.x = 0
+			# A linha que zerava a velocidade foi removida daqui.
+			# Agora o personagem manterá o seu momento horizontal.
 			state_machine.action_timer.start(current_profile.recovery_duration)
 
 
@@ -70,6 +68,7 @@ func _select_profile_from_direction(direction: Vector2) -> DodgeProfile:
 	elif direction.y > 0:
 		return down_dodge_profile
 	elif direction.x != 0:
+		# TODO: Implementar lógica para diferenciar forward/back
 		return forward_dodge_profile
 	else:
 		return neutral_dodge_profile
