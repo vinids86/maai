@@ -1,15 +1,19 @@
 class_name AttackState
 extends State
 
-@export var attack_profile: AttackProfile
+# A variável @export foi REMOVIDA.
+var current_profile: AttackProfile
 
 enum Phases { STARTUP, ACTIVE, RECOVERY }
 var current_phase: Phases
 var time_left_in_phase: float = 0.0
 
 func enter(args: Dictionary = {}):
-	if not attack_profile:
-		push_warning("AttackState: Nenhum AttackProfile foi atribuído. A abortar.")
+	# O estado agora recebe o perfil de ataque a ser executado.
+	self.current_profile = args.get("profile")
+
+	if not current_profile:
+		push_warning("AttackState: Não recebeu um AttackProfile para executar. A abortar.")
 		state_machine.on_current_state_finished()
 		return
 	
@@ -39,6 +43,8 @@ func process_physics(delta: float, is_running: bool = false):
 				state_machine.on_current_state_finished()
 				return
 
+# --- FUNÇÕES DE PERMISSÃO ---
+
 func allow_dodge() -> bool:
 	return false
 
@@ -46,13 +52,15 @@ func allow_attack() -> bool:
 	# Permite que um novo ataque seja 'bufferizado' apenas durante a fase de recuperação.
 	return current_phase == Phases.RECOVERY
 
+# --- LÓGICA INTERNA ---
+
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
 	
 	match current_phase:
 		Phases.STARTUP:
-			time_left_in_phase = attack_profile.startup_duration
+			time_left_in_phase = current_profile.startup_duration
 		Phases.ACTIVE:
-			time_left_in_phase = attack_profile.active_duration
+			time_left_in_phase = current_profile.active_duration
 		Phases.RECOVERY:
-			time_left_in_phase = attack_profile.recovery_duration
+			time_left_in_phase = current_profile.recovery_duration

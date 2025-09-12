@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AttackSet" load_steps=8 format=3 uid="uid://ckjc1cdhkvxg6"]
+
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_8ol7k"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_b3bwt"]
+[ext_resource type="Resource" uid="uid://3vru34ypce3e" path="res://resources/player/attack/light_attack_1.tres" id="2_vdxql"]
+[ext_resource type="Resource" uid="uid://blu3ck0cqaghc" path="res://resources/player/attack/light_attack_2.tres" id="3_2vwa7"]
+[ext_resource type="Resource" uid="uid://l2rw8gs82st7" path="res://resources/player/attack/light_attack_3.tres" id="4_rulu0"]
+[ext_resource type="Resource" uid="uid://vpmyfollsjy2" path="res://resources/player/attack/light_attack_4.tres" id="5_e7woa"]
+[ext_resource type="Resource" uid="uid://3t17hausdgm6" path="res://resources/player/attack/light_attack_5.tres" id="6_ubbog"]
+
+[resource]
+script = ExtResource("2_b3bwt")
+attacks = Array[ExtResource("1_8ol7k")]([ExtResource("2_vdxql"), ExtResource("3_2vwa7"), ExtResource("4_rulu0"), ExtResource("5_e7woa"), ExtResource("6_ubbog")])
+metadata/_custom_type_script = "uid://bwq542vou2wu1"

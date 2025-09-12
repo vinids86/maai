@@ -5,34 +5,34 @@ extends CharacterBody2D
 @onready var state_machine: StateMachine = $StateMachine
 @onready var hold_input_timer: Timer = $HoldInputTimer
 @onready var run_cancel_timer: Timer = $RunCancelTimer
+@onready var buffer_controller: BufferController = $BufferController
+
+# --- DADOS DE COMBATE ---
+@export var attack_set: AttackSet
 
 # --- ESTADO INTERNO ---
 var is_running: bool = false
 var facing_sign: int = 1
 var facing_locked: bool = false
+var combo_index: int = 0
 
 # --- CICLO DE VIDA DO GODOT ---
 
 func _ready():
-	# Conectamos os sinais de timeout dos nossos timers às suas respetivas funções.
 	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
 	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
 
 func _physics_process(delta: float):
-	# Agora passamos o nosso estado de corrida para a StateMachine a cada frame.
 	state_machine.process_physics(delta, is_running)
 	move_and_slide()
 
 func _unhandled_input(event: InputEvent):
-	# Lidamos com o pressionar e o soltar da nossa nova ação unificada.
 	if event.is_action_pressed("dodge_run"):
-		# Se a janela para cancelar a corrida estiver ativa, este "press" é uma esquiva.
 		if not run_cancel_timer.is_stopped():
 			run_cancel_timer.stop()
 			var direction = _get_dodge_direction_from_input()
 			state_machine.on_dodge_pressed(direction)
 		else:
-			# Caso contrário, é um "press" normal para iniciar a lógica de toque/segurar.
 			hold_input_timer.start()
 		
 		get_viewport().set_input_as_handled()
@@ -45,33 +45,56 @@ func _unhandled_input(event: InputEvent):
 				var direction = _get_dodge_direction_from_input()
 				state_machine.on_dodge_pressed(direction)
 		else:
-			# Se estávamos a correr, não paramos imediatamente. Iniciamos a janela de cancelamento.
 			run_cancel_timer.start()
 
 		get_viewport().set_input_as_handled()
 		return
 	
-	# ESTA É A NOVA LÓGICA
-	# O Player interpreta o input de ataque e comunica a intenção.
 	if event.is_action_pressed("attack"):
-		state_machine.on_attack_pressed()
+		# ESTA É A LÓGICA CORRIGIDA E RESTAURADA
+		# Primeiro, verificamos se o estado atual permite alguma forma de ataque.
+		if state_machine.current_state.allow_attack():
+			# Verificamos se estamos num estado neutro para iniciar um novo combo.
+			if state_machine.current_state.name == "LocomotionState":
+				# Se sim, pegamos no primeiro ataque e executamo-lo diretamente.
+				var profile = get_next_attack_in_combo()
+				if profile:
+					state_machine.on_attack_pressed(profile)
+			else:
+				# Caso contrário (estamos, por exemplo, na recuperação de outro ataque),
+				# guardamos a intenção no buffer para continuar o combo.
+				buffer_controller.capture_attack()
+		
 		get_viewport().set_input_as_handled()
 		return
 
-	# Passamos os outros eventos para a StateMachine.
 	state_machine.process_input(event)
 
 
 # --- HANDLERS DOS TIMERS ---
 
 func _on_hold_input_timer_timeout():
-	# O tempo para "segurar" terminou. Ativamos a corrida.
 	if Input.is_action_pressed("dodge_run"):
 		is_running = true
 
 func _on_run_cancel_timer_timeout():
-	# A janela de oportunidade para cancelar a corrida terminou. Agora paramos de correr.
 	is_running = false
+
+# --- LÓGICA DE COMBO ---
+
+func get_next_attack_in_combo() -> AttackProfile:
+	if not attack_set or attack_set.attacks.is_empty():
+		return null
+
+	if combo_index >= attack_set.attacks.size():
+		return null
+	
+	var profile = attack_set.attacks[combo_index]
+	combo_index += 1
+	return profile
+
+func reset_combo_chain():
+	combo_index = 0
 
 # --- LÓGICA DE INPUT ---
 

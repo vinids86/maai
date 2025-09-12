@@ -12,16 +12,16 @@ var states: Dictionary = {}
 var current_state: State
 var owner_node: Node
 var movement_component: Node
-# A referência ao ActionTimer foi REMOVIDA.
+var buffer_controller: BufferController # Nova referência
 
 func _ready():
 	owner_node = get_parent()
 	movement_component = owner_node.find_child("MovementComponent")
+	buffer_controller = owner_node.find_child("BufferController")
 	
 	assert(owner_node != null, "StateMachine deve ser filha de um nó de ator (Player/Enemy).")
 	assert(movement_component != null, "Não foi encontrado um nó 'MovementComponent' como irmão da StateMachine.")
-
-	# A conexão do sinal do timer foi REMOVIDA.
+	assert(buffer_controller != null, "Não foi encontrado um nó 'BufferController' como irmão da StateMachine.")
 
 	for child in get_children():
 		if child is State:
@@ -45,18 +45,30 @@ func process_input(event: InputEvent):
 		current_state.process_input(event)
 
 # --- INTENÇÕES DE INPUT ---
-func on_attack_pressed():
-	if current_state.allow_attack():
-		transition_to("AttackState")
 
 func on_dodge_pressed(direction: Vector2):
 	if current_state.allow_dodge():
 		transition_to("DodgeState", {"direction": direction})
 
+# A função agora recebe o perfil de ataque específico a ser executado.
+func on_attack_pressed(profile: AttackProfile):
+	if current_state.allow_attack():
+		# A transição é feita com o perfil fornecido pelo Player.
+		transition_to("AttackState", {"profile": profile})
+
 # --- LÓGICA DE TRANSIÇÃO ---
 
 func on_current_state_finished():
-	# TODO: Implementar lógica de buffer aqui no futuro.
+	# Quando um estado termina, verificamos se há um ataque no buffer.
+	if buffer_controller.consume_attack():
+		# Se houver, pedimos ao Player (owner_node) o próximo ataque do combo.
+		var next_profile = owner_node.get_next_attack_in_combo()
+		if next_profile:
+			transition_to("AttackState", {"profile": next_profile})
+			return
+
+	# Se não houver buffer ou próximo ataque, resetamos o combo e voltamos ao estado padrão.
+	owner_node.reset_combo_chain()
 	transition_to(initial_state_key)
 
 
