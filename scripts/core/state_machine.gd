@@ -1,8 +1,9 @@
 class_name StateMachine
 extends Node
 
-# --- SINAIS ---
-signal state_changed(previous_state: State, new_state: State)
+# --- SINAL ÚNICO ---
+# O nosso novo sinal unificado. Ele transporta um dicionário com todo o contexto.
+signal phase_changed(phase_data: Dictionary)
 
 # --- CONFIGURAÇÃO ---
 @export var initial_state_key: String = "LocomotionState"
@@ -12,7 +13,7 @@ var states: Dictionary = {}
 var current_state: State
 var owner_node: Node
 var movement_component: Node
-var buffer_controller: BufferController # Nova referência
+var buffer_controller: BufferController
 
 func _ready():
 	owner_node = get_parent()
@@ -30,11 +31,10 @@ func _ready():
 	
 	if states.has(initial_state_key):
 		current_state = states[initial_state_key]
+		# A responsabilidade de emitir o primeiro sinal agora é do próprio estado, na sua função enter().
 		current_state.enter()
-		emit_signal("state_changed", null, current_state)
 	else:
 		push_error("StateMachine Error: Initial state '%s' not found." % initial_state_key)
-
 
 func process_physics(delta: float, is_running: bool = false):
 	if current_state:
@@ -44,33 +44,30 @@ func process_input(event: InputEvent):
 	if current_state:
 		current_state.process_input(event)
 
-# --- INTENÇÕES DE INPUT ---
+# --- FUNÇÃO PÚBLICA PARA EMITIR SINAIS ---
+# Os estados irão chamar esta função para anunciar as suas mudanças de fase.
+func emit_phase_change(data: Dictionary):
+	emit_signal("phase_changed", data)
 
+# --- INTENÇÕES DE INPUT ---
 func on_dodge_pressed(direction: Vector2):
 	if current_state.allow_dodge():
 		transition_to("DodgeState", {"direction": direction})
 
-# A função agora recebe o perfil de ataque específico a ser executado.
 func on_attack_pressed(profile: AttackProfile):
 	if current_state.allow_attack():
-		# A transição é feita com o perfil fornecido pelo Player.
 		transition_to("AttackState", {"profile": profile})
 
 # --- LÓGICA DE TRANSIÇÃO ---
-
 func on_current_state_finished():
-	# Quando um estado termina, verificamos se há um ataque no buffer.
 	if buffer_controller.consume_attack():
-		# Se houver, pedimos ao Player (owner_node) o próximo ataque do combo.
 		var next_profile = owner_node.get_next_attack_in_combo()
 		if next_profile:
 			transition_to("AttackState", {"profile": next_profile})
 			return
 
-	# Se não houver buffer ou próximo ataque, resetamos o combo e voltamos ao estado padrão.
 	owner_node.reset_combo_chain()
 	transition_to(initial_state_key)
-
 
 func transition_to(new_state_key: String, args: Dictionary = {}):
 	if not states.has(new_state_key):
@@ -89,6 +86,5 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 		previous_state.exit()
 	
 	current_state = new_state
+	# A emissão do sinal foi REMOVIDA daqui.
 	current_state.enter(args)
-	
-	emit_signal("state_changed", previous_state, current_state)

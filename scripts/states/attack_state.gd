@@ -1,7 +1,7 @@
 class_name AttackState
 extends State
 
-# A variável @export foi REMOVIDA.
+# A variável @export foi removida; o estado é agora um executor genérico.
 var current_profile: AttackProfile
 
 enum Phases { STARTUP, ACTIVE, RECOVERY }
@@ -9,7 +9,6 @@ var current_phase: Phases
 var time_left_in_phase: float = 0.0
 
 func enter(args: Dictionary = {}):
-	# O estado agora recebe o perfil de ataque a ser executado.
 	self.current_profile = args.get("profile")
 
 	if not current_profile:
@@ -18,7 +17,7 @@ func enter(args: Dictionary = {}):
 		return
 	
 	owner_node.facing_locked = true
-	owner_node.velocity = Vector2.ZERO # O personagem para de se mover para atacar.
+	owner_node.velocity = Vector2.ZERO
 	_change_phase(Phases.STARTUP)
 
 
@@ -49,7 +48,6 @@ func allow_dodge() -> bool:
 	return false
 
 func allow_attack() -> bool:
-	# Permite que um novo ataque seja 'bufferizado' apenas durante a fase de recuperação.
 	return current_phase == Phases.RECOVERY
 
 # --- LÓGICA INTERNA ---
@@ -64,3 +62,10 @@ func _change_phase(new_phase: Phases):
 			time_left_in_phase = current_profile.active_duration
 		Phases.RECOVERY:
 			time_left_in_phase = current_profile.recovery_duration
+			
+	var phase_data = {
+		"state_name": self.name,
+		"phase_name": Phases.keys()[current_phase],
+		"profile": current_profile
+	}
+	state_machine.emit_phase_change(phase_data)

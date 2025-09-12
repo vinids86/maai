@@ -46,7 +46,7 @@ func process_physics(delta: float, is_running: bool = false):
 				state_machine.on_current_state_finished()
 				return
 
-	if not current_profile.ignores_gravity:
+	if not current_profile or not current_profile.ignores_gravity:
 		movement_component.apply_gravity(delta)
 
 func allow_dodge() -> bool:
@@ -60,6 +60,14 @@ func _change_phase(new_phase: Phases):
 			time_left_in_phase = current_profile.active_duration
 		Phases.RECOVERY:
 			time_left_in_phase = current_profile.recovery_duration
+	
+	var phase_data = {
+		"state_name": self.name,
+		"phase_name": Phases.keys()[current_phase],
+		"profile": current_profile
+	}
+	state_machine.emit_phase_change(phase_data)
+
 
 func _select_profile_from_direction(direction: Vector2) -> DodgeProfile:
 	if direction.y < 0:
