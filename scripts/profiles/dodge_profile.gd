@@ -9,3 +9,4 @@ extends Resource
 
 @export_group("Physics")
 @export var speed: float = 750.0
+@export var ignores_gravity: bool = false
