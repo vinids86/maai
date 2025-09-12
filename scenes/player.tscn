@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=15 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -11,6 +11,8 @@
 [ext_resource type="Resource" uid="uid://h5j4chnrxexj" path="res://resources/player/dodge/back.tres" id="9_3v2ag"]
 [ext_resource type="Resource" uid="uid://cfu400oitmjxr" path="res://resources/player/dodge/up.tres" id="10_jej6c"]
 [ext_resource type="Resource" uid="uid://cxtoyg6r5qy34" path="res://resources/player/dodge/down.tres" id="11_f1ej7"]
+[ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="12_jej6c"]
+[ext_resource type="Resource" uid="uid://3vru34ypce3e" path="res://resources/player/attack/light_attack_1.tres" id="13_f1ej7"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qc3e3"]
 radius = 16.0
@@ -56,3 +58,7 @@ forward_dodge_profile = ExtResource("8_d2wvv")
 back_dodge_profile = ExtResource("9_3v2ag")
 up_dodge_profile = ExtResource("10_jej6c")
 down_dodge_profile = ExtResource("11_f1ej7")
+
+[node name="AttackState" type="Node" parent="StateMachine"]
+script = ExtResource("12_jej6c")
+attack_profile = ExtResource("13_f1ej7")

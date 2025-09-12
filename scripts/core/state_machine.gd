@@ -45,6 +45,9 @@ func process_input(event: InputEvent):
 		current_state.process_input(event)
 
 # --- INTENÇÕES DE INPUT ---
+func on_attack_pressed():
+	if current_state.allow_attack():
+		transition_to("AttackState")
 
 func on_dodge_pressed(direction: Vector2):
 	if current_state.allow_dodge():

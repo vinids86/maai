@@ -30,6 +30,7 @@ func process_input(event: InputEvent):
 func allow_dodge() -> bool:
 	return false
 
+# ESTA É A NOVA FUNÇÃO
 func allow_attack() -> bool:
 	return false
 	

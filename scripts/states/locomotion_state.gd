@@ -25,6 +25,11 @@ func process_input(event: InputEvent):
 func allow_dodge() -> bool:
 	return owner_node.is_on_floor()
 
+# --- NOVA LÓGICA DE PERMISSÃO ---
+func allow_attack() -> bool:
+	# Permitimos um ataque se o personagem estiver no chão.
+	return owner_node.is_on_floor()
+
 func _update_facing_sign(direction: float):
 	if owner_node.facing_locked:
 		return
