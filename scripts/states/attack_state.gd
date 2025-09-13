@@ -11,11 +11,8 @@ enum Phases { STARTUP, ACTIVE, RECOVERY }
 var current_phase: Phases
 var time_left_in_phase: float = 0.0
 
-# A função _ready() foi REMOVIDA para evitar a "race condition".
-
 func enter(args: Dictionary = {}):
 	# --- INICIALIZAÇÃO SEGURA DAS REFERÊNCIAS (LAZY LOADING) ---
-	# Fazemos isto apenas na primeira vez que entramos no estado.
 	if not hitbox:
 		hitbox = owner_node.find_child("AttackHitbox")
 		if hitbox:
@@ -38,9 +35,9 @@ func enter(args: Dictionary = {}):
 
 
 func exit():
-	# Garantimos que a hitbox é desativada se o estado for interrompido.
 	if hitbox_shape:
 		hitbox_shape.disabled = true
+		hitbox_shape.shape = null
 	owner_node.facing_locked = false
 
 
@@ -61,11 +58,20 @@ func process_physics(delta: float, is_running: bool = false):
 				state_machine.on_current_state_finished()
 				return
 
+# --- FUNÇÕES DE PERMISSÃO ---
+
 func allow_dodge() -> bool:
 	return false
 
-func allow_attack() -> bool:
+func can_buffer_attack() -> bool:
 	return current_phase == Phases.RECOVERY
+
+# ESTA É A CORREÇÃO
+# Permitimos que este estado seja reentrado para que os combos possam ser encadeados.
+func allow_reentry() -> bool:
+	return true
+
+# --- LÓGICA INTERNA ---
 
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
@@ -78,14 +84,11 @@ func _change_phase(new_phase: Phases):
 		Phases.ACTIVE:
 			time_left_in_phase = current_profile.active_duration
 			sfx_to_play = current_profile.active_sfx
-			# Ativamos e configuramos a hitbox
 			_update_and_enable_hitbox()
 		Phases.RECOVERY:
 			time_left_in_phase = current_profile.recovery_duration
 			sfx_to_play = current_profile.recovery_sfx
-			# Desativamos a hitbox
 			hitbox_shape.disabled = true
-			# E removemos a sua forma para uma depuração visual mais limpa.
 			hitbox_shape.shape = null
 			
 	var phase_data = {
@@ -102,16 +105,12 @@ func _change_phase(new_phase: Phases):
 
 
 func _update_and_enable_hitbox():
-	# Criamos uma nova forma retangular para a hitbox.
 	var shape = RectangleShape2D.new()
 	shape.size = current_profile.hitbox_size
 	
-	# Atribuímos a nova forma e definimos a sua posição.
 	hitbox_shape.shape = shape
 	hitbox.position = current_profile.hitbox_position
 	
-	# A posição deve respeitar a direção para a qual o personagem está virado.
 	hitbox.position.x *= owner_node.facing_sign
 	
-	# Ativamos a hitbox para que ela possa detetar colisões.
 	hitbox_shape.disabled = false

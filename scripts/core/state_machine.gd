@@ -2,7 +2,6 @@ class_name StateMachine
 extends Node
 
 # --- SINAL ÚNICO ---
-# O nosso novo sinal unificado. Ele transporta um dicionário com todo o contexto.
 signal phase_changed(phase_data: Dictionary)
 
 # --- CONFIGURAÇÃO ---
@@ -31,10 +30,10 @@ func _ready():
 	
 	if states.has(initial_state_key):
 		current_state = states[initial_state_key]
-		# A responsabilidade de emitir o primeiro sinal agora é do próprio estado, na sua função enter().
 		current_state.enter()
 	else:
 		push_error("StateMachine Error: Initial state '%s' not found." % initial_state_key)
+
 
 func process_physics(delta: float, is_running: bool = false):
 	if current_state:
@@ -45,20 +44,29 @@ func process_input(event: InputEvent):
 		current_state.process_input(event)
 
 # --- FUNÇÃO PÚBLICA PARA EMITIR SINAIS ---
-# Os estados irão chamar esta função para anunciar as suas mudanças de fase.
 func emit_phase_change(data: Dictionary):
 	emit_signal("phase_changed", data)
 
 # --- INTENÇÕES DE INPUT ---
+
 func on_dodge_pressed(direction: Vector2):
 	if current_state.allow_dodge():
 		transition_to("DodgeState", {"direction": direction})
 
-func on_attack_pressed(profile: AttackProfile):
-	if current_state.allow_attack():
-		transition_to("AttackState", {"profile": profile})
+# ESTA É A LÓGICA DE ATAQUE FINAL E ROBUSTA
+func on_attack_pressed():
+	# A StateMachine agora pergunta ao estado se ele pode iniciar um novo ataque ou apenas fazer buffer.
+	if current_state.can_initiate_attack():
+		owner_node.reset_combo_chain()
+		var profile = owner_node.get_next_attack_in_combo()
+		if profile:
+			transition_to("AttackState", {"profile": profile})
+	elif current_state.can_buffer_attack():
+		buffer_controller.capture_attack()
+
 
 # --- LÓGICA DE TRANSIÇÃO ---
+
 func on_current_state_finished():
 	if buffer_controller.consume_attack():
 		var next_profile = owner_node.get_next_attack_in_combo()
@@ -68,6 +76,7 @@ func on_current_state_finished():
 
 	owner_node.reset_combo_chain()
 	transition_to(initial_state_key)
+
 
 func transition_to(new_state_key: String, args: Dictionary = {}):
 	if not states.has(new_state_key):
@@ -86,5 +95,4 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 		previous_state.exit()
 	
 	current_state = new_state
-	# A emissão do sinal foi REMOVIDA daqui.
 	current_state.enter(args)

@@ -1,7 +1,6 @@
 class_name State
 extends Node
 
-# --- REFERÊNCIAS ---
 var state_machine: StateMachine
 var owner_node: Node
 var movement_component: Node
@@ -11,31 +10,15 @@ func initialize(sm: StateMachine, owner: Node, move_comp: Node):
 	self.owner_node = owner
 	self.movement_component = move_comp
 
-# --- FUNÇÕES VIRTUAIS DO CICLO DE VIDA DO ESTADO ---
-
-func enter(args: Dictionary = {}):
-	pass
-
-func exit():
-	pass
-	
-func process_physics(delta: float, is_running: bool = false):
-	pass
-	
-func process_input(event: InputEvent):
-	pass
+func enter(args: Dictionary = {}): pass
+func exit(): pass
+func process_physics(delta: float, is_running: bool = false): pass
+func process_input(event: InputEvent): pass
 
 # --- FUNÇÕES DE PERMISSÃO ---
-
-func allow_dodge() -> bool:
-	return false
-
-# ESTA É A NOVA FUNÇÃO
-func allow_attack() -> bool:
-	return false
-	
-func allow_parry() -> bool:
-	return false
-
-func allow_reentry() -> bool:
-	return false
+func allow_dodge() -> bool: return false
+# A função 'allow_attack' foi substituída por permissões mais específicas.
+func can_initiate_attack() -> bool: return false
+func can_buffer_attack() -> bool: return false
+func allow_parry() -> bool: return false
+func allow_reentry() -> bool: return false

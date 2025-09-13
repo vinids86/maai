@@ -51,20 +51,9 @@ func _unhandled_input(event: InputEvent):
 		return
 	
 	if event.is_action_pressed("attack"):
-		# ESTA É A LÓGICA CORRIGIDA E RESTAURADA
-		# Primeiro, verificamos se o estado atual permite alguma forma de ataque.
-		if state_machine.current_state.allow_attack():
-			# Verificamos se estamos num estado neutro para iniciar um novo combo.
-			if state_machine.current_state.name == "LocomotionState":
-				# Se sim, pegamos no primeiro ataque e executamo-lo diretamente.
-				var profile = get_next_attack_in_combo()
-				if profile:
-					state_machine.on_attack_pressed(profile)
-			else:
-				# Caso contrário (estamos, por exemplo, na recuperação de outro ataque),
-				# guardamos a intenção no buffer para continuar o combo.
-				print("ATTACK")
-				buffer_controller.capture_attack()
+		# A lógica foi simplificada. O Player apenas notifica a StateMachine da intenção.
+		# A StateMachine irá então perguntar ao estado atual como deve proceder.
+		state_machine.on_attack_pressed()
 		
 		get_viewport().set_input_as_handled()
 		return
