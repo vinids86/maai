@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://ciepgnvn26lbl"]
+
+[ext_resource type="Script" uid="uid://sdjob2ocyoge" path="res://scripts/ui/enemy_status_ui.gd" id="1_dxpdl"]
+[ext_resource type="Texture2D" uid="uid://dnd5if5ok4tck" path="res://assets/under.png" id="1_m2fm8"]
+[ext_resource type="Texture2D" uid="uid://b6in2fan4sl6f" path="res://assets/progress_health.png" id="2_dxpdl"]
+[ext_resource type="Texture2D" uid="uid://by5iff8a6w436" path="res://assets/progress_stamina.png" id="3_w3bge"]
+
+[node name="EnemyStatusUI" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 420.0
+offset_bottom = 40.0
+scale = Vector2(0.4, 0.4)
+script = ExtResource("1_dxpdl")
+
+[node name="HealthBar" type="TextureProgressBar" parent="."]
+layout_mode = 0
+offset_right = 404.0
+offset_bottom = 32.0
+texture_under = ExtResource("1_m2fm8")
+texture_progress = ExtResource("2_dxpdl")
+
+[node name="StaminaBar" type="TextureProgressBar" parent="."]
+layout_mode = 0
+offset_top = 12.0
+offset_right = 404.0
+offset_bottom = 52.0
+texture_under = ExtResource("1_m2fm8")
+texture_progress = ExtResource("3_w3bge")

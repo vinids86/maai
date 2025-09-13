@@ -3,6 +3,9 @@ extends CharacterBody2D
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var ai_controller: AIController = $AIController
+@onready var health_component: HealthComponent = $HealthComponent
+@onready var stamina_component: StaminaComponent = $StaminaComponent
+@onready var status_ui: EnemyStatusUI = $EnemyStatusUI
 
 @export var visual_node: CanvasItem
 
@@ -12,9 +15,15 @@ var facing_locked: bool = false
 
 func _ready():
 	assert(visual_node != null, "Enemy: O nó visual (visual_node) não foi atribuído no Inspetor.")
+	assert(health_component != null, "Enemy: Nó HealthComponent não encontrado.")
+	assert(stamina_component != null, "Enemy: Nó StaminaComponent não encontrado.")
+	assert(status_ui != null, "Enemy: Nó EnemyStatusUI não encontrado.")
 	
 	if visual_node.material is ShaderMaterial:
 		material_ref = visual_node.material
+		
+	health_component.health_changed.connect(status_ui.update_health)
+	stamina_component.stamina_changed.connect(status_ui.update_stamina)
 
 func _physics_process(delta: float):
 	var walk_direction = ai_controller.get_walk_direction()

@@ -27,6 +27,11 @@ height = 64.0
 [node name="Player" type="CharacterBody2D"]
 script = ExtResource("1_4flbx")
 attack_set = ExtResource("2_oprun")
+neutral_dodge_profile = ExtResource("7_fjrip")
+forward_dodge_profile = ExtResource("8_d2wvv")
+back_dodge_profile = ExtResource("9_3v2ag")
+up_dodge_profile = ExtResource("10_jej6c")
+down_dodge_profile = ExtResource("11_f1ej7")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position_smoothing_enabled = true
