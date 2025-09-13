@@ -28,4 +28,5 @@ func heal(amount: float):
 	emit_signal("health_changed", current_health, max_health)
 
 func is_dead() -> bool:
+	print("Is dead? ", current_health <= 0)
 	return current_health <= 0

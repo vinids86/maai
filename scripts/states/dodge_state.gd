@@ -32,7 +32,7 @@ func exit():
 	owner_node.facing_locked = false
 
 
-func process_physics(delta: float, is_running: bool = false):
+func process_physics(delta: float, walk_direction: float, is_running: bool):
 	time_left_in_phase -= delta
 	
 	while time_left_in_phase <= 0:
@@ -55,6 +55,7 @@ func allow_dodge() -> bool:
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
 	
+	var anim_to_play: StringName
 	var sfx_to_play: AudioStream
 	match current_phase:
 		Phases.ACTIVE:
@@ -63,14 +64,14 @@ func _change_phase(new_phase: Phases):
 		Phases.RECOVERY:
 			time_left_in_phase = current_profile.recovery_duration
 			sfx_to_play = current_profile.recovery_sfx
+
+	anim_to_play = current_profile.animation_name
 	
 	var phase_data = {
 		"state_name": self.name,
 		"phase_name": Phases.keys()[current_phase],
 		"profile": current_profile,
-		# A animação é a mesma para todas as fases da esquiva.
-		"animation_to_play": current_profile.animation_name,
-		# O som é específico para cada fase.
+		"animation_to_play": anim_to_play,
 		"sfx_to_play": sfx_to_play
 	}
 	state_machine.emit_phase_change(phase_data)

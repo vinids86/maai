@@ -1,13 +1,10 @@
 class_name StateMachine
 extends Node
 
-# --- SINAL ÚNICO ---
 signal phase_changed(phase_data: Dictionary)
 
-# --- CONFIGURAÇÃO ---
 @export var initial_state_key: String = "LocomotionState"
 
-# --- COMPONENTES E ESTADOS ---
 var states: Dictionary = {}
 var current_state: State
 var owner_node: Node
@@ -35,27 +32,22 @@ func _ready():
 		push_error("StateMachine Error: Initial state '%s' not found." % initial_state_key)
 
 
-func process_physics(delta: float, is_running: bool = false):
+func process_physics(delta: float, walk_direction: float, is_running: bool):
 	if current_state:
-		current_state.process_physics(delta, is_running)
+		current_state.process_physics(delta, walk_direction, is_running)
 
 func process_input(event: InputEvent):
 	if current_state:
 		current_state.process_input(event)
 
-# --- FUNÇÃO PÚBLICA PARA EMITIR SINAIS ---
 func emit_phase_change(data: Dictionary):
 	emit_signal("phase_changed", data)
-
-# --- INTENÇÕES DE INPUT ---
 
 func on_dodge_pressed(direction: Vector2):
 	if current_state.allow_dodge():
 		transition_to("DodgeState", {"direction": direction})
 
-# ESTA É A LÓGICA DE ATAQUE FINAL E ROBUSTA
 func on_attack_pressed():
-	# A StateMachine agora pergunta ao estado se ele pode iniciar um novo ataque ou apenas fazer buffer.
 	if current_state.can_initiate_attack():
 		owner_node.reset_combo_chain()
 		var profile = owner_node.get_next_attack_in_combo()
@@ -63,9 +55,6 @@ func on_attack_pressed():
 			transition_to("AttackState", {"profile": profile})
 	elif current_state.can_buffer_attack():
 		buffer_controller.capture_attack()
-
-
-# --- LÓGICA DE TRANSIÇÃO ---
 
 func on_current_state_finished():
 	if buffer_controller.consume_attack():
@@ -76,7 +65,6 @@ func on_current_state_finished():
 
 	owner_node.reset_combo_chain()
 	transition_to(initial_state_key)
-
 
 func transition_to(new_state_key: String, args: Dictionary = {}):
 	if not states.has(new_state_key):

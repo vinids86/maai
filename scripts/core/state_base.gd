@@ -12,10 +12,9 @@ func initialize(sm: StateMachine, owner: Node, move_comp: Node):
 
 func enter(args: Dictionary = {}): pass
 func exit(): pass
-func process_physics(delta: float, is_running: bool = false): pass
+func process_physics(delta: float, walk_direction: float, is_running: bool): pass
 func process_input(event: InputEvent): pass
 
-# --- FUNÇÕES DE PERMISSÃO ---
 func allow_dodge() -> bool: return false
 func can_initiate_attack() -> bool: return false
 func can_buffer_attack() -> bool: return false

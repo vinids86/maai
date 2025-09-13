@@ -2,9 +2,9 @@ class_name AttackProfile
 extends Resource
 
 @export_group("Phases")
-@export var startup_duration: float = 0.2
-@export var active_duration: float = 0.15
-@export var recovery_duration: float = 0.25
+@export var startup_duration: float = 0.5
+@export var active_duration: float = 0.1
+@export var recovery_duration: float = 0.8
 
 @export_group("Presentation")
 @export var animation_name: StringName

@@ -1,15 +1,11 @@
 class_name MovementComponent
 extends Node
 
-# --- REFERÊNCIAS ---
 var owner_node: CharacterBody2D
 
 func _ready():
-	# Guardamos uma referência ao corpo do personagem para evitar chamadas repetidas a get_parent().
-	owner_node = get_parent()
-	assert(owner_node is CharacterBody2D, "MovementComponent deve ser filho de um CharacterBody2D.")
-
-# --- LÓGICA DE MOVIMENTO ---
+	owner_node = get_parent() as CharacterBody2D
+	assert(owner_node != null, "MovementComponent deve ser filho de um CharacterBody2D.")
 
 func calculate_walk_velocity(walk_direction: float, is_running: bool, profile: LocomotionProfile):
 	if not profile:
@@ -37,14 +33,10 @@ func apply_dodge_velocity(direction: Vector2, profile: DodgeProfile):
 
 	var final_velocity: Vector2
 
-	# ESTA É A NOVA LÓGICA
-	# Se a esquiva tiver um componente vertical (um pulo ou esquiva para baixo),
-	# nós calculamos cada eixo de forma independente para garantir a força total.
 	if direction.y != 0:
 		final_velocity.x = direction.x * profile.speed
 		final_velocity.y = direction.y * profile.speed
 	else:
-		# Se for uma esquiva puramente horizontal, a normalização antiga ainda é a melhor.
 		final_velocity = direction.normalized() * profile.speed
 	
 	owner_node.velocity = final_velocity
