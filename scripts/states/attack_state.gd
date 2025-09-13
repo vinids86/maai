@@ -1,7 +1,6 @@
 class_name AttackState
 extends State
 
-# A variável @export foi removida; o estado é agora um executor genérico.
 var current_profile: AttackProfile
 
 enum Phases { STARTUP, ACTIVE, RECOVERY }
@@ -42,30 +41,36 @@ func process_physics(delta: float, is_running: bool = false):
 				state_machine.on_current_state_finished()
 				return
 
-# --- FUNÇÕES DE PERMISSÃO ---
-
 func allow_dodge() -> bool:
 	return false
 
 func allow_attack() -> bool:
 	return current_phase == Phases.RECOVERY
 
-# --- LÓGICA INTERNA ---
-
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
 	
+	var sfx_to_play: AudioStream
 	match current_phase:
 		Phases.STARTUP:
 			time_left_in_phase = current_profile.startup_duration
+			sfx_to_play = current_profile.startup_sfx
 		Phases.ACTIVE:
 			time_left_in_phase = current_profile.active_duration
+			sfx_to_play = current_profile.active_sfx
 		Phases.RECOVERY:
 			time_left_in_phase = current_profile.recovery_duration
+			sfx_to_play = current_profile.recovery_sfx
 			
 	var phase_data = {
 		"state_name": self.name,
 		"phase_name": Phases.keys()[current_phase],
-		"profile": current_profile
+		"profile": current_profile,
+		"sfx_to_play": sfx_to_play
 	}
+	
+	# A animação é enviada apenas uma vez, no início do ataque.
+	if current_phase == Phases.STARTUP:
+		phase_data["animation_to_play"] = current_profile.animation_name
+	
 	state_machine.emit_phase_change(phase_data)

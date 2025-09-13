@@ -55,16 +55,23 @@ func allow_dodge() -> bool:
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
 	
+	var sfx_to_play: AudioStream
 	match current_phase:
 		Phases.ACTIVE:
 			time_left_in_phase = current_profile.active_duration
+			sfx_to_play = current_profile.active_sfx
 		Phases.RECOVERY:
 			time_left_in_phase = current_profile.recovery_duration
+			sfx_to_play = current_profile.recovery_sfx
 	
 	var phase_data = {
 		"state_name": self.name,
 		"phase_name": Phases.keys()[current_phase],
-		"profile": current_profile
+		"profile": current_profile,
+		# A animação é a mesma para todas as fases da esquiva.
+		"animation_to_play": current_profile.animation_name,
+		# O som é específico para cada fase.
+		"sfx_to_play": sfx_to_play
 	}
 	state_machine.emit_phase_change(phase_data)
 

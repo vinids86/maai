@@ -6,4 +6,7 @@
 script = ExtResource("1_y4vqf")
 speed = 100.0
 run_speed = 250.0
+idle_animation = &""
+walk_animation = &""
+run_animation = &""
 metadata/_custom_type_script = "uid://m6k761rpsw2b"

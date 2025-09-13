@@ -7,4 +7,6 @@ script = ExtResource("1_f1ysy")
 active_duration = 0.25
 recovery_duration = 0.15
 speed = 400.0
+ignores_gravity = false
+animation_name = &""
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"

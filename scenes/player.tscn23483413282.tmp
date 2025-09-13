@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=16 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -14,8 +14,6 @@
 [ext_resource type="Resource" uid="uid://cfu400oitmjxr" path="res://resources/player/dodge/up.tres" id="10_jej6c"]
 [ext_resource type="Resource" uid="uid://cxtoyg6r5qy34" path="res://resources/player/dodge/down.tres" id="11_f1ej7"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="12_jej6c"]
-[ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_listener.gd" id="15_a8ls1"]
-[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="16_qfm1y"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qc3e3"]
 radius = 16.0
@@ -28,18 +26,14 @@ attack_set = ExtResource("2_oprun")
 [node name="Camera2D" type="Camera2D" parent="."]
 position_smoothing_enabled = true
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_qc3e3")
 
 [node name="ColorRect" type="ColorRect" parent="."]
 offset_left = -16.0
 offset_top = -32.0
 offset_right = 16.0
 offset_bottom = 32.0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("CapsuleShape2D_qc3e3")
-
-[node name="SFXPlayer" type="AudioStreamPlayer2D" parent="."]
 
 [node name="HoldInputTimer" type="Timer" parent="."]
 wait_time = 0.2
@@ -48,16 +42,6 @@ one_shot = true
 [node name="RunCancelTimer" type="Timer" parent="."]
 wait_time = 0.15
 one_shot = true
-
-[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("audio_player", "state_machine")]
-script = ExtResource("16_qfm1y")
-audio_player = NodePath("../SFXPlayer")
-state_machine = NodePath("../StateMachine")
-
-[node name="AnimationListener" type="Node" parent="." node_paths=PackedStringArray("animation_player", "state_machine")]
-script = ExtResource("15_a8ls1")
-animation_player = NodePath("../AnimationPlayer")
-state_machine = NodePath("../StateMachine")
 
 [node name="MovementComponent" type="Node" parent="."]
 script = ExtResource("2_g2els")
