@@ -5,8 +5,17 @@ extends CharacterBody2D
 @onready var hold_input_timer: Timer = $HoldInputTimer
 @onready var run_cancel_timer: Timer = $RunCancelTimer
 @onready var buffer_controller: BufferController = $BufferController
+@onready var stamina_component: StaminaComponent = $StaminaComponent
 
+@export_group("Combat Data")
 @export var attack_set: AttackSet
+
+@export_group("Dodge Profiles")
+@export var neutral_dodge_profile: DodgeProfile
+@export var forward_dodge_profile: DodgeProfile
+@export var back_dodge_profile: DodgeProfile
+@export var up_dodge_profile: DodgeProfile
+@export var down_dodge_profile: DodgeProfile
 
 var is_running: bool = false
 var facing_sign: int = 1
@@ -24,10 +33,12 @@ func _physics_process(delta: float):
 
 func _unhandled_input(event: InputEvent):
 	if event.is_action_pressed("dodge_run"):
+		var direction = _get_dodge_direction_from_input()
+		var profile = _get_dodge_profile_for_direction(direction)
+		
 		if not run_cancel_timer.is_stopped():
 			run_cancel_timer.stop()
-			var direction = _get_dodge_direction_from_input()
-			state_machine.on_dodge_pressed(direction)
+			state_machine.on_dodge_pressed(direction, profile)
 		else:
 			hold_input_timer.start()
 		
@@ -39,7 +50,8 @@ func _unhandled_input(event: InputEvent):
 			if not hold_input_timer.is_stopped():
 				hold_input_timer.stop()
 				var direction = _get_dodge_direction_from_input()
-				state_machine.on_dodge_pressed(direction)
+				var profile = _get_dodge_profile_for_direction(direction)
+				state_machine.on_dodge_pressed(direction, profile)
 		else:
 			run_cancel_timer.start()
 
@@ -87,3 +99,16 @@ func _get_dodge_direction_from_input() -> Vector2:
 		direction.x = 1
 		
 	return direction
+
+func _get_dodge_profile_for_direction(direction: Vector2) -> DodgeProfile:
+	if direction.y < 0:
+		return up_dodge_profile
+	elif direction.y > 0:
+		return down_dodge_profile
+	elif direction.x != 0:
+		if direction.x * facing_sign > 0:
+			return forward_dodge_profile
+		else:
+			return back_dodge_profile
+	else:
+		return neutral_dodge_profile

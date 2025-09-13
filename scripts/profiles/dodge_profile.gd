@@ -9,6 +9,9 @@ extends Resource
 @export var speed: float = 750.0
 @export var ignores_gravity: bool = false
 
+@export_group("Mechanics")
+@export var stamina_cost: float = 15.0
+
 @export_group("Presentation")
 @export var animation_name: StringName
 @export var active_sfx: AudioStream

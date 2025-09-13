@@ -2,8 +2,8 @@ class_name AttackProfile
 extends Resource
 
 @export_group("Phases")
-@export var startup_duration: float = 0.5
-@export var active_duration: float = 0.1
+@export var startup_duration: float = 0.4
+@export var active_duration: float = 0.15
 @export var recovery_duration: float = 0.8
 
 @export_group("Presentation")
@@ -21,3 +21,4 @@ extends Resource
 
 @export_group("Mechanics")
 @export var damage: float = 10.0
+@export var stamina_cost: float = 5.0
