@@ -1,7 +1,6 @@
 class_name AttackState
 extends State
 
-# --- REFERÊNCIAS ---
 var hitbox: Area2D
 var hitbox_shape: CollisionShape2D
 
@@ -12,7 +11,6 @@ var current_phase: Phases
 var time_left_in_phase: float = 0.0
 
 func enter(args: Dictionary = {}):
-	# --- INICIALIZAÇÃO SEGURA DAS REFERÊNCIAS (LAZY LOADING) ---
 	if not hitbox:
 		hitbox = owner_node.find_child("AttackHitbox")
 		if hitbox:
@@ -21,7 +19,6 @@ func enter(args: Dictionary = {}):
 		assert(hitbox != null, "AttackState: Nó 'AttackHitbox' não encontrado como filho do ator.")
 		assert(hitbox_shape != null, "AttackState: Nó 'CollisionShape2D' não encontrado como filho da AttackHitbox.")
 
-	# --- LÓGICA NORMAL DE ENTRADA ---
 	self.current_profile = args.get("profile")
 
 	if not current_profile:
@@ -30,7 +27,6 @@ func enter(args: Dictionary = {}):
 		return
 	
 	owner_node.facing_locked = true
-	owner_node.velocity = Vector2.ZERO
 	_change_phase(Phases.STARTUP)
 
 
@@ -42,6 +38,9 @@ func exit():
 
 
 func process_physics(delta: float, is_running: bool = false):
+	if not current_profile:
+		return
+
 	time_left_in_phase -= delta
 	
 	if time_left_in_phase <= 0:
@@ -57,8 +56,14 @@ func process_physics(delta: float, is_running: bool = false):
 			Phases.RECOVERY:
 				state_machine.on_current_state_finished()
 				return
+	
+	if current_phase == Phases.STARTUP or current_phase == Phases.ACTIVE:
+		var move_vel = current_profile.movement_velocity
+		owner_node.velocity.x = move_vel.x * owner_node.facing_sign
+		owner_node.velocity.y = move_vel.y
+	else:
+		owner_node.velocity = Vector2.ZERO
 
-# --- FUNÇÕES DE PERMISSÃO ---
 
 func allow_dodge() -> bool:
 	return false
@@ -66,12 +71,8 @@ func allow_dodge() -> bool:
 func can_buffer_attack() -> bool:
 	return current_phase == Phases.RECOVERY
 
-# ESTA É A CORREÇÃO
-# Permitimos que este estado seja reentrado para que os combos possam ser encadeados.
 func allow_reentry() -> bool:
 	return true
-
-# --- LÓGICA INTERNA ---
 
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
