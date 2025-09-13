@@ -63,6 +63,7 @@ func _unhandled_input(event: InputEvent):
 			else:
 				# Caso contrário (estamos, por exemplo, na recuperação de outro ataque),
 				# guardamos a intenção no buffer para continuar o combo.
+				print("ATTACK")
 				buffer_controller.capture_attack()
 		
 		get_viewport().set_input_as_handled()

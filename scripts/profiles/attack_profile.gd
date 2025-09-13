@@ -12,4 +12,6 @@ extends Resource
 @export var active_sfx: AudioStream
 @export var recovery_sfx: AudioStream
 
-# No futuro, adicionaremos aqui propriedades como dano, dano de poise, etc.
+@export_group("Hitbox")
+@export var hitbox_size: Vector2 = Vector2(32, 32)
+@export var hitbox_position: Vector2 = Vector2(40, 0)

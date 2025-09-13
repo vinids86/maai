@@ -37,7 +37,15 @@ offset_right = 16.0
 offset_bottom = 32.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+visible = false
 shape = SubResource("CapsuleShape2D_qc3e3")
+
+[node name="AttackHitbox" type="Area2D" parent="."]
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
+disabled = true
 
 [node name="SFXPlayer" type="AudioStreamPlayer2D" parent="."]
 
