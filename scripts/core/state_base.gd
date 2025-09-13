@@ -17,7 +17,6 @@ func process_input(event: InputEvent): pass
 
 # --- FUNÇÕES DE PERMISSÃO ---
 func allow_dodge() -> bool: return false
-# A função 'allow_attack' foi substituída por permissões mais específicas.
 func can_initiate_attack() -> bool: return false
 func can_buffer_attack() -> bool: return false
 func allow_parry() -> bool: return false

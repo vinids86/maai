@@ -1,7 +1,7 @@
 class_name AttackState
 extends State
 
-var hitbox: Area2D
+var hitbox: Hitbox
 var hitbox_shape: CollisionShape2D
 
 var current_profile: AttackProfile
@@ -27,6 +27,7 @@ func enter(args: Dictionary = {}):
 		return
 	
 	owner_node.facing_locked = true
+	owner_node.velocity = Vector2.ZERO
 	_change_phase(Phases.STARTUP)
 
 
@@ -35,6 +36,7 @@ func exit():
 		hitbox_shape.disabled = true
 		hitbox_shape.shape = null
 	owner_node.facing_locked = false
+	hitbox.attack_profile = null
 
 
 func process_physics(delta: float, is_running: bool = false):
@@ -65,9 +67,6 @@ func process_physics(delta: float, is_running: bool = false):
 		owner_node.velocity = Vector2.ZERO
 
 
-func allow_dodge() -> bool:
-	return false
-
 func can_buffer_attack() -> bool:
 	return current_phase == Phases.RECOVERY
 
@@ -91,6 +90,7 @@ func _change_phase(new_phase: Phases):
 			sfx_to_play = current_profile.recovery_sfx
 			hitbox_shape.disabled = true
 			hitbox_shape.shape = null
+			hitbox.attack_profile = null
 			
 	var phase_data = {
 		"state_name": self.name,
@@ -106,6 +106,8 @@ func _change_phase(new_phase: Phases):
 
 
 func _update_and_enable_hitbox():
+	hitbox.attack_profile = current_profile
+	
 	var shape = RectangleShape2D.new()
 	shape.size = current_profile.hitbox_size
 	

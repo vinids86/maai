@@ -1,11 +1,13 @@
-[gd_scene load_steps=18 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=20 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_oprun"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_controller.gd" id="3_f1ej7"]
+[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="3_qfm1y"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="4_dqkch"]
+[ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="4_fulsm"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/default_locomotion.tres" id="5_qlg0r"]
 [ext_resource type="Script" uid="uid://mqtxcxisr6ph" path="res://scripts/states/dodge_state.gd" id="6_tuyoq"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="7_fjrip"]
@@ -41,8 +43,10 @@ visible = false
 shape = SubResource("CapsuleShape2D_qc3e3")
 
 [node name="AttackHitbox" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 8
 monitoring = false
-monitorable = false
+script = ExtResource("3_qfm1y")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
 disabled = true
@@ -56,6 +60,9 @@ one_shot = true
 [node name="RunCancelTimer" type="Timer" parent="."]
 wait_time = 0.15
 one_shot = true
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("4_fulsm")
 
 [node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("audio_player", "state_machine")]
 script = ExtResource("16_qfm1y")

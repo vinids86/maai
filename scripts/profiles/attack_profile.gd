@@ -17,6 +17,7 @@ extends Resource
 @export var hitbox_position: Vector2 = Vector2(40, 0)
 
 @export_group("Movement")
-@export var movement_velocity: Vector2 = Vector2.ZERO # (X: horizontal, Y: vertical)
+@export var movement_velocity: Vector2 = Vector2.ZERO
 
-# No futuro, adicionaremos aqui propriedades como dano, dano de poise, etc.
+@export_group("Mechanics")
+@export var damage: float = 10.0
