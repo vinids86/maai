@@ -65,6 +65,12 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 		owner_node.velocity = Vector2.ZERO
 
 
+func get_current_poise() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.action_poise
+
+
 func can_initiate_attack() -> bool:
 	return false
 	

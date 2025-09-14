@@ -25,8 +25,10 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 	
 	_update_and_emit_phase(walk_direction, is_running)
 
-func process_input(event: InputEvent):
-	pass
+func get_current_poise() -> float:
+	if not locomotion_profile:
+		return 0.0
+	return locomotion_profile.base_poise
 
 func allow_dodge() -> bool:
 	return owner_node.is_on_floor()
@@ -34,6 +36,9 @@ func allow_dodge() -> bool:
 func can_initiate_attack() -> bool:
 	return owner_node.is_on_floor()
 
+func can_buffer_attack() -> bool:
+	return false
+	
 func allow_autoblock() -> bool:
 	return true
 

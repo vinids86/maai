@@ -23,3 +23,6 @@ extends Resource
 @export var damage: float = 10.0
 @export var stamina_cost: float = 0.0
 @export var stamina_damage: float = 10.0
+@export var poise_damage: float = 10.0
+@export var poise_momentum_gain: float = 5.0
+@export var action_poise: float = 20.0 # O poise defensivo durante este ataque.

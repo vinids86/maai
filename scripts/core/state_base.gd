@@ -15,6 +15,9 @@ func exit(): pass
 func process_physics(delta: float, walk_direction: float, is_running: bool): pass
 func process_input(event: InputEvent): pass
 
+func get_current_poise() -> float:
+	return 0.0
+
 func allow_dodge() -> bool: return false
 func can_initiate_attack() -> bool: return false
 func can_buffer_attack() -> bool: return false

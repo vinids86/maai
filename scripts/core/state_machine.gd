@@ -45,6 +45,9 @@ func process_input(event: InputEvent):
 
 func emit_phase_change(data: Dictionary):
 	emit_signal("phase_changed", data)
+	
+func get_current_state() -> State:
+	return current_state
 
 func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 	if not current_state.allow_dodge():
@@ -70,15 +73,15 @@ func on_impact_resolved(result: ImpactResolver.ContactResult):
 			ImpactResolver.ContactResult.Outcome.BLOCKED:
 				transition_to("StaggerState")
 			ImpactResolver.ContactResult.Outcome.GUARD_BROKEN:
-				# TODO: Adicionar transição para GuardBrokenState
 				transition_to("StaggerState")
 			ImpactResolver.ContactResult.Outcome.HIT:
+				transition_to("StaggerState")
+			ImpactResolver.ContactResult.Outcome.POISE_BROKEN:
 				transition_to("StaggerState")
 	
 	if result.attacker_node == owner_node:
 		match result.outcome:
 			ImpactResolver.ContactResult.Outcome.PARRIED:
-				# TODO: Adicionar transição para ParriedState
 				pass
 
 func on_current_state_finished():
