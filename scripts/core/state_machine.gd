@@ -14,9 +14,9 @@ var stamina_component: StaminaComponent
 
 func _ready():
 	owner_node = get_parent()
-	movement_component = owner_node.find_child("MovementComponent")
-	buffer_controller = owner_node.find_child("BufferController")
-	stamina_component = owner_node.find_child("StaminaComponent")
+	movement_component = owner_node.find_child("MovementComponent") as MovementComponent
+	buffer_controller = owner_node.find_child("BufferController") as BufferController
+	stamina_component = owner_node.find_child("StaminaComponent") as StaminaComponent
 	
 	assert(owner_node != null, "StateMachine deve ser filha de um nó de ator (Player/Enemy).")
 	assert(movement_component != null, "Não foi encontrado um nó 'MovementComponent' como irmão da StateMachine.")
@@ -69,9 +69,16 @@ func on_attack_pressed():
 	elif current_state.can_buffer_attack():
 		buffer_controller.capture_attack()
 
+func on_parry_pressed():
+	if current_state.allow_parry():
+		transition_to("ParryState")
+
 func _on_impact_resolved(result: ImpactResolver.ContactResult):
 	if result.defender_node == owner_node:
 		match result.outcome:
+			ImpactResolver.ContactResult.Outcome.PARRY_SUCCESS:
+				if current_state is ParryState:
+					current_state.on_parry_success()
 			ImpactResolver.ContactResult.Outcome.BLOCKED:
 				transition_to("StaggerState")
 			ImpactResolver.ContactResult.Outcome.GUARD_BROKEN:

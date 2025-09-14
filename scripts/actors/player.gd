@@ -63,6 +63,11 @@ func _unhandled_input(event: InputEvent):
 		get_viewport().set_input_as_handled()
 		return
 
+	if event.is_action_pressed("parry"):
+		state_machine.on_parry_pressed()
+		get_viewport().set_input_as_handled()
+		return
+
 	state_machine.process_input(event)
 
 func _on_hold_input_timer_timeout():

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ParryProfile" load_steps=3 format=3 uid="uid://b7kijgne205pc"]
+
+[ext_resource type="Script" uid="uid://vapdm40oww0x" path="res://scripts/profiles/parry_profile.gd" id="1_u1h6j"]
+[ext_resource type="AudioStream" uid="uid://mh2334p0m1yp" path="res://audio/parry_active.wav" id="1_vj1u7"]
+
+[resource]
+script = ExtResource("1_u1h6j")
+active_duration = 0.15
+recovery_duration = 0.3
+poise_bonus_value = 50.0
+poise_bonus_duration = 2.0
+animation_name = &""
+active_sfx = ExtResource("1_vj1u7")
+metadata/_custom_type_script = "uid://vapdm40oww0x"

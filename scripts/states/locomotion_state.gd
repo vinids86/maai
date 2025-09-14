@@ -39,6 +39,9 @@ func can_initiate_attack() -> bool:
 func can_buffer_attack() -> bool:
 	return false
 	
+func allow_parry() -> bool:
+	return owner_node.is_on_floor()
+
 func allow_autoblock() -> bool:
 	return true
 

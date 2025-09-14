@@ -6,6 +6,7 @@ class ContactResult extends Resource:
 	enum Outcome {
 		HIT,
 		POISE_BROKEN,
+		PARRY_SUCCESS,
 		PARRIED,
 		BLOCKED,
 		GUARD_BROKEN,
@@ -31,6 +32,16 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 	result.defender_node = defender
 	result.attack_profile = attack_profile
 	
+	if defender_sm and defender_sm.current_state is ParryState:
+		if (defender_sm.current_state as ParryState).is_in_active_phase():
+			result.outcome = ContactResult.Outcome.PARRY_SUCCESS
+			emit_signal("impact_resolved", result)
+			
+			var parried_result = result.duplicate()
+			parried_result.outcome = ContactResult.Outcome.PARRIED
+			emit_signal("impact_resolved", parried_result)
+			return
+
 	var defender_poise_comp = defender.find_child("PoiseComponent")
 	var was_poise_broken = false
 	if defender_poise_comp:
