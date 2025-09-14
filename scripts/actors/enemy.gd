@@ -12,6 +12,7 @@ extends CharacterBody2D
 var material_ref: ShaderMaterial
 var facing_sign: int = 1
 var facing_locked: bool = false
+var combo_index: int = 0
 
 func _ready():
 	assert(visual_node != null, "Enemy: O nó visual (visual_node) não foi atribuído no Inspetor.")
@@ -31,6 +32,9 @@ func _physics_process(delta: float):
 	
 	state_machine.process_physics(delta, walk_direction, is_running)
 	move_and_slide()
+	
+func reset_combo_chain():
+	combo_index = 0
 
 func flash_red():
 	if not material_ref:

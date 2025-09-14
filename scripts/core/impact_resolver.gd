@@ -18,32 +18,38 @@ class ContactResult extends Resource:
 	var attack_profile: AttackProfile
 
 func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
-	var attacker = hitbox.owner_actor
-	var defender = hurtbox.owner_actor
-	var attack_profile = hitbox.attack_profile
+	var attacker: Node = hitbox.owner_actor
+	var defender: Node = hurtbox.owner_actor
+	var attack_profile: AttackProfile = hitbox.attack_profile
 	
 	if not attacker or not defender or not attack_profile:
 		return
 
-	var defender_sm = defender.find_child("StateMachine")
+	var defender_sm: StateMachine = defender.find_child("StateMachine") as StateMachine
 	
-	var result = ContactResult.new()
+	var result: ContactResult = ContactResult.new()
 	result.attacker_node = attacker
 	result.defender_node = defender
 	result.attack_profile = attack_profile
+
+	# >>> Inserção mínima: aviso SINCRÔNICO para IA tentar parry no mesmo frame <<<
+	var defender_ai: AIController = defender.find_child("AIController") as AIController
+	if defender_ai != null:
+		defender_ai.on_incoming_attack(attacker as CharacterBody2D, hitbox)
+	# <<< fim da inserção >>>
 	
 	if defender_sm and defender_sm.current_state is ParryState:
 		if (defender_sm.current_state as ParryState).is_in_active_phase():
 			result.outcome = ContactResult.Outcome.PARRY_SUCCESS
 			emit_signal("impact_resolved", result)
 			
-			var parried_result = result.duplicate()
+			var parried_result: ContactResult = result.duplicate()
 			parried_result.outcome = ContactResult.Outcome.PARRIED
 			emit_signal("impact_resolved", parried_result)
 			return
 
 	var defender_poise_comp = defender.find_child("PoiseComponent")
-	var was_poise_broken = false
+	var was_poise_broken: bool = false
 	if defender_poise_comp:
 		var defender_poise = defender_poise_comp.get_effective_poise()
 		if attack_profile.poise_damage >= defender_poise:

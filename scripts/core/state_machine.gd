@@ -118,6 +118,5 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 	
 	if previous_state:
 		previous_state.exit()
-	
 	current_state = new_state
 	current_state.enter(args)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=21 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -9,9 +9,14 @@
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="7_8qclf"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/default_locomotion.tres" id="8_w8i8w"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="9_8qclf"]
+[ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="10_s1ycm"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_controller.gd" id="10_w8i8w"]
+[ext_resource type="Script" uid="uid://6j164hqmaqt2" path="res://scripts/states/parry_state.gd" id="11_shcg2"]
 [ext_resource type="Script" uid="uid://hhcv8mh33t6y" path="res://scripts/components/stamina_component.gd" id="11_w8i8w"]
+[ext_resource type="Resource" uid="uid://b7kijgne205pc" path="res://resources/player/parry/default.tres" id="12_ile5s"]
 [ext_resource type="PackedScene" uid="uid://ciepgnvn26lbl" path="res://scenes/enemy_status_ui.tscn" id="12_otmr2"]
+[ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="13_1x4g4"]
+[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="17_shcg2"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c4w8v"]
 shader = ExtResource("2_5uy6h")
@@ -72,6 +77,19 @@ metadata/_custom_type_script = "uid://c50xfgbngchgg"
 script = ExtResource("10_w8i8w")
 metadata/_custom_type_script = "uid://beortrl7adiim"
 
+[node name="StaggerState" type="Node" parent="StateMachine"]
+script = ExtResource("10_s1ycm")
+metadata/_custom_type_script = "uid://m2bbkg5u3e8f"
+
+[node name="ParryState" type="Node" parent="StateMachine"]
+script = ExtResource("11_shcg2")
+parry_profile = ExtResource("12_ile5s")
+metadata/_custom_type_script = "uid://6j164hqmaqt2"
+
+[node name="ParriedState" type="Node" parent="StateMachine"]
+script = ExtResource("13_1x4g4")
+metadata/_custom_type_script = "uid://ba650tjbftjqi"
+
 [node name="MovementComponent" type="Node" parent="."]
 script = ExtResource("9_8qclf")
 
@@ -85,3 +103,11 @@ offset_left = -75.0
 offset_top = -52.0
 offset_right = -35.0
 offset_bottom = -12.0
+
+[node name="SFXEnemy" type="AudioStreamPlayer2D" parent="."]
+
+[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("audio_player", "state_machine")]
+script = ExtResource("17_shcg2")
+audio_player = NodePath("../SFXEnemy")
+state_machine = NodePath("../StateMachine")
+metadata/_custom_type_script = "uid://nl1a7e12lrfa"
