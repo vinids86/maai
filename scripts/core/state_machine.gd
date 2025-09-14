@@ -82,7 +82,7 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 			ImpactResolver.ContactResult.Outcome.BLOCKED:
 				transition_to("StaggerState")
 			ImpactResolver.ContactResult.Outcome.GUARD_BROKEN:
-				transition_to("StaggerState")
+				transition_to("StaggerState") # Placeholder
 			ImpactResolver.ContactResult.Outcome.HIT:
 				transition_to("StaggerState")
 			ImpactResolver.ContactResult.Outcome.POISE_BROKEN:
@@ -91,7 +91,7 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 	if result.attacker_node == owner_node:
 		match result.outcome:
 			ImpactResolver.ContactResult.Outcome.PARRIED:
-				pass
+				transition_to("ParriedState")
 
 func on_current_state_finished():
 	if buffer_controller.consume_attack():

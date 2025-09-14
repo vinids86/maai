@@ -6,6 +6,7 @@
 script = ExtResource("1_y4vqf")
 speed = 100.0
 run_speed = 250.0
+base_poise = 5.0
 idle_animation = &""
 walk_animation = &""
 run_animation = &""

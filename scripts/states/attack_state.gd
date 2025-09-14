@@ -79,6 +79,9 @@ func can_buffer_attack() -> bool:
 
 func allow_reentry() -> bool:
 	return true
+	
+func allow_dodge() -> bool: 
+	return current_phase == Phases.RECOVERY
 
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase

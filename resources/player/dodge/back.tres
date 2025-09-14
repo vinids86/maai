@@ -1,5 +1,6 @@
-[gd_resource type="Resource" script_class="DodgeProfile" load_steps=2 format=3 uid="uid://h5j4chnrxexj"]
+[gd_resource type="Resource" script_class="DodgeProfile" load_steps=3 format=3 uid="uid://h5j4chnrxexj"]
 
+[ext_resource type="AudioStream" uid="uid://dbm1xt5hw8dp0" path="res://audio/dodge.wav" id="1_e5l5m"]
 [ext_resource type="Script" uid="uid://fxnxrf24bhpp" path="res://scripts/profiles/dodge_profile.gd" id="1_urjtw"]
 
 [resource]
@@ -10,4 +11,5 @@ speed = 200.0
 ignores_gravity = true
 stamina_cost = 15.0
 animation_name = &""
+active_sfx = ExtResource("1_e5l5m")
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"

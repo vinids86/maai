@@ -9,7 +9,7 @@ var time_left_in_phase: float = 0.0
 
 func enter(args: Dictionary = {}):
 	if not parry_profile:
-		push_warning("ParryState: Nenhum ParryProfile foi atribuído. A abortar.")
+		push_warning("ParryState: Nenhum ParryProfile foi atribuído no Inspetor. A abortar.")
 		state_machine.on_current_state_finished()
 		return
 	
@@ -17,8 +17,10 @@ func enter(args: Dictionary = {}):
 	owner_node.velocity = Vector2.ZERO
 	_change_phase(Phases.ACTIVE)
 
+
 func exit():
 	owner_node.facing_locked = false
+
 
 func process_physics(delta: float, walk_direction: float, is_running: bool):
 	if not parry_profile:
