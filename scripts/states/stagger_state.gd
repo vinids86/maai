@@ -5,14 +5,18 @@ extends State
 
 var time_left_in_phase: float = 0.0
 
-func enter(args: Dictionary = {}) -> void:
+func enter(args: Dictionary = {}):
 	if not stagger_profile:
-		push_warning("StaggerState: Nenhum StaggerProfile atribuído no Inspetor. Abortando.")
+		push_warning("StaggerState: Nenhum StaggerProfile atribuído no Inspetor. A abortar.")
 		state_machine.on_current_state_finished()
 		return
 
 	time_left_in_phase = stagger_profile.duration
-	owner_node.velocity = Vector2.ZERO
+	
+	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
+	owner_node.velocity = knockback
+	if knockback.x != 0:
+		owner_node.velocity.x *= -owner_node.facing_sign
 
 	var phase_data := {
 		"state_name": self.name,
@@ -24,7 +28,7 @@ func enter(args: Dictionary = {}) -> void:
 	state_machine.emit_phase_change(phase_data)
 
 
-func process_physics(delta: float, walk_direction: float, is_running: bool) -> void:
+func process_physics(delta: float, walk_direction: float, is_running: bool):
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0.0:
 		state_machine.on_current_state_finished()

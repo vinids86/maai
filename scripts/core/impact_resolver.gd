@@ -3,13 +3,13 @@ extends Node
 signal impact_resolved(result: ContactResult)
 
 class ContactResult extends Resource:
-	# Dois papéis claros no MESMO payload
 	enum DefenderOutcome { HIT, POISE_BROKEN, PARRY_SUCCESS, BLOCKED, GUARD_BROKEN, DODGED }
 	enum AttackerOutcome { NONE, PARRIED }
 
 	var attacker_node: Node
 	var defender_node: Node
 	var attack_profile: AttackProfile
+	var knockback_vector: Vector2
 
 	var defender_outcome: DefenderOutcome
 	var attacker_outcome: AttackerOutcome = AttackerOutcome.NONE
@@ -28,13 +28,12 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox) -> void:
 	result.attacker_node = attacker
 	result.defender_node = defender
 	result.attack_profile = attack_profile
+	result.knockback_vector = attack_profile.knockback_vector
 
-	# Aviso SINCRÔNICO para IA tentar parry no mesmo frame (mantido)
 	var defender_ai: AIController = defender.find_child("AIController") as AIController
 	if defender_ai != null:
 		defender_ai.on_incoming_attack(attacker as CharacterBody2D, hitbox)
 
-	# Parry ativo? então um ÚNICO emit com dois outcomes
 	if defender_sm != null and defender_sm.current_state is ParryState:
 		var ps: ParryState = defender_sm.current_state as ParryState
 		if ps.is_in_active_phase():
@@ -43,7 +42,6 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox) -> void:
 			emit_signal("impact_resolved", result)
 			return
 
-	# Fluxo normal (autoblock/poise/hit)
 	var was_poise_broken: bool = false
 	var defender_poise_comp: Node = defender.find_child("PoiseComponent")
 	if defender_poise_comp != null:
@@ -62,7 +60,6 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox) -> void:
 	else:
 		result.defender_outcome = ContactResult.DefenderOutcome.HIT
 
-	# Aplica dano se NÃO for bloqueado
 	if result.defender_outcome != ContactResult.DefenderOutcome.BLOCKED:
 		var defender_health: HealthComponent = defender.find_child("HealthComponent") as HealthComponent
 		if defender_health is HealthComponent:

@@ -25,4 +25,5 @@ extends Resource
 @export var stamina_damage: float = 10.0
 @export var poise_damage: float = 10.0
 @export var poise_momentum_gain: float = 5.0
-@export var action_poise: float = 20.0 # O poise defensivo durante este ataque.
+@export var action_poise: float = 10.0
+@export var knockback_vector: Vector2 = Vector2(150, -100)

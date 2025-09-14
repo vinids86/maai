@@ -61,24 +61,12 @@ func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 	transition_to("DodgeState", {"direction": direction, "profile": profile})
 
 func on_attack_pressed():
-	var can_start: bool = false
-	if current_state != null:
-		can_start = current_state.can_initiate_attack()
-
-	var can_buffer: bool = false
-	if current_state != null:
-		can_buffer = current_state.can_buffer_attack()
-
-	if can_start:
+	if current_state.can_initiate_attack():
 		owner_node.reset_combo_chain()
-		var profile: AttackProfile = owner_node.get_next_attack_in_combo()
-		var has_profile: bool = profile != null
-		var has_stamina: bool = false
-		if has_profile:
-			has_stamina = stamina_component.try_consume(profile.stamina_cost)
-		if has_profile and has_stamina:
+		var profile = owner_node.get_next_attack_in_combo()
+		if profile and stamina_component.try_consume(profile.stamina_cost):
 			transition_to("AttackState", {"profile": profile})
-	elif can_buffer:
+	elif current_state.can_buffer_attack():
 		buffer_controller.capture_attack()
 
 func on_parry_pressed():
@@ -87,20 +75,14 @@ func on_parry_pressed():
 
 func _on_impact_resolved(result: ImpactResolver.ContactResult) -> void:
 	if result.defender_node == owner_node:
-		match result.defender_outcome:
-			ImpactResolver.ContactResult.DefenderOutcome.PARRY_SUCCESS:
-				if current_state is ParryState:
-					current_state.on_parry_success()
-			ImpactResolver.ContactResult.DefenderOutcome.BLOCKED:
-				transition_to("BlockStunState")
-			ImpactResolver.ContactResult.DefenderOutcome.GUARD_BROKEN:
-				transition_to("StaggerState") # Placeholder
-			ImpactResolver.ContactResult.DefenderOutcome.HIT:
-				transition_to("StaggerState")
-			ImpactResolver.ContactResult.DefenderOutcome.POISE_BROKEN:
-				transition_to("StaggerState")
-			_:
-				pass
+		var outcome = result.defender_outcome
+		if outcome == ImpactResolver.ContactResult.DefenderOutcome.PARRY_SUCCESS:
+			if current_state is ParryState:
+				current_state.on_parry_success()
+		elif outcome == ImpactResolver.ContactResult.DefenderOutcome.BLOCKED:
+			transition_to("BlockStunState")
+		elif outcome in [ImpactResolver.ContactResult.DefenderOutcome.GUARD_BROKEN, ImpactResolver.ContactResult.DefenderOutcome.HIT, ImpactResolver.ContactResult.DefenderOutcome.POISE_BROKEN]:
+			transition_to("StaggerState", {"knockback_vector": result.knockback_vector})
 
 	if result.attacker_node == owner_node:
 		if result.attacker_outcome == ImpactResolver.ContactResult.AttackerOutcome.PARRIED:
