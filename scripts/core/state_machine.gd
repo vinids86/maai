@@ -60,7 +60,7 @@ func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 		
 	transition_to("DodgeState", {"direction": direction, "profile": profile})
 
-func on_attack_pressed() -> void:
+func on_attack_pressed():
 	var can_start: bool = false
 	if current_state != null:
 		can_start = current_state.can_initiate_attack()
@@ -86,14 +86,13 @@ func on_parry_pressed():
 		transition_to("ParryState")
 
 func _on_impact_resolved(result: ImpactResolver.ContactResult) -> void:
-	# DEFENSOR: trata desfecho do defensor
 	if result.defender_node == owner_node:
 		match result.defender_outcome:
 			ImpactResolver.ContactResult.DefenderOutcome.PARRY_SUCCESS:
 				if current_state is ParryState:
 					current_state.on_parry_success()
 			ImpactResolver.ContactResult.DefenderOutcome.BLOCKED:
-				transition_to("StaggerState")
+				transition_to("BlockStunState")
 			ImpactResolver.ContactResult.DefenderOutcome.GUARD_BROKEN:
 				transition_to("StaggerState") # Placeholder
 			ImpactResolver.ContactResult.DefenderOutcome.HIT:
@@ -103,7 +102,6 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult) -> void:
 			_:
 				pass
 
-	# ATACANTE: só nos importa se foi PARRIED
 	if result.attacker_node == owner_node:
 		if result.attacker_outcome == ImpactResolver.ContactResult.AttackerOutcome.PARRIED:
 			transition_to("ParriedState")

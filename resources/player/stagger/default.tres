@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="StaggerProfile" load_steps=3 format=3 uid="uid://hoyhnn4kdadc"]
 
 [ext_resource type="Script" uid="uid://juhcc5i51ggi" path="res://scripts/profiles/stagger_profile.gd" id="1_5beut"]
-[ext_resource type="AudioStream" uid="uid://npid0in1ju3o" path="res://audio/block.wav" id="1_x0h5i"]
+[ext_resource type="AudioStream" uid="uid://bv5ldrsxj3eh0" path="res://audio/hit.wav" id="1_x0h5i"]
 
 [resource]
 script = ExtResource("1_5beut")
