@@ -7,7 +7,7 @@ enum Phases { ACTIVE, SUCCESS, RECOVERY }
 var current_phase: Phases
 var time_left_in_phase: float = 0.0
 
-func enter(args: Dictionary = {}):
+func enter(args: Dictionary = {}) -> void:
 	if not parry_profile:
 		push_warning("ParryState: Nenhum ParryProfile foi atribuído no Inspetor. A abortar.")
 		state_machine.on_current_state_finished()
@@ -17,20 +17,17 @@ func enter(args: Dictionary = {}):
 	owner_node.velocity = Vector2.ZERO
 	_change_phase(Phases.ACTIVE)
 
-
-func exit():
+func exit() -> void:
 	owner_node.facing_locked = false
 
-
-func process_physics(delta: float, walk_direction: float, is_running: bool):
+func process_physics(delta: float, walk_direction: float, is_running: bool) -> void:
 	if not parry_profile:
 		return
 
 	time_left_in_phase -= delta
 	
-	if time_left_in_phase <= 0:
-		var time_exceeded = -time_left_in_phase
-		
+	if time_left_in_phase <= 0.0:
+		var time_exceeded: float = -time_left_in_phase
 		match current_phase:
 			Phases.ACTIVE:
 				_change_phase(Phases.RECOVERY)
@@ -45,11 +42,11 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 func is_in_active_phase() -> bool:
 	return current_phase == Phases.ACTIVE
 
-func on_parry_success():
+func on_parry_success() -> void:
 	if current_phase == Phases.ACTIVE:
 		_change_phase(Phases.SUCCESS)
 
-func _change_phase(new_phase: Phases):
+func _change_phase(new_phase: Phases) -> void:
 	current_phase = new_phase
 	
 	var sfx_to_play: AudioStream
@@ -63,8 +60,8 @@ func _change_phase(new_phase: Phases):
 		Phases.RECOVERY:
 			time_left_in_phase = parry_profile.recovery_duration
 			sfx_to_play = parry_profile.recovery_sfx
-			
-	var phase_data = {
+
+	var phase_data: Dictionary = {
 		"state_name": self.name,
 		"phase_name": Phases.keys()[current_phase],
 		"profile": parry_profile,
@@ -75,3 +72,12 @@ func _change_phase(new_phase: Phases):
 		phase_data["animation_to_play"] = parry_profile.animation_name
 	
 	state_machine.emit_phase_change(phase_data)
+
+func can_initiate_attack() -> bool:
+	return false
+
+func can_buffer_attack() -> bool:
+	return current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY
+
+func allow_autoblock() -> bool: 
+	return current_phase == Phases.RECOVERY

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="StaggerProfile" load_steps=3 format=3 uid="uid://hoyhnn4kdadc"]
+
+[ext_resource type="Script" uid="uid://juhcc5i51ggi" path="res://scripts/profiles/stagger_profile.gd" id="1_5beut"]
+[ext_resource type="AudioStream" uid="uid://npid0in1ju3o" path="res://audio/block.wav" id="1_x0h5i"]
+
+[resource]
+script = ExtResource("1_5beut")
+duration = 0.3
+animation_name = &""
+enter_sfx = ExtResource("1_x0h5i")
+metadata/_custom_type_script = "uid://juhcc5i51ggi"

@@ -9,6 +9,9 @@ extends CharacterBody2D
 
 @export var visual_node: CanvasItem
 
+@export_group("Combat Data")
+@export var attack_set: AttackSet
+
 var material_ref: ShaderMaterial
 var facing_sign: int = 1
 var facing_locked: bool = false
@@ -35,6 +38,17 @@ func _physics_process(delta: float):
 	
 func reset_combo_chain():
 	combo_index = 0
+	
+func get_next_attack_in_combo() -> AttackProfile:
+	if not attack_set or attack_set.attacks.is_empty():
+		return null
+
+	if combo_index >= attack_set.attacks.size():
+		return null
+	
+	var profile = attack_set.attacks[combo_index]
+	combo_index += 1
+	return profile
 
 func flash_red():
 	if not material_ref:

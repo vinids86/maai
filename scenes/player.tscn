@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=28 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -23,9 +23,15 @@
 [ext_resource type="Resource" uid="uid://b7kijgne205pc" path="res://resources/player/parry/default.tres" id="20_i4ail"]
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="21_4ni07"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="22_l71n6"]
+[ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="23_ke2ow"]
+[ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="24_l71n6"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qc3e3"]
 radius = 25.0
+height = 64.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4ni07"]
+radius = 16.0
 height = 64.0
 
 [node name="Player" type="CharacterBody2D"]
@@ -119,9 +125,20 @@ metadata/_custom_type_script = "uid://ba650tjbftjqi"
 
 [node name="StaggerState" type="Node" parent="StateMachine"]
 script = ExtResource("22_l71n6")
+stagger_profile = ExtResource("23_ke2ow")
 metadata/_custom_type_script = "uid://m2bbkg5u3e8f"
 
 [node name="StaminaComponent" type="Node" parent="."]
 script = ExtResource("19_4r5pv")
 
 [node name="DelayTimer" type="Timer" parent="StaminaComponent"]
+
+[node name="Hurtbox" type="Area2D" parent="."]
+visible = false
+collision_layer = 32
+collision_mask = 16
+script = ExtResource("24_l71n6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+visible = false
+shape = SubResource("CapsuleShape2D_4ni07")

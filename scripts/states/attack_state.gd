@@ -10,11 +10,11 @@ enum Phases { STARTUP, ACTIVE, RECOVERY }
 var current_phase: Phases
 var time_left_in_phase: float = 0.0
 
-func enter(args: Dictionary = {}):
+func enter(args: Dictionary = {}) -> void:
 	if not hitbox:
-		hitbox = owner_node.find_child("AttackHitbox")
+		hitbox = owner_node.find_child("AttackHitbox") as Area2D
 		if hitbox:
-			hitbox_shape = hitbox.find_child("CollisionShape2D")
+			hitbox_shape = hitbox.find_child("CollisionShape2D") as CollisionShape2D
 		
 		assert(hitbox != null, "AttackState: Nó 'AttackHitbox' não encontrado como filho do ator.")
 		assert(hitbox_shape != null, "AttackState: Nó 'CollisionShape2D' não encontrado como filho da AttackHitbox.")
@@ -29,23 +29,20 @@ func enter(args: Dictionary = {}):
 	owner_node.facing_locked = true
 	_change_phase(Phases.STARTUP)
 
-
-func exit():
+func exit() -> void:
 	if hitbox_shape:
 		hitbox_shape.disabled = true
 		hitbox_shape.shape = null
 	owner_node.facing_locked = false
 
-
-func process_physics(delta: float, walk_direction: float, is_running: bool):
+func process_physics(delta: float, walk_direction: float, is_running: bool) -> void:
 	if not current_profile:
 		return
 
 	time_left_in_phase -= delta
 	
-	if time_left_in_phase <= 0:
-		var time_exceeded = -time_left_in_phase
-		
+	if time_left_in_phase <= 0.0:
+		var time_exceeded: float = -time_left_in_phase
 		match current_phase:
 			Phases.STARTUP:
 				_change_phase(Phases.ACTIVE)
@@ -58,18 +55,16 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 				return
 	
 	if current_phase == Phases.STARTUP or current_phase == Phases.ACTIVE:
-		var move_vel = current_profile.movement_velocity
+		var move_vel: Vector2 = current_profile.movement_velocity
 		owner_node.velocity.x = move_vel.x * owner_node.facing_sign
 		owner_node.velocity.y = move_vel.y
 	else:
 		owner_node.velocity = Vector2.ZERO
 
-
 func get_current_poise() -> float:
 	if not current_profile:
 		return 0.0
 	return current_profile.action_poise
-
 
 func can_initiate_attack() -> bool:
 	return false
@@ -83,7 +78,7 @@ func allow_reentry() -> bool:
 func allow_dodge() -> bool: 
 	return current_phase == Phases.RECOVERY
 
-func _change_phase(new_phase: Phases):
+func _change_phase(new_phase: Phases) -> void:
 	current_phase = new_phase
 	
 	var sfx_to_play: AudioStream
@@ -98,10 +93,11 @@ func _change_phase(new_phase: Phases):
 		Phases.RECOVERY:
 			time_left_in_phase = current_profile.recovery_duration
 			sfx_to_play = current_profile.recovery_sfx
-			hitbox_shape.disabled = true
-			hitbox_shape.shape = null
+			if hitbox_shape != null:
+				hitbox_shape.disabled = true
+				hitbox_shape.shape = null
 			
-	var phase_data = {
+	var phase_data: Dictionary = {
 		"state_name": self.name,
 		"phase_name": Phases.keys()[current_phase],
 		"profile": current_profile,
@@ -113,11 +109,10 @@ func _change_phase(new_phase: Phases):
 	
 	state_machine.emit_phase_change(phase_data)
 
-
-func _update_and_enable_hitbox():
+func _update_and_enable_hitbox() -> void:
 	hitbox.attack_profile = current_profile
 	
-	var shape = RectangleShape2D.new()
+	var shape: RectangleShape2D = RectangleShape2D.new()
 	shape.size = current_profile.hitbox_size
 	
 	hitbox_shape.shape = shape

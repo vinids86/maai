@@ -1,9 +1,10 @@
-[gd_scene load_steps=21 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=25 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="2_4ra3w"]
 [ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="2_5uy6h"]
+[ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_ile5s"]
 [ext_resource type="Script" uid="uid://dewrlich57pgi" path="res://scripts/components/ai_controller.gd" id="5_md484"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="6_ipns3"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="7_8qclf"]
@@ -15,8 +16,11 @@
 [ext_resource type="Script" uid="uid://hhcv8mh33t6y" path="res://scripts/components/stamina_component.gd" id="11_w8i8w"]
 [ext_resource type="Resource" uid="uid://b7kijgne205pc" path="res://resources/player/parry/default.tres" id="12_ile5s"]
 [ext_resource type="PackedScene" uid="uid://ciepgnvn26lbl" path="res://scenes/enemy_status_ui.tscn" id="12_otmr2"]
+[ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="12_rogs8"]
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="13_1x4g4"]
+[ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="15_1x4g4"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="17_shcg2"]
+[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="20_2pwtc"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c4w8v"]
 shader = ExtResource("2_5uy6h")
@@ -34,6 +38,7 @@ height = 64.0
 [node name="Enemy" type="CharacterBody2D" node_paths=PackedStringArray("visual_node")]
 script = ExtResource("1_md0e3")
 visual_node = NodePath("ColorRect")
+attack_set = ExtResource("2_ile5s")
 
 [node name="ColorRect" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_c4w8v")
@@ -48,7 +53,6 @@ visible = false
 shape = SubResource("CapsuleShape2D_7p1mj")
 
 [node name="Hurtbox" type="Area2D" parent="."]
-visible = false
 collision_layer = 8
 collision_mask = 4
 script = ExtResource("2_4ra3w")
@@ -79,6 +83,7 @@ metadata/_custom_type_script = "uid://beortrl7adiim"
 
 [node name="StaggerState" type="Node" parent="StateMachine"]
 script = ExtResource("10_s1ycm")
+stagger_profile = ExtResource("12_rogs8")
 metadata/_custom_type_script = "uid://m2bbkg5u3e8f"
 
 [node name="ParryState" type="Node" parent="StateMachine"]
@@ -88,7 +93,12 @@ metadata/_custom_type_script = "uid://6j164hqmaqt2"
 
 [node name="ParriedState" type="Node" parent="StateMachine"]
 script = ExtResource("13_1x4g4")
+parried_duration = 0.6
 metadata/_custom_type_script = "uid://ba650tjbftjqi"
+
+[node name="AttackState" type="Node" parent="StateMachine"]
+script = ExtResource("15_1x4g4")
+metadata/_custom_type_script = "uid://c3f0ddxqxcn8k"
 
 [node name="MovementComponent" type="Node" parent="."]
 script = ExtResource("9_8qclf")
@@ -111,3 +121,11 @@ script = ExtResource("17_shcg2")
 audio_player = NodePath("../SFXEnemy")
 state_machine = NodePath("../StateMachine")
 metadata/_custom_type_script = "uid://nl1a7e12lrfa"
+
+[node name="AttackHitbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 32
+monitoring = false
+script = ExtResource("20_2pwtc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]

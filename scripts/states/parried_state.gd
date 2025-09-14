@@ -10,7 +10,6 @@ func enter(args: Dictionary = {}):
 	owner_node.velocity = Vector2.ZERO
 	_emit_phase_signal()
 
-
 func process_physics(delta: float, walk_direction: float, is_running: bool):
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0:
@@ -23,3 +22,6 @@ func _emit_phase_signal():
 		"phase_name": "STUNNED"
 	}
 	state_machine.emit_phase_change(phase_data)
+
+func allow_parry() -> bool: 
+	return true
