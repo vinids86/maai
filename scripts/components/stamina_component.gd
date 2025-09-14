@@ -28,8 +28,23 @@ func try_consume(amount: float) -> bool:
 	if amount > current_stamina:
 		return false
 	
-	current_stamina -= amount
+	_update_stamina(current_stamina - amount)
+	return true
+
+func take_stamina_damage(amount: float) -> bool:
+	if is_stamina_broken():
+		return false
+
+	var stamina_after_damage = current_stamina - amount
+	_update_stamina(stamina_after_damage)
+	
+	return not is_stamina_broken()
+
+func is_stamina_broken() -> bool:
+	return current_stamina <= 0
+
+func _update_stamina(new_value: float):
+	current_stamina = max(0, new_value)
 	can_regenerate = false
 	delay_timer.start()
 	emit_signal("stamina_changed", current_stamina, max_stamina)
-	return true

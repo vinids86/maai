@@ -20,3 +20,4 @@ func can_initiate_attack() -> bool: return false
 func can_buffer_attack() -> bool: return false
 func allow_parry() -> bool: return false
 func allow_reentry() -> bool: return false
+func allow_autoblock() -> bool: return false

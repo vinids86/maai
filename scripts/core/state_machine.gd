@@ -51,7 +51,6 @@ func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 		return
 	
 	if not profile or not stamina_component.try_consume(profile.stamina_cost):
-		# TODO: Tocar um som de "falta de stamina" aqui.
 		return
 		
 	transition_to("DodgeState", {"direction": direction, "profile": profile})
@@ -64,6 +63,23 @@ func on_attack_pressed():
 			transition_to("AttackState", {"profile": profile})
 	elif current_state.can_buffer_attack():
 		buffer_controller.capture_attack()
+
+func on_impact_resolved(result: ImpactResolver.ContactResult):
+	if result.defender_node == owner_node:
+		match result.outcome:
+			ImpactResolver.ContactResult.Outcome.BLOCKED:
+				transition_to("StaggerState")
+			ImpactResolver.ContactResult.Outcome.GUARD_BROKEN:
+				# TODO: Adicionar transição para GuardBrokenState
+				transition_to("StaggerState")
+			ImpactResolver.ContactResult.Outcome.HIT:
+				transition_to("StaggerState")
+	
+	if result.attacker_node == owner_node:
+		match result.outcome:
+			ImpactResolver.ContactResult.Outcome.PARRIED:
+				# TODO: Adicionar transição para ParriedState
+				pass
 
 func on_current_state_finished():
 	if buffer_controller.consume_attack():

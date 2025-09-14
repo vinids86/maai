@@ -21,4 +21,5 @@ extends Resource
 
 @export_group("Mechanics")
 @export var damage: float = 10.0
-@export var stamina_cost: float = 5.0
+@export var stamina_cost: float = 0.0
+@export var stamina_damage: float = 10.0

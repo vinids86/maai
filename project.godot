@@ -17,7 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-CombatResolver="*res://scripts/core/combat_resolver.gd"
+ImpactResolver="*res://scripts/core/impact_resolver.gd"
 
 [dotnet]
 

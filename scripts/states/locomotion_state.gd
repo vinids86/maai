@@ -8,9 +8,6 @@ var current_phase: Phases = Phases.IDLE
 
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
-func initialize(sm: StateMachine, owner: Node, move_comp: Node):
-	super.initialize(sm, owner, move_comp)
-
 func enter(args: Dictionary = {}):
 	_change_phase(Phases.IDLE)
 
@@ -36,6 +33,9 @@ func allow_dodge() -> bool:
 
 func can_initiate_attack() -> bool:
 	return owner_node.is_on_floor()
+
+func allow_autoblock() -> bool:
+	return true
 
 func _update_facing_sign(direction: float):
 	if owner_node.facing_locked:

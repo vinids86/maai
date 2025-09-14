@@ -17,5 +17,5 @@ func _on_area_entered(area: Area2D):
 		print("LOG [Hurtbox]: O objeto que colidiu NÃO é uma Hitbox. A ignorar.")
 		return
 	
-	print("LOG [Hurtbox]: O objeto é uma Hitbox válida. A notificar o CombatResolver.")
-	CombatResolver.resolve_contact(area, self)
+	print("LOG [Hurtbox]: O objeto é uma Hitbox válida. A notificar o ImpactResolver.")
+	ImpactResolver.resolve_contact(area, self)
