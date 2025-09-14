@@ -2,12 +2,15 @@ class_name PoiseComponent
 extends Node
 
 @onready var state_machine: StateMachine = get_parent().find_child("StateMachine")
+var owner_node: Node
 
 var poise_momentum: float = 0.0
 var _active_bonuses: Array[Dictionary] = []
 
 func _ready():
+	owner_node = get_parent()
 	assert(state_machine != null, "PoiseComponent: StateMachine não encontrada como irmã.")
+	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
 
 func _physics_process(delta: float):
 	for i in range(_active_bonuses.size() - 1, -1, -1):
@@ -40,3 +43,9 @@ func add_momentum(amount: float):
 
 func reset_momentum():
 	poise_momentum = 0.0
+	
+func _on_impact_resolved(result: ImpactResolver.ContactResult):
+	if result.attacker_node == owner_node:
+		var successful_hit = (result.outcome == ImpactResolver.ContactResult.Outcome.HIT or result.outcome == ImpactResolver.ContactResult.Outcome.POISE_BROKEN)
+		if successful_hit:
+			add_momentum(result.attack_profile.poise_momentum_gain)

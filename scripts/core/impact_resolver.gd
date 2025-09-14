@@ -1,5 +1,7 @@
 extends Node
 
+signal impact_resolved(result: ContactResult)
+
 class ContactResult extends Resource:
 	enum Outcome {
 		HIT,
@@ -20,11 +22,9 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 	var attack_profile = hitbox.attack_profile
 	
 	if not attacker or not defender or not attack_profile:
-		push_warning("ImpactResolver: Contexto de combate incompleto.")
 		return
 
 	var defender_sm = defender.find_child("StateMachine")
-	var attacker_sm = attacker.find_child("StateMachine")
 	
 	var result = ContactResult.new()
 	result.attacker_node = attacker
@@ -54,10 +54,7 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 		if defender_health is HealthComponent:
 			defender_health.take_damage(attack_profile.damage)
 	
-	if defender_sm:
-		defender_sm.on_impact_resolved(result)
-	if attacker_sm:
-		attacker_sm.on_impact_resolved(result)
+	emit_signal("impact_resolved", result)
 
 	if defender.has_method("flash_red"):
 		defender.flash_red()

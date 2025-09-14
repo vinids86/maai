@@ -23,6 +23,8 @@ func _ready():
 	assert(buffer_controller != null, "Não foi encontrado um nó 'BufferController' como irmão da StateMachine.")
 	assert(stamina_component != null, "Não foi encontrado um nó 'StaminaComponent' como irmão da StateMachine.")
 
+	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+
 	for child in get_children():
 		if child is State:
 			states[child.name] = child
@@ -67,7 +69,7 @@ func on_attack_pressed():
 	elif current_state.can_buffer_attack():
 		buffer_controller.capture_attack()
 
-func on_impact_resolved(result: ImpactResolver.ContactResult):
+func _on_impact_resolved(result: ImpactResolver.ContactResult):
 	if result.defender_node == owner_node:
 		match result.outcome:
 			ImpactResolver.ContactResult.Outcome.BLOCKED:
