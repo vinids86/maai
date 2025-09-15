@@ -18,11 +18,18 @@ func _ready():
 	delay_timer.wait_time = regeneration_delay
 	delay_timer.one_shot = true
 	delay_timer.timeout.connect(func(): can_regenerate = true)
+	
+	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
 
 func _physics_process(delta: float):
 	if can_regenerate and current_stamina < max_stamina:
 		current_stamina = min(max_stamina, current_stamina + regeneration_rate * delta)
 		emit_signal("stamina_changed", current_stamina, max_stamina)
+
+func _on_impact_resolved(result: ImpactResolver.ContactResult):
+	if result.defender_node == get_parent():
+		if result.defender_outcome == ImpactResolver.ContactResult.DefenderOutcome.FINISHER_HIT:
+			restore_to_full()
 
 func try_consume(amount: float) -> bool:
 	if amount > current_stamina:
@@ -39,6 +46,10 @@ func take_stamina_damage(amount: float) -> bool:
 	_update_stamina(stamina_after_damage)
 	
 	return not is_stamina_broken()
+
+func restore_to_full():
+	_update_stamina(max_stamina)
+	can_regenerate = true
 
 func is_stamina_broken() -> bool:
 	return current_stamina <= 0

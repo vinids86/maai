@@ -78,7 +78,6 @@ func on_attack_pressed():
 
 func on_parry_pressed():
 	var profile = owner_node.get_parry_profile()
-	print("current_state.allow_parry()", current_state)
 	if current_state.allow_parry() and profile and stamina_component.try_consume(profile.stamina_cost):
 		transition_to("ParryState", {"profile": profile})
 
@@ -94,6 +93,9 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 			ImpactResolver.ContactResult.DefenderOutcome.GUARD_BROKEN:
 				var profile = owner_node.get_guard_broken_profile()
 				transition_to("GuardBrokenState", {"profile": profile})
+			ImpactResolver.ContactResult.DefenderOutcome.FINISHER_HIT:
+				var profile = owner_node.get_stagger_profile()
+				transition_to("StaggerState", {"profile": profile, "knockback_vector": result.knockback_vector})
 			ImpactResolver.ContactResult.DefenderOutcome.HIT:
 				var profile = owner_node.get_stagger_profile()
 				transition_to("StaggerState", {"profile": profile, "knockback_vector": result.knockback_vector})
