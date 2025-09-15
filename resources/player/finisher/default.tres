@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="FinisherProfile" load_steps=3 format=3 uid="uid://dlyjau1qwi2fq"]
+
+[ext_resource type="Resource" uid="uid://06fqvorpx30u" path="res://resources/player/finisher/finisher_attack_profile.tres" id="1_1ib33"]
+[ext_resource type="Script" uid="uid://doyh241a0qmbq" path="res://scripts/profiles/finisher_profile.gd" id="1_ytm4g"]
+
+[resource]
+script = ExtResource("1_ytm4g")
+ready_duration = 2.0
+attack_profile = ExtResource("1_1ib33")
+animation_name = &""
+metadata/_custom_type_script = "uid://doyh241a0qmbq"

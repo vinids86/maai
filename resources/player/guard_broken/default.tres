@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="GuardBrokenProfile" load_steps=2 format=3 uid="uid://diorbol6o41cm"]
+
+[ext_resource type="Script" uid="uid://cjf8fjt0ss3wo" path="res://scripts/profiles/guard_broken_profile.gd" id="1_5hv1o"]
+
+[resource]
+script = ExtResource("1_5hv1o")
+duration = 2.0
+animation_name = &""
+metadata/_custom_type_script = "uid://cjf8fjt0ss3wo"

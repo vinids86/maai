@@ -4,7 +4,7 @@ signal impact_resolved(result: ContactResult)
 
 class ContactResult extends Resource:
 	enum DefenderOutcome { HIT, POISE_BROKEN, PARRY_SUCCESS, BLOCKED, GUARD_BROKEN, DODGED }
-	enum AttackerOutcome { NONE, PARRIED }
+	enum AttackerOutcome { NONE, PARRIED, GUARD_BREAK_SUCCESS }
 
 	var attacker_node: Node
 	var defender_node: Node
@@ -14,7 +14,7 @@ class ContactResult extends Resource:
 	var defender_outcome: DefenderOutcome
 	var attacker_outcome: AttackerOutcome = AttackerOutcome.NONE
 
-func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox) -> void:
+func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 	var attacker: Node = hitbox.owner_actor
 	var defender: Node = hurtbox.owner_actor
 	var attack_profile: AttackProfile = hitbox.attack_profile
@@ -30,6 +30,7 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox) -> void:
 	result.attack_profile = attack_profile
 	result.knockback_vector = attack_profile.knockback_vector
 
+	# Notificação SÍNCRONA para a IA poder reagir no mesmo frame.
 	var defender_ai: AIController = defender.find_child("AIController") as AIController
 	if defender_ai != null:
 		defender_ai.on_incoming_attack(attacker as CharacterBody2D, hitbox)
@@ -55,6 +56,7 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox) -> void:
 			result.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
 		else:
 			result.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
+			result.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 	elif was_poise_broken:
 		result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 	else:

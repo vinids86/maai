@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=30 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -22,7 +22,10 @@
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="17_6awcb"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="17_shcg2"]
 [ext_resource type="Resource" uid="uid://c13fhm2w824s2" path="res://resources/player/block/default.tres" id="18_wjec0"]
+[ext_resource type="Script" uid="uid://bnsx7y061rnqe" path="res://scripts/states/guard_broken_state.gd" id="19_i4rgx"]
+[ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="20_2mchx"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="20_2pwtc"]
+[ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="21_2mchx"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c4w8v"]
 shader = ExtResource("2_5uy6h")
@@ -106,6 +109,15 @@ metadata/_custom_type_script = "uid://c3f0ddxqxcn8k"
 script = ExtResource("17_6awcb")
 block_stun_profile = ExtResource("18_wjec0")
 metadata/_custom_type_script = "uid://b3auw1r8kc2yi"
+
+[node name="GuardBrokenState" type="Node" parent="StateMachine"]
+script = ExtResource("19_i4rgx")
+guard_broken_profile = ExtResource("20_2mchx")
+metadata/_custom_type_script = "uid://bnsx7y061rnqe"
+
+[node name="FinisherReadyState" type="Node" parent="StateMachine"]
+script = ExtResource("21_2mchx")
+metadata/_custom_type_script = "uid://bsk4xllkbirnu"
 
 [node name="MovementComponent" type="Node" parent="."]
 script = ExtResource("9_8qclf")

@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=34 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -27,6 +27,10 @@
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="24_31cv2"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="24_l71n6"]
 [ext_resource type="Resource" uid="uid://c13fhm2w824s2" path="res://resources/player/block/default.tres" id="25_pf23h"]
+[ext_resource type="Script" uid="uid://bnsx7y061rnqe" path="res://scripts/states/guard_broken_state.gd" id="26_dt7fs"]
+[ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="27_wqfne"]
+[ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="28_wnwbv"]
+[ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="29_gl8cc"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qc3e3"]
 radius = 25.0
@@ -39,6 +43,7 @@ height = 64.0
 [node name="Player" type="CharacterBody2D"]
 script = ExtResource("1_4flbx")
 attack_set = ExtResource("2_oprun")
+finisher_profile = ExtResource("29_gl8cc")
 neutral_dodge_profile = ExtResource("7_fjrip")
 forward_dodge_profile = ExtResource("8_d2wvv")
 back_dodge_profile = ExtResource("9_3v2ag")
@@ -134,6 +139,16 @@ metadata/_custom_type_script = "uid://m2bbkg5u3e8f"
 script = ExtResource("24_31cv2")
 block_stun_profile = ExtResource("25_pf23h")
 metadata/_custom_type_script = "uid://b3auw1r8kc2yi"
+
+[node name="GuardBrokenState" type="Node" parent="StateMachine"]
+script = ExtResource("26_dt7fs")
+guard_broken_profile = ExtResource("27_wqfne")
+metadata/_custom_type_script = "uid://bnsx7y061rnqe"
+
+[node name="FinisherReadyState" type="Node" parent="StateMachine"]
+script = ExtResource("28_wnwbv")
+finisher_profile = ExtResource("29_gl8cc")
+metadata/_custom_type_script = "uid://bsk4xllkbirnu"
 
 [node name="StaminaComponent" type="Node" parent="."]
 script = ExtResource("19_4r5pv")

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AttackProfile" load_steps=3 format=3 uid="uid://06fqvorpx30u"]
+
+[ext_resource type="AudioStream" uid="uid://cwftjlj373ksh" path="res://audio/finisher.wav" id="1_3gkfb"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_dreuq"]
+
+[resource]
+script = ExtResource("1_dreuq")
+startup_duration = 0.15
+active_duration = 0.1
+recovery_duration = 0.3
+animation_name = &""
+active_sfx = ExtResource("1_3gkfb")
+hitbox_size = Vector2(32, 32)
+hitbox_position = Vector2(40, 0)
+movement_velocity = Vector2(300, 0)
+damage = 30.0
+stamina_cost = 0.0
+stamina_damage = 10.0
+poise_damage = 10.0
+poise_momentum_gain = 5.0
+action_poise = 100.0
+knockback_vector = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"

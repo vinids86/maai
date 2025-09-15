@@ -46,12 +46,12 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 	var owner_node = get_parent()
 	
 	if result.attacker_node == owner_node:
-		if result.outcome == ImpactResolver.ContactResult.Outcome.HIT or result.outcome == ImpactResolver.ContactResult.Outcome.BLOCKED:
+		if result.outcome == ImpactResolver.ContactResult.DefenderOutcome.HIT or result.outcome == ImpactResolver.ContactResult.DefenderOutcome.BLOCKED:
 			if result.attack_profile:
 				add_momentum(result.attack_profile.poise_momentum_gain)
 
 	if result.defender_node == owner_node:
-		if result.outcome == ImpactResolver.ContactResult.Outcome.PARRY_SUCCESS:
+		if result.outcome == ImpactResolver.ContactResult.DefenderOutcome.PARRY_SUCCESS:
 			var parry_state = state_machine.get_current_state() as ParryState
 			if parry_state and parry_state.parry_profile:
 				var profile = parry_state.parry_profile

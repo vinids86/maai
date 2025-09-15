@@ -9,6 +9,7 @@ extends CharacterBody2D
 
 @export_group("Combat Data")
 @export var attack_set: AttackSet
+@export var finisher_profile: FinisherProfile
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile
@@ -87,6 +88,12 @@ func get_next_attack_in_combo() -> AttackProfile:
 	var profile = attack_set.attacks[combo_index]
 	combo_index += 1
 	return profile
+
+func get_finisher_attack_profile() -> AttackProfile:
+	if not finisher_profile:
+		push_warning("Player não tem um FinisherProfile atribuído.")
+		return null
+	return finisher_profile.attack_profile
 
 func reset_combo_chain():
 	combo_index = 0
