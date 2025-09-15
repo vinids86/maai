@@ -30,7 +30,6 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 	result.attack_profile = attack_profile
 	result.knockback_vector = attack_profile.knockback_vector
 
-	# Notificação SÍNCRONA para a IA poder reagir no mesmo frame.
 	var defender_ai: AIController = defender.find_child("AIController") as AIController
 	if defender_ai != null:
 		defender_ai.on_incoming_attack(attacker as CharacterBody2D, hitbox)

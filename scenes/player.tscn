@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=35 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -10,8 +10,10 @@
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="4_fulsm"]
 [ext_resource type="Script" uid="uid://mqtxcxisr6ph" path="res://scripts/states/dodge_state.gd" id="6_tuyoq"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="7_fjrip"]
+[ext_resource type="Resource" uid="uid://bqjgtxke4um5v" path="res://resources/player/parried/default.tres" id="7_gl8cc"]
 [ext_resource type="Resource" uid="uid://brr4qpn5yk0mn" path="res://resources/player/dodge/forward.tres" id="8_d2wvv"]
 [ext_resource type="Resource" uid="uid://h5j4chnrxexj" path="res://resources/player/dodge/back.tres" id="9_3v2ag"]
+[ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_487ah"]
 [ext_resource type="Resource" uid="uid://cfu400oitmjxr" path="res://resources/player/dodge/up.tres" id="10_jej6c"]
 [ext_resource type="Resource" uid="uid://cxtoyg6r5qy34" path="res://resources/player/dodge/down.tres" id="11_f1ej7"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="12_jej6c"]
@@ -19,6 +21,7 @@
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="16_qfm1y"]
 [ext_resource type="Script" uid="uid://hhcv8mh33t6y" path="res://scripts/components/stamina_component.gd" id="19_4r5pv"]
 [ext_resource type="Script" uid="uid://6j164hqmaqt2" path="res://scripts/states/parry_state.gd" id="19_60mlk"]
+[ext_resource type="Resource" uid="uid://b7kijgne205pc" path="res://resources/player/parry/default.tres" id="20_i4ail"]
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="21_4ni07"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="22_l71n6"]
 [ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="23_ke2ow"]
@@ -42,6 +45,12 @@ height = 64.0
 script = ExtResource("1_4flbx")
 attack_set = ExtResource("2_oprun")
 finisher_profile = ExtResource("29_gl8cc")
+parry_profile = ExtResource("20_i4ail")
+block_stun_profile = ExtResource("25_pf23h")
+stagger_profile = ExtResource("23_ke2ow")
+parried_profile = ExtResource("7_gl8cc")
+guard_broken_profile = ExtResource("27_wqfne")
+locomotion_profile = ExtResource("9_487ah")
 neutral_dodge_profile = ExtResource("7_fjrip")
 forward_dodge_profile = ExtResource("8_d2wvv")
 back_dodge_profile = ExtResource("9_3v2ag")
@@ -123,17 +132,14 @@ metadata/_custom_type_script = "uid://ba650tjbftjqi"
 
 [node name="StaggerState" type="Node" parent="StateMachine"]
 script = ExtResource("22_l71n6")
-stagger_profile = ExtResource("23_ke2ow")
 metadata/_custom_type_script = "uid://m2bbkg5u3e8f"
 
 [node name="BlockStunState" type="Node" parent="StateMachine"]
 script = ExtResource("24_31cv2")
-block_stun_profile = ExtResource("25_pf23h")
 metadata/_custom_type_script = "uid://b3auw1r8kc2yi"
 
 [node name="GuardBrokenState" type="Node" parent="StateMachine"]
 script = ExtResource("26_dt7fs")
-guard_broken_profile = ExtResource("27_wqfne")
 metadata/_custom_type_script = "uid://bnsx7y061rnqe"
 
 [node name="FinisherReadyState" type="Node" parent="StateMachine"]

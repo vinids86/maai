@@ -46,6 +46,9 @@ func can_buffer_attack() -> bool:
 	
 func allow_autoblock() -> bool:
 	return true
+	
+func allow_parry() -> bool:
+	return true
 
 func _update_facing_sign(direction: float):
 	if owner_node.facing_locked:

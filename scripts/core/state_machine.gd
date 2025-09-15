@@ -77,11 +77,9 @@ func on_attack_pressed():
 		buffer_controller.capture_attack()
 
 func on_parry_pressed():
-	if not current_state.allow_parry():
-		return
-	
 	var profile = owner_node.get_parry_profile()
-	if profile and stamina_component.try_consume(profile.stamina_cost):
+	print("current_state.allow_parry()", current_state)
+	if current_state.allow_parry() and profile and stamina_component.try_consume(profile.stamina_cost):
 		transition_to("ParryState", {"profile": profile})
 
 func _on_impact_resolved(result: ImpactResolver.ContactResult):
@@ -91,18 +89,23 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 				if current_state is ParryState:
 					current_state.on_parry_success()
 			ImpactResolver.ContactResult.DefenderOutcome.BLOCKED:
-				transition_to("BlockStunState")
+				var profile = owner_node.get_block_stun_profile()
+				transition_to("BlockStunState", {"profile": profile})
 			ImpactResolver.ContactResult.DefenderOutcome.GUARD_BROKEN:
-				transition_to("GuardBrokenState")
+				var profile = owner_node.get_guard_broken_profile()
+				transition_to("GuardBrokenState", {"profile": profile})
 			ImpactResolver.ContactResult.DefenderOutcome.HIT:
-				transition_to("StaggerState", {"knockback_vector": result.knockback_vector})
+				var profile = owner_node.get_stagger_profile()
+				transition_to("StaggerState", {"profile": profile, "knockback_vector": result.knockback_vector})
 			ImpactResolver.ContactResult.DefenderOutcome.POISE_BROKEN:
-				transition_to("StaggerState", {"knockback_vector": result.knockback_vector})
+				var profile = owner_node.get_stagger_profile()
+				transition_to("StaggerState", {"profile": profile, "knockback_vector": result.knockback_vector})
 	
 	if result.attacker_node == owner_node:
 		match result.attacker_outcome:
 			ImpactResolver.ContactResult.AttackerOutcome.PARRIED:
-				transition_to("ParriedState")
+				var profile = owner_node.get_parried_profile()
+				transition_to("ParriedState", {"profile": profile})
 			ImpactResolver.ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
 				var profile = owner_node.get_finisher_profile()
 				transition_to("FinisherReadyState", {"profile": profile})

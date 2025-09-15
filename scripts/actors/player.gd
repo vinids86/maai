@@ -11,6 +11,10 @@ extends CharacterBody2D
 @export var attack_set: AttackSet
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
+@export var block_stun_profile: BlockStunProfile
+@export var stagger_profile: StaggerProfile
+@export var parried_profile: ParriedProfile
+@export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
 
 @export_group("Dodge Profiles")
@@ -101,6 +105,18 @@ func get_finisher_attack_profile() -> AttackProfile:
 
 func get_parry_profile() -> ParryProfile:
 	return parry_profile
+	
+func get_block_stun_profile() -> BlockStunProfile:
+	return block_stun_profile
+	
+func get_stagger_profile() -> StaggerProfile:
+	return stagger_profile
+	
+func get_parried_profile() -> ParriedProfile:
+	return parried_profile
+	
+func get_guard_broken_profile() -> GuardBrokenProfile:
+	return guard_broken_profile
 
 func get_locomotion_profile() -> LocomotionProfile:
 	return locomotion_profile

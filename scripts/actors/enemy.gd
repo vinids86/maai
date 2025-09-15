@@ -11,6 +11,20 @@ extends CharacterBody2D
 
 @export_group("Combat Data")
 @export var attack_set: AttackSet
+@export var finisher_profile: FinisherProfile
+@export var parry_profile: ParryProfile
+@export var block_stun_profile: BlockStunProfile
+@export var stagger_profile: StaggerProfile
+@export var parried_profile: ParriedProfile
+@export var guard_broken_profile: GuardBrokenProfile
+@export var locomotion_profile: LocomotionProfile
+
+@export_group("Dodge Profiles")
+@export var neutral_dodge_profile: DodgeProfile
+@export var forward_dodge_profile: DodgeProfile
+@export var back_dodge_profile: DodgeProfile
+@export var up_dodge_profile: DodgeProfile
+@export var down_dodge_profile: DodgeProfile
 
 var material_ref: ShaderMaterial
 var facing_sign: int = 1
@@ -49,6 +63,32 @@ func get_next_attack_in_combo() -> AttackProfile:
 	var profile = attack_set.attacks[combo_index]
 	combo_index += 1
 	return profile
+
+func get_finisher_profile() -> FinisherProfile:
+	return finisher_profile
+
+func get_finisher_attack_profile() -> AttackProfile:
+	if not finisher_profile:
+		return null
+	return finisher_profile.attack_profile
+
+func get_parry_profile() -> ParryProfile:
+	return parry_profile
+	
+func get_block_stun_profile() -> BlockStunProfile:
+	return block_stun_profile
+	
+func get_stagger_profile() -> StaggerProfile:
+	return stagger_profile
+	
+func get_parried_profile() -> ParriedProfile:
+	return parried_profile
+	
+func get_guard_broken_profile() -> GuardBrokenProfile:
+	return guard_broken_profile
+
+func get_locomotion_profile() -> LocomotionProfile:
+	return locomotion_profile
 
 func flash_red():
 	if not material_ref:
