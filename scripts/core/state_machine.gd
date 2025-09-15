@@ -32,7 +32,8 @@ func _ready():
 	
 	if states.has(initial_state_key):
 		current_state = states[initial_state_key]
-		current_state.enter()
+		var profile = owner_node.get_locomotion_profile()
+		current_state.enter({"profile": profile})
 	else:
 		push_error("StateMachine Error: Initial state '%s' not found." % initial_state_key)
 
@@ -76,8 +77,12 @@ func on_attack_pressed():
 		buffer_controller.capture_attack()
 
 func on_parry_pressed():
-	if current_state.allow_parry():
-		transition_to("ParryState")
+	if not current_state.allow_parry():
+		return
+	
+	var profile = owner_node.get_parry_profile()
+	if profile and stamina_component.try_consume(profile.stamina_cost):
+		transition_to("ParryState", {"profile": profile})
 
 func _on_impact_resolved(result: ImpactResolver.ContactResult):
 	if result.defender_node == owner_node:
@@ -99,7 +104,8 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 			ImpactResolver.ContactResult.AttackerOutcome.PARRIED:
 				transition_to("ParriedState")
 			ImpactResolver.ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
-				transition_to("FinisherReadyState")
+				var profile = owner_node.get_finisher_profile()
+				transition_to("FinisherReadyState", {"profile": profile})
 
 func on_current_state_finished():
 	if buffer_controller.consume_attack():
@@ -109,7 +115,8 @@ func on_current_state_finished():
 			return
 
 	owner_node.reset_combo_chain()
-	transition_to(initial_state_key)
+	var profile = owner_node.get_locomotion_profile()
+	transition_to(initial_state_key, {"profile": profile})
 
 func transition_to(new_state_key: String, args: Dictionary = {}):
 	if not states.has(new_state_key):

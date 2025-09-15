@@ -1,7 +1,7 @@
 class_name LocomotionState
 extends State
 
-@export var locomotion_profile: LocomotionProfile
+var current_profile: LocomotionProfile
 
 enum Phases { IDLE, WALK, RUN }
 var current_phase: Phases = Phases.IDLE
@@ -9,26 +9,31 @@ var current_phase: Phases = Phases.IDLE
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 func enter(args: Dictionary = {}):
+	self.current_profile = args.get("profile")
+	if not current_profile:
+		push_warning("LocomotionState: Não recebeu um LocomotionProfile. A abortar.")
+		return
+	
 	_change_phase(Phases.IDLE)
+
 
 func process_physics(delta: float, walk_direction: float, is_running: bool):
 	if not owner_node.is_on_floor():
 		owner_node.velocity.y += gravity * delta
 
-	if not locomotion_profile:
-		push_warning("LocomotionState não tem um LocomotionProfile atribuído no Inspetor.")
+	if not current_profile:
 		return
 
 	_update_facing_sign(walk_direction)
 	
-	movement_component.calculate_walk_velocity(walk_direction, is_running, locomotion_profile)
+	movement_component.calculate_walk_velocity(walk_direction, is_running, current_profile)
 	
 	_update_and_emit_phase(walk_direction, is_running)
 
 func get_current_poise() -> float:
-	if not locomotion_profile:
+	if not current_profile:
 		return 0.0
-	return locomotion_profile.base_poise
+	return current_profile.base_poise
 
 func allow_dodge() -> bool:
 	return owner_node.is_on_floor()
@@ -39,9 +44,6 @@ func can_initiate_attack() -> bool:
 func can_buffer_attack() -> bool:
 	return false
 	
-func allow_parry() -> bool:
-	return owner_node.is_on_floor()
-
 func allow_autoblock() -> bool:
 	return true
 
@@ -73,16 +75,16 @@ func _change_phase(new_phase: Phases):
 	var anim_to_play: StringName
 	match current_phase:
 		Phases.IDLE:
-			anim_to_play = locomotion_profile.idle_animation
+			anim_to_play = current_profile.idle_animation
 		Phases.WALK:
-			anim_to_play = locomotion_profile.walk_animation
+			anim_to_play = current_profile.walk_animation
 		Phases.RUN:
-			anim_to_play = locomotion_profile.run_animation
+			anim_to_play = current_profile.run_animation
 	
 	var phase_data = {
 		"state_name": self.name,
 		"phase_name": Phases.keys()[current_phase],
-		"profile": locomotion_profile,
+		"profile": current_profile,
 		"animation_to_play": anim_to_play
 	}
 	

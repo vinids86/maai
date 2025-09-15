@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=28 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -8,13 +8,11 @@
 [ext_resource type="Script" uid="uid://dewrlich57pgi" path="res://scripts/components/ai_controller.gd" id="5_md484"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="6_ipns3"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="7_8qclf"]
-[ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/default_locomotion.tres" id="8_w8i8w"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="9_8qclf"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="10_s1ycm"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_controller.gd" id="10_w8i8w"]
 [ext_resource type="Script" uid="uid://6j164hqmaqt2" path="res://scripts/states/parry_state.gd" id="11_shcg2"]
 [ext_resource type="Script" uid="uid://hhcv8mh33t6y" path="res://scripts/components/stamina_component.gd" id="11_w8i8w"]
-[ext_resource type="Resource" uid="uid://b7kijgne205pc" path="res://resources/player/parry/default.tres" id="12_ile5s"]
 [ext_resource type="PackedScene" uid="uid://ciepgnvn26lbl" path="res://scenes/enemy_status_ui.tscn" id="12_otmr2"]
 [ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="12_rogs8"]
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="13_1x4g4"]
@@ -79,7 +77,6 @@ metadata/_custom_type_script = "uid://dus5o11ra71f"
 
 [node name="LocomotionState" type="Node" parent="StateMachine"]
 script = ExtResource("7_8qclf")
-locomotion_profile = ExtResource("8_w8i8w")
 metadata/_custom_type_script = "uid://c50xfgbngchgg"
 
 [node name="BufferController" type="Node" parent="StateMachine"]
@@ -93,7 +90,6 @@ metadata/_custom_type_script = "uid://m2bbkg5u3e8f"
 
 [node name="ParryState" type="Node" parent="StateMachine"]
 script = ExtResource("11_shcg2")
-parry_profile = ExtResource("12_ile5s")
 metadata/_custom_type_script = "uid://6j164hqmaqt2"
 
 [node name="ParriedState" type="Node" parent="StateMachine"]
