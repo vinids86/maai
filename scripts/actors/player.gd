@@ -4,8 +4,6 @@ extends CharacterBody2D
 @onready var state_machine: StateMachine = $StateMachine
 @onready var hold_input_timer: Timer = $HoldInputTimer
 @onready var run_cancel_timer: Timer = $RunCancelTimer
-@onready var buffer_controller: BufferController = $BufferController
-@onready var stamina_component: StaminaComponent = $StaminaComponent
 
 @export_group("Combat Data")
 @export var attack_set: AttackSet
@@ -40,15 +38,11 @@ func _physics_process(delta: float):
 
 func _unhandled_input(event: InputEvent):
 	if event.is_action_pressed("dodge_run"):
-		var direction = _get_dodge_direction_from_input()
-		var profile = _get_dodge_profile_for_direction(direction)
-		
 		if not run_cancel_timer.is_stopped():
 			run_cancel_timer.stop()
-			state_machine.on_dodge_pressed(direction, profile)
+			_send_dodge_intention()
 		else:
 			hold_input_timer.start()
-		
 		get_viewport().set_input_as_handled()
 		return
 
@@ -56,22 +50,23 @@ func _unhandled_input(event: InputEvent):
 		if not is_running:
 			if not hold_input_timer.is_stopped():
 				hold_input_timer.stop()
-				var direction = _get_dodge_direction_from_input()
-				var profile = _get_dodge_profile_for_direction(direction)
-				state_machine.on_dodge_pressed(direction, profile)
+				_send_dodge_intention()
 		else:
 			run_cancel_timer.start()
-
 		get_viewport().set_input_as_handled()
 		return
 	
 	if event.is_action_pressed("attack"):
-		state_machine.on_attack_pressed()
+		var profile = get_next_attack_in_combo()
+		if profile:
+			state_machine.on_attack_pressed(profile)
 		get_viewport().set_input_as_handled()
 		return
 
 	if event.is_action_pressed("parry"):
-		state_machine.on_parry_pressed()
+		var profile = get_parry_profile()
+		if profile:
+			state_machine.on_parry_pressed(profile)
 		get_viewport().set_input_as_handled()
 		return
 
@@ -84,23 +79,25 @@ func _on_hold_input_timer_timeout():
 func _on_run_cancel_timer_timeout():
 	is_running = false
 
-func get_next_attack_in_combo() -> AttackProfile:
-	if not attack_set or attack_set.attacks.is_empty():
-		return null
+func _send_dodge_intention():
+	var direction = _get_dodge_direction_from_input()
+	var profile = _get_dodge_profile_for_direction(direction)
+	if profile:
+		state_machine.on_dodge_pressed(direction, profile)
 
-	if combo_index >= attack_set.attacks.size():
-		return null
-	
-	var profile = attack_set.attacks[combo_index]
+func get_next_attack_in_combo() -> AttackProfile:
+	if not attack_set or attack_set.attacks.is_empty(): return null
+	if combo_index >= attack_set.attacks.size(): return null
+	return attack_set.attacks[combo_index]
+
+func advance_combo_chain():
 	combo_index += 1
-	return profile
 
 func get_finisher_profile() -> FinisherProfile:
 	return finisher_profile
 
 func get_finisher_attack_profile() -> AttackProfile:
-	if not finisher_profile:
-		return null
+	if not finisher_profile: return null
 	return finisher_profile.attack_profile
 
 func get_parry_profile() -> ParryProfile:
@@ -126,27 +123,16 @@ func reset_combo_chain():
 
 func _get_dodge_direction_from_input() -> Vector2:
 	var direction = Vector2.ZERO
-	if Input.is_action_pressed("move_up"):
-		direction.y = -1
-	elif Input.is_action_pressed("move_down"):
-		direction.y = 1
-	
-	if Input.is_action_pressed("move_left"):
-		direction.x = -1
-	elif Input.is_action_pressed("move_right"):
-		direction.x = 1
-		
+	if Input.is_action_pressed("move_up"): direction.y = -1
+	elif Input.is_action_pressed("move_down"): direction.y = 1
+	if Input.is_action_pressed("move_left"): direction.x = -1
+	elif Input.is_action_pressed("move_right"): direction.x = 1
 	return direction
 
 func _get_dodge_profile_for_direction(direction: Vector2) -> DodgeProfile:
-	if direction.y < 0:
-		return up_dodge_profile
-	elif direction.y > 0:
-		return down_dodge_profile
+	if direction.y < 0: return up_dodge_profile
+	elif direction.y > 0: return down_dodge_profile
 	elif direction.x != 0:
-		if direction.x * facing_sign > 0:
-			return forward_dodge_profile
-		else:
-			return back_dodge_profile
-	else:
-		return neutral_dodge_profile
+		if direction.x * facing_sign > 0: return forward_dodge_profile
+		else: return back_dodge_profile
+	else: return neutral_dodge_profile

@@ -38,7 +38,7 @@ func get_current_poise() -> float:
 func allow_dodge() -> bool:
 	return owner_node.is_on_floor()
 
-func can_initiate_attack() -> bool:
+func allow_attack() -> bool:
 	return owner_node.is_on_floor()
 
 func can_buffer_attack() -> bool:

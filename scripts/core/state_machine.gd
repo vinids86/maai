@@ -9,18 +9,18 @@ var states: Dictionary = {}
 var current_state: State
 var owner_node: Node
 var movement_component: Node
-var buffer_controller: BufferController
+var buffer_component: BufferComponent
 var stamina_component: StaminaComponent
 
 func _ready():
 	owner_node = get_parent()
 	movement_component = owner_node.find_child("MovementComponent") as MovementComponent
-	buffer_controller = owner_node.find_child("BufferController") as BufferController
+	buffer_component = owner_node.find_child("BufferComponent") as BufferComponent
 	stamina_component = owner_node.find_child("StaminaComponent") as StaminaComponent
 	
 	assert(owner_node != null, "StateMachine deve ser filha de um nó de ator (Player/Enemy).")
 	assert(movement_component != null, "Não foi encontrado um nó 'MovementComponent' como irmão da StateMachine.")
-	assert(buffer_controller != null, "Não foi encontrado um nó 'BufferController' como irmão da StateMachine.")
+	assert(buffer_component != null, "Não foi encontrado um nó 'BufferComponent' como irmão da StateMachine.")
 	assert(stamina_component != null, "Não foi encontrado um nó 'StaminaComponent' como irmão da StateMachine.")
 
 	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
@@ -53,33 +53,36 @@ func get_current_state() -> State:
 	return current_state
 
 func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
-	if not current_state.allow_dodge():
-		return
-	
-	if not profile or not stamina_component.try_consume(profile.stamina_cost):
-		return
-		
-	transition_to("DodgeState", {"direction": direction, "profile": profile})
-
-func on_attack_pressed():
-	if current_state is FinisherReadyState:
-		var profile = owner_node.get_finisher_attack_profile()
+	if current_state.allow_dodge():
 		if profile and stamina_component.try_consume(profile.stamina_cost):
-			transition_to("AttackState", {"profile": profile})
-		return
+			buffer_component.clear()
+			transition_to("DodgeState", {"direction": direction, "profile": profile})
+	else:
 
-	if current_state.can_initiate_attack():
+		var context = {"direction": direction, "profile": profile}
+		buffer_component.capture(BufferComponent.BufferedAction.DODGE, context)
+
+func on_attack_pressed(profile: AttackProfile):
+	if current_state.allow_attack():
 		owner_node.reset_combo_chain()
-		var profile = owner_node.get_next_attack_in_combo()
 		if profile and stamina_component.try_consume(profile.stamina_cost):
+			owner_node.advance_combo_chain()
+			buffer_component.clear()
 			transition_to("AttackState", {"profile": profile})
-	elif current_state.can_buffer_attack():
-		buffer_controller.capture_attack()
+	else:
+		var context = {"profile": profile}
+		buffer_component.capture(BufferComponent.BufferedAction.ATTACK, context)
 
-func on_parry_pressed():
-	var profile = owner_node.get_parry_profile()
-	if current_state.allow_parry() and profile and stamina_component.try_consume(profile.stamina_cost):
-		transition_to("ParryState", {"profile": profile})
+
+func on_parry_pressed(profile: ParryProfile):
+	if current_state.allow_parry():
+		if profile and stamina_component.try_consume(profile.stamina_cost):
+			buffer_component.clear()
+			transition_to("ParryState", {"profile": profile})
+	else:
+		var context = {"profile": profile}
+		buffer_component.capture(BufferComponent.BufferedAction.PARRY, context)
+
 
 func _on_impact_resolved(result: ImpactResolver.ContactResult):
 	if result.defender_node == owner_node:
@@ -112,12 +115,28 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 				var profile = owner_node.get_finisher_profile()
 				transition_to("FinisherReadyState", {"profile": profile})
 
+
 func on_current_state_finished():
-	if buffer_controller.consume_attack():
-		var next_profile = owner_node.get_next_attack_in_combo()
-		if next_profile and stamina_component.try_consume(next_profile.stamina_cost):
-			transition_to("AttackState", {"profile": next_profile})
-			return
+	var buffered_data = buffer_component.consume()
+	if buffered_data:
+		match buffered_data.action:
+			BufferComponent.BufferedAction.ATTACK:
+				var profile = buffered_data.context.get("profile")
+				if profile and stamina_component.try_consume(profile.stamina_cost):
+					owner_node.advance_combo_chain()
+					transition_to("AttackState", {"profile": profile})
+					return
+			BufferComponent.BufferedAction.DODGE:
+				var direction = buffered_data.context.get("direction")
+				var profile = buffered_data.context.get("profile")
+				if profile and stamina_component.try_consume(profile.stamina_cost):
+					transition_to("DodgeState", {"direction": direction, "profile": profile})
+					return
+			BufferComponent.BufferedAction.PARRY:
+				var profile = buffered_data.context.get("profile")
+				if profile and stamina_component.try_consume(profile.stamina_cost):
+					transition_to("ParryState", {"profile": profile})
+					return
 
 	owner_node.reset_combo_chain()
 	var profile = owner_node.get_locomotion_profile()

@@ -1,9 +1,9 @@
-[gd_scene load_steps=35 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=37 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_oprun"]
-[ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_controller.gd" id="3_f1ej7"]
+[ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="3_f1ej7"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="3_qfm1y"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="4_dqkch"]
@@ -23,6 +23,7 @@
 [ext_resource type="Script" uid="uid://6j164hqmaqt2" path="res://scripts/states/parry_state.gd" id="19_60mlk"]
 [ext_resource type="Resource" uid="uid://b7kijgne205pc" path="res://resources/player/parry/default.tres" id="20_i4ail"]
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="21_4ni07"]
+[ext_resource type="Script" uid="uid://24v4chol2qs0" path="res://scripts/profiles/buffer_profile.gd" id="21_487ah"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="22_l71n6"]
 [ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="23_ke2ow"]
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="24_31cv2"]
@@ -36,6 +37,11 @@
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qc3e3"]
 radius = 25.0
 height = 64.0
+
+[sub_resource type="Resource" id="Resource_md1ol"]
+script = ExtResource("21_487ah")
+buffer_window = 0.5
+metadata/_custom_type_script = "uid://24v4chol2qs0"
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4ni07"]
 radius = 16.0
@@ -107,8 +113,9 @@ state_machine = NodePath("../StateMachine")
 [node name="MovementComponent" type="Node" parent="."]
 script = ExtResource("2_g2els")
 
-[node name="BufferController" type="Node" parent="."]
+[node name="BufferComponent" type="Node" parent="."]
 script = ExtResource("3_f1ej7")
+buffer_profile = SubResource("Resource_md1ol")
 
 [node name="StateMachine" type="Node" parent="."]
 script = ExtResource("3_qhqgy")

@@ -66,7 +66,7 @@ func get_current_poise() -> float:
 		return 0.0
 	return current_profile.action_poise
 
-func can_initiate_attack() -> bool:
+func allow_attack() -> bool:
 	return false
 	
 func can_buffer_attack() -> bool:

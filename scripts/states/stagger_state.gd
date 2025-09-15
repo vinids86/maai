@@ -39,7 +39,7 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 		state_machine.on_current_state_finished()
 
 
-func can_initiate_attack() -> bool:
+func allow_attack() -> bool:
 	return false
 
 func can_buffer_attack() -> bool:

@@ -78,7 +78,7 @@ func _change_phase(new_phase: Phases):
 	
 	state_machine.emit_phase_change(phase_data)
 
-func can_initiate_attack() -> bool:
+func allow_attack() -> bool:
 	return false
 
 func can_buffer_attack() -> bool:

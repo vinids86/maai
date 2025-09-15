@@ -53,6 +53,9 @@ func _physics_process(delta: float):
 func reset_combo_chain():
 	combo_index = 0
 	
+func advance_combo_chain():
+	combo_index += 1
+	
 func get_next_attack_in_combo() -> AttackProfile:
 	if not attack_set or attack_set.attacks.is_empty():
 		return null
