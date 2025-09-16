@@ -58,13 +58,11 @@ func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 			buffer_component.clear()
 			transition_to("DodgeState", {"direction": direction, "profile": profile})
 	else:
-
 		var context = {"direction": direction, "profile": profile}
 		buffer_component.capture(BufferComponent.BufferedAction.DODGE, context)
 
 func on_attack_pressed(profile: AttackProfile):
 	if current_state.allow_attack():
-		owner_node.reset_combo_chain()
 		if profile and stamina_component.try_consume(profile.stamina_cost):
 			owner_node.advance_combo_chain()
 			buffer_component.clear()
@@ -117,6 +115,11 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 
 
 func on_current_state_finished():
+	var finished_state = current_state
+	
+	if owner_node.has_method("on_action_state_finished"):
+		owner_node.on_action_state_finished(finished_state)
+
 	var buffered_data = buffer_component.consume()
 	if buffered_data:
 		match buffered_data.action:
@@ -138,7 +141,6 @@ func on_current_state_finished():
 					transition_to("ParryState", {"profile": profile})
 					return
 
-	owner_node.reset_combo_chain()
 	var profile = owner_node.get_locomotion_profile()
 	transition_to(initial_state_key, {"profile": profile})
 
@@ -156,6 +158,9 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 	var previous_state = current_state
 	
 	if previous_state:
+		print("current: ", current_state, " previos: ", previous_state)
+		if owner_node.has_method("on_action_state_finished"):
+			owner_node.on_action_state_finished(previous_state)
 		previous_state.exit()
 	
 	current_state = new_state

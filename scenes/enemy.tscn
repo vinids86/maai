@@ -99,8 +99,11 @@ shape = SubResource("CapsuleShape2D_8tegq")
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("1_7p1mj")
 
+[node name="ComboGraceTimer" type="Timer" parent="."]
+
 [node name="AIController" type="Node" parent="."]
 script = ExtResource("5_md484")
+parry_chance = 0.6
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 
 [node name="StateMachine" type="Node" parent="."]

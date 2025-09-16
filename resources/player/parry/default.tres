@@ -8,7 +8,8 @@
 script = ExtResource("1_u1h6j")
 active_duration = 0.15
 recovery_duration = 0.3
-poise_bonus_value = 50.0
+stamina_cost = 0.0
+poise_bonus_on_success = 50.0
 poise_bonus_duration = 2.0
 animation_name = &""
 active_sfx = ExtResource("1_vj1u7")

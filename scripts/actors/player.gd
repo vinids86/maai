@@ -4,6 +4,7 @@ extends CharacterBody2D
 @onready var state_machine: StateMachine = $StateMachine
 @onready var hold_input_timer: Timer = $HoldInputTimer
 @onready var run_cancel_timer: Timer = $RunCancelTimer
+@onready var combo_grace_timer: Timer = $ComboGraceTimer
 
 @export_group("Combat Data")
 @export var attack_set: AttackSet
@@ -30,6 +31,7 @@ var combo_index: int = 0
 func _ready():
 	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
 	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
+	combo_grace_timer.timeout.connect(reset_combo_chain)
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
@@ -72,6 +74,10 @@ func _unhandled_input(event: InputEvent):
 
 	state_machine.process_input(event)
 
+func on_action_state_finished(finished_state: State):
+	if finished_state is AttackState:
+		combo_grace_timer.start()
+
 func _on_hold_input_timer_timeout():
 	if Input.is_action_pressed("dodge_run"):
 		is_running = true
@@ -91,7 +97,9 @@ func get_next_attack_in_combo() -> AttackProfile:
 	return attack_set.attacks[combo_index]
 
 func advance_combo_chain():
-	combo_index += 1
+	if attack_set and combo_index < attack_set.attacks.size():
+		combo_index += 1
+	combo_grace_timer.stop()
 
 func get_finisher_profile() -> FinisherProfile:
 	return finisher_profile

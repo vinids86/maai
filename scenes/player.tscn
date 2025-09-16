@@ -97,6 +97,10 @@ one_shot = true
 wait_time = 0.15
 one_shot = true
 
+[node name="ComboGraceTimer" type="Timer" parent="."]
+wait_time = 0.15
+one_shot = true
+
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("4_fulsm")
 
