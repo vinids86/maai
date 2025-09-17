@@ -4,7 +4,7 @@ extends CharacterBody2D
 @onready var state_machine: StateMachine = $StateMachine
 @onready var hold_input_timer: Timer = $HoldInputTimer
 @onready var run_cancel_timer: Timer = $RunCancelTimer
-@onready var combo_grace_timer: Timer = $ComboGraceTimer
+@onready var combo_component: ComboComponent = $ComboComponent
 
 @export_group("Combat Data")
 @export var attack_set: AttackSet
@@ -26,12 +26,10 @@ extends CharacterBody2D
 var is_running: bool = false
 var facing_sign: int = 1
 var facing_locked: bool = false
-var combo_index: int = 0
 
 func _ready():
 	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
 	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
-	combo_grace_timer.timeout.connect(reset_combo_chain)
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
@@ -59,7 +57,7 @@ func _unhandled_input(event: InputEvent):
 		return
 	
 	if event.is_action_pressed("attack"):
-		var profile = get_next_attack_in_combo()
+		var profile = combo_component.get_next_attack_profile()
 		if profile:
 			state_machine.on_attack_pressed(profile)
 		get_viewport().set_input_as_handled()
@@ -74,10 +72,6 @@ func _unhandled_input(event: InputEvent):
 
 	state_machine.process_input(event)
 
-func on_action_state_finished(finished_state: State):
-	if finished_state is AttackState:
-		combo_grace_timer.start()
-
 func _on_hold_input_timer_timeout():
 	if Input.is_action_pressed("dodge_run"):
 		is_running = true
@@ -90,16 +84,6 @@ func _send_dodge_intention():
 	var profile = _get_dodge_profile_for_direction(direction)
 	if profile:
 		state_machine.on_dodge_pressed(direction, profile)
-
-func get_next_attack_in_combo() -> AttackProfile:
-	if not attack_set or attack_set.attacks.is_empty(): return null
-	if combo_index >= attack_set.attacks.size(): return null
-	return attack_set.attacks[combo_index]
-
-func advance_combo_chain():
-	if attack_set and combo_index < attack_set.attacks.size():
-		combo_index += 1
-	combo_grace_timer.stop()
 
 func get_finisher_profile() -> FinisherProfile:
 	return finisher_profile
@@ -125,9 +109,6 @@ func get_guard_broken_profile() -> GuardBrokenProfile:
 
 func get_locomotion_profile() -> LocomotionProfile:
 	return locomotion_profile
-
-func reset_combo_chain():
-	combo_index = 0
 
 func _get_dodge_direction_from_input() -> Vector2:
 	var direction = Vector2.ZERO

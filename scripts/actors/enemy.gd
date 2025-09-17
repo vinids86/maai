@@ -6,7 +6,7 @@ extends CharacterBody2D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var stamina_component: StaminaComponent = $StaminaComponent
 @onready var status_ui: EnemyStatusUI = $EnemyStatusUI
-@onready var combo_grace_timer: Timer = $ComboGraceTimer
+@onready var combo_component: ComboComponent = $ComboComponent
 
 @export var visual_node: CanvasItem
 
@@ -30,20 +30,19 @@ extends CharacterBody2D
 var material_ref: ShaderMaterial
 var facing_sign: int = 1
 var facing_locked: bool = false
-var combo_index: int = 0
 
 func _ready():
 	assert(visual_node != null, "Enemy: O nó visual (visual_node) não foi atribuído no Inspetor.")
 	assert(health_component != null, "Enemy: Nó HealthComponent não encontrado.")
 	assert(stamina_component != null, "Enemy: Nó StaminaComponent não encontrado.")
 	assert(status_ui != null, "Enemy: Nó EnemyStatusUI não encontrado.")
+	assert(combo_component != null, "Enemy: Nó ComboComponent não encontrado.")
 	
 	if visual_node.material is ShaderMaterial:
 		material_ref = visual_node.material
 		
 	health_component.health_changed.connect(status_ui.update_health)
 	stamina_component.stamina_changed.connect(status_ui.update_stamina)
-	combo_grace_timer.timeout.connect(reset_combo_chain)
 
 func _physics_process(delta: float):
 	var walk_direction = ai_controller.get_walk_direction()
@@ -51,28 +50,7 @@ func _physics_process(delta: float):
 	
 	state_machine.process_physics(delta, walk_direction, is_running)
 	move_and_slide()
-
-func on_action_state_finished(finished_state: State):
-	if finished_state is AttackState:
-		combo_grace_timer.start()
 	
-func reset_combo_chain():
-	combo_index = 0
-	
-func advance_combo_chain():
-	if attack_set and combo_index < attack_set.attacks.size():
-		combo_index += 1
-	combo_grace_timer.stop()
-	
-func get_next_attack_in_combo() -> AttackProfile:
-	if not attack_set or attack_set.attacks.is_empty():
-		return null
-
-	if combo_index >= attack_set.attacks.size():
-		return null
-	
-	return attack_set.attacks[combo_index]
-
 func get_finisher_profile() -> FinisherProfile:
 	return finisher_profile
 

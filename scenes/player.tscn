@@ -1,4 +1,4 @@
-[gd_scene load_steps=37 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=38 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -25,6 +25,7 @@
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="21_4ni07"]
 [ext_resource type="Script" uid="uid://24v4chol2qs0" path="res://scripts/profiles/buffer_profile.gd" id="21_487ah"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="22_l71n6"]
+[ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="22_md1ol"]
 [ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="23_ke2ow"]
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="24_31cv2"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="24_l71n6"]
@@ -97,10 +98,6 @@ one_shot = true
 wait_time = 0.15
 one_shot = true
 
-[node name="ComboGraceTimer" type="Timer" parent="."]
-wait_time = 0.15
-one_shot = true
-
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("4_fulsm")
 
@@ -120,6 +117,15 @@ script = ExtResource("2_g2els")
 [node name="BufferComponent" type="Node" parent="."]
 script = ExtResource("3_f1ej7")
 buffer_profile = SubResource("Resource_md1ol")
+
+[node name="ComboComponent" type="Node" parent="."]
+script = ExtResource("22_md1ol")
+metadata/_custom_type_script = "uid://7awh4v6bsojt"
+
+[node name="StaminaComponent" type="Node" parent="."]
+script = ExtResource("19_4r5pv")
+
+[node name="DelayTimer" type="Timer" parent="StaminaComponent"]
 
 [node name="StateMachine" type="Node" parent="."]
 script = ExtResource("3_qhqgy")
@@ -156,11 +162,6 @@ metadata/_custom_type_script = "uid://bnsx7y061rnqe"
 [node name="FinisherReadyState" type="Node" parent="StateMachine"]
 script = ExtResource("28_wnwbv")
 metadata/_custom_type_script = "uid://bsk4xllkbirnu"
-
-[node name="StaminaComponent" type="Node" parent="."]
-script = ExtResource("19_4r5pv")
-
-[node name="DelayTimer" type="Timer" parent="StaminaComponent"]
 
 [node name="Hurtbox" type="Area2D" parent="."]
 visible = false

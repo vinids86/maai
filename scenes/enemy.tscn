@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=40 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -34,6 +34,7 @@
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="20_2mchx"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="20_2pwtc"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="21_2mchx"]
+[ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 
 [sub_resource type="Resource" id="Resource_2sbpf"]
 script = ExtResource("16_ekh6n")
@@ -99,11 +100,9 @@ shape = SubResource("CapsuleShape2D_8tegq")
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("1_7p1mj")
 
-[node name="ComboGraceTimer" type="Timer" parent="."]
-
 [node name="AIController" type="Node" parent="."]
 script = ExtResource("5_md484")
-parry_chance = 0.6
+parry_chance = 0.45
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 
 [node name="StateMachine" type="Node" parent="."]
@@ -171,3 +170,7 @@ monitoring = false
 script = ExtResource("20_2pwtc")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
+
+[node name="ComboComponent" type="Node" parent="."]
+script = ExtResource("35_2sbpf")
+metadata/_custom_type_script = "uid://7awh4v6bsojt"

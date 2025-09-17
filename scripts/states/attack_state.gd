@@ -6,7 +6,7 @@ var hitbox_shape: CollisionShape2D
 
 var current_profile: AttackProfile
 
-enum Phases { STARTUP, ACTIVE, RECOVERY }
+enum Phases { STARTUP, ACTIVE, RECOVERY, LINK }
 var current_phase: Phases
 var time_left_in_phase: float = 0.0
 
@@ -27,6 +27,7 @@ func enter(args: Dictionary = {}) -> void:
 		return
 	
 	owner_node.facing_locked = true
+	print("STARTUP: ", Time.get_ticks_msec())
 	_change_phase(Phases.STARTUP)
 
 func exit() -> void:
@@ -45,12 +46,23 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> v
 		var time_exceeded: float = -time_left_in_phase
 		match current_phase:
 			Phases.STARTUP:
+				print("ACTIVE: ", Time.get_ticks_msec())
 				_change_phase(Phases.ACTIVE)
 				time_left_in_phase -= time_exceeded
 			Phases.ACTIVE:
+				print("RECOVERY: ", Time.get_ticks_msec())
 				_change_phase(Phases.RECOVERY)
 				time_left_in_phase -= time_exceeded
 			Phases.RECOVERY:
+				if state_machine.buffer_component.has_buffer():
+					state_machine.on_current_state_finished()
+					return
+				else:
+					print("LINK: ", Time.get_ticks_msec())
+					_change_phase(Phases.LINK)
+					time_left_in_phase -= time_exceeded
+			Phases.LINK:
+				print("EXIT: ", Time.get_ticks_msec())
 				state_machine.on_current_state_finished()
 				return
 	
@@ -65,9 +77,6 @@ func get_current_poise() -> float:
 	if not current_profile:
 		return 0.0
 	return current_profile.action_poise
-
-func allow_attack() -> bool:
-	return false
 	
 func can_buffer_attack() -> bool:
 	return current_phase == Phases.RECOVERY
@@ -75,8 +84,14 @@ func can_buffer_attack() -> bool:
 func allow_reentry() -> bool:
 	return true
 	
-func allow_dodge() -> bool: 
-	return current_phase == Phases.RECOVERY
+func allow_attack() -> bool:
+	return current_phase == Phases.LINK
+	
+func allow_parry() -> bool:
+	return current_phase == Phases.LINK
+
+func allow_dodge() -> bool:
+	return current_phase == Phases.RECOVERY or current_phase == Phases.LINK
 
 func _change_phase(new_phase: Phases) -> void:
 	current_phase = new_phase
@@ -84,18 +99,24 @@ func _change_phase(new_phase: Phases) -> void:
 	var sfx_to_play: AudioStream
 	match current_phase:
 		Phases.STARTUP:
+			print("startup_duration: ", current_profile.startup_duration)
 			time_left_in_phase = current_profile.startup_duration
 			sfx_to_play = current_profile.startup_sfx
 		Phases.ACTIVE:
+			print("active_duration: ", current_profile.active_duration)
 			time_left_in_phase = current_profile.active_duration
 			sfx_to_play = current_profile.active_sfx
 			_update_and_enable_hitbox()
 		Phases.RECOVERY:
+			print("recovery_duration: ", current_profile.recovery_duration)
 			time_left_in_phase = current_profile.recovery_duration
 			sfx_to_play = current_profile.recovery_sfx
 			if hitbox_shape != null:
 				hitbox_shape.disabled = true
 				hitbox_shape.shape = null
+		Phases.LINK:
+			print("link_duration: ", current_profile.link_duration)
+			time_left_in_phase = current_profile.link_duration
 			
 	var phase_data: Dictionary = {
 		"state_name": self.name,

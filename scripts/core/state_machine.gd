@@ -2,6 +2,7 @@ class_name StateMachine
 extends Node
 
 signal phase_changed(phase_data: Dictionary)
+signal transitioned(from_state: State, to_state: State)
 
 @export var initial_state_key: String = "LocomotionState"
 
@@ -64,7 +65,6 @@ func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 func on_attack_pressed(profile: AttackProfile):
 	if current_state.allow_attack():
 		if profile and stamina_component.try_consume(profile.stamina_cost):
-			owner_node.advance_combo_chain()
 			buffer_component.clear()
 			transition_to("AttackState", {"profile": profile})
 	else:
@@ -115,18 +115,12 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 
 
 func on_current_state_finished():
-	var finished_state = current_state
-	
-	if owner_node.has_method("on_action_state_finished"):
-		owner_node.on_action_state_finished(finished_state)
-
 	var buffered_data = buffer_component.consume()
 	if buffered_data:
 		match buffered_data.action:
 			BufferComponent.BufferedAction.ATTACK:
 				var profile = buffered_data.context.get("profile")
 				if profile and stamina_component.try_consume(profile.stamina_cost):
-					owner_node.advance_combo_chain()
 					transition_to("AttackState", {"profile": profile})
 					return
 			BufferComponent.BufferedAction.DODGE:
@@ -158,10 +152,9 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 	var previous_state = current_state
 	
 	if previous_state:
-		print("current: ", current_state, " previos: ", previous_state)
-		if owner_node.has_method("on_action_state_finished"):
-			owner_node.on_action_state_finished(previous_state)
 		previous_state.exit()
 	
 	current_state = new_state
 	current_state.enter(args)
+	
+	emit_signal("transitioned", previous_state, current_state)

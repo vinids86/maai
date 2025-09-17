@@ -7,7 +7,8 @@
 script = ExtResource("1_xblq5")
 startup_duration = 0.2
 active_duration = 0.1
-recovery_duration = 0.3
+recovery_duration = 0.2
+link_duration = 0.6
 animation_name = &""
 active_sfx = ExtResource("1_q1who")
 hitbox_size = Vector2(32, 32)

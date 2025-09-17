@@ -41,6 +41,6 @@ func _on_impact_resolved(result: ImpactResolver.ContactResult):
 		if result.defender_outcome == ImpactResolver.ContactResult.DefenderOutcome.PARRY_SUCCESS:
 			if _state_machine != null:
 				await get_tree().process_frame
-				var profile = _owner_actor.get_next_attack_in_combo()
+				var profile = _owner_actor.combo_component.get_next_attack_profile()
 				if profile:
 					_state_machine.on_attack_pressed(profile)
