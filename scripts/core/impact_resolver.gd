@@ -34,15 +34,20 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 	if defender_ai != null:
 		defender_ai.on_incoming_attack(attacker as CharacterBody2D, hitbox)
 
+	var defender_is_in_parry = defender_sm and defender_sm.current_state is ParryState and (defender_sm.current_state as ParryState).is_in_active_phase()
+
+	if defender_is_in_parry and attack_profile.parry_interaction != AttackProfile.ParryInteractionType.UNPARRYABLE:
+		result.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
+		if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.STANDARD:
+			result.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
+		else: # RESISTANT
+			result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+		
+		emit_signal("impact_resolved", result)
+		return
+
 	if defender_sm and defender_sm.current_state is GuardBrokenState:
 		result.defender_outcome = ContactResult.DefenderOutcome.FINISHER_HIT
-	elif defender_sm and defender_sm.current_state is ParryState:
-		var ps: ParryState = defender_sm.current_state as ParryState
-		if ps.is_in_active_phase():
-			result.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
-			result.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
-			emit_signal("impact_resolved", result)
-			return
 	else:
 		var was_poise_broken: bool = false
 		var defender_poise_comp: Node = defender.find_child("PoiseComponent")
@@ -63,7 +68,7 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 		else:
 			result.defender_outcome = ContactResult.DefenderOutcome.HIT
 
-	if result.defender_outcome != ContactResult.DefenderOutcome.BLOCKED:
+	if result.defender_outcome != ContactResult.DefenderOutcome.BLOCKED and result.defender_outcome != ContactResult.DefenderOutcome.PARRY_SUCCESS:
 		var defender_health: HealthComponent = defender.find_child("HealthComponent") as HealthComponent
 		if defender_health is HealthComponent:
 			defender_health.take_damage(attack_profile.damage)

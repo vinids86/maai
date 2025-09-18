@@ -1,6 +1,12 @@
 class_name AttackProfile
 extends Resource
 
+enum ParryInteractionType {
+	STANDARD,
+	RESISTANT,
+	UNPARRYABLE
+}
+
 @export_group("Phases")
 @export var startup_duration: float = 0.3
 @export var active_duration: float = 0.1
@@ -28,3 +34,4 @@ extends Resource
 @export var poise_momentum_gain: float = 5.0
 @export var action_poise: float = 10.0
 @export var knockback_vector: Vector2 = Vector2(150, -100)
+@export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
