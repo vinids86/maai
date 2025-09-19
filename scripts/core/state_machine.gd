@@ -89,6 +89,9 @@ func _on_impact_resolved(result: ContactResult):
 			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
 				var profile = owner_node.get_finisher_profile()
 				transition_to("FinisherReadyState", {"profile": profile})
+			ContactResult.AttackerOutcome.TRADE_LOST:
+				var profile = owner_node.get_stagger_profile()
+				transition_to("StaggerState", {"profile": profile})
 
 func on_current_state_finished(reason: Dictionary = {}):
 	var outcome = reason.get("outcome")
