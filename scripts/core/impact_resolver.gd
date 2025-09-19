@@ -2,78 +2,37 @@ extends Node
 
 signal impact_resolved(result: ContactResult)
 
-class ContactResult extends Resource:
-	enum DefenderOutcome { HIT, POISE_BROKEN, PARRY_SUCCESS, BLOCKED, GUARD_BROKEN, DODGED, FINISHER_HIT }
-	enum AttackerOutcome { NONE, PARRIED, GUARD_BREAK_SUCCESS }
-
-	var attacker_node: Node
-	var defender_node: Node
-	var attack_profile: AttackProfile
-	var knockback_vector: Vector2
-
-	var defender_outcome: DefenderOutcome
-	var attacker_outcome: AttackerOutcome = AttackerOutcome.NONE
-
 func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 	var attacker: Node = hitbox.owner_actor
 	var defender: Node = hurtbox.owner_actor
-	var attack_profile: AttackProfile = hitbox.attack_profile
 
-	if attacker == null or defender == null or attack_profile == null:
+	if not is_instance_valid(attacker) or not is_instance_valid(defender):
 		return
 
-	var defender_sm: StateMachine = defender.find_child("StateMachine") as StateMachine
+	var context = ContactContext.new()
+	context.attacker_node = attacker
+	context.defender_node = defender
+	context.attack_profile = hitbox.attack_profile
+	
+	context.defender_health_comp = defender.find_child("HealthComponent")
+	context.defender_stamina_comp = defender.find_child("StaminaComponent")
+	context.defender_poise_comp = defender.find_child("PoiseComponent")
+	context.defender_state_machine = defender.find_child("StateMachine")
 
-	var result: ContactResult = ContactResult.new()
-	result.attacker_node = attacker
-	result.defender_node = defender
-	result.attack_profile = attack_profile
-	result.knockback_vector = attack_profile.knockback_vector
-
-	var defender_ai: AIController = defender.find_child("AIController") as AIController
-	if defender_ai != null:
-		defender_ai.on_incoming_attack(attacker as CharacterBody2D, hitbox)
-
-	var defender_is_in_parry = defender_sm and defender_sm.current_state is ParryState and (defender_sm.current_state as ParryState).is_in_active_phase()
-
-	if defender_is_in_parry and attack_profile.parry_interaction != AttackProfile.ParryInteractionType.UNPARRYABLE:
-		result.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
-		if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.STANDARD:
-			result.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
-		else: # RESISTANT
-			result.attacker_outcome = ContactResult.AttackerOutcome.NONE
-		
-		emit_signal("impact_resolved", result)
+	if not (context.defender_health_comp and context.defender_stamina_comp and \
+			context.defender_poise_comp and context.defender_state_machine):
+		push_warning("ImpactResolver: O defensor não possui todos os componentes necessários.")
 		return
 
-	if defender_sm and defender_sm.current_state is GuardBrokenState:
-		result.defender_outcome = ContactResult.DefenderOutcome.FINISHER_HIT
-	else:
-		var was_poise_broken: bool = false
-		var defender_poise_comp: Node = defender.find_child("PoiseComponent")
-		if defender_poise_comp != null:
-			var defender_poise: float = defender_poise_comp.get_effective_poise()
-			if attack_profile.poise_damage >= defender_poise:
-				was_poise_broken = true
+	var defender_ai_controller = defender.find_child("AIController")
+	if defender_ai_controller:
+		defender_ai_controller.on_incoming_attack(attacker, hitbox)
 
-		if defender_sm and defender_sm.current_state.allow_autoblock():
-			var defender_stamina: StaminaComponent = defender.find_child("StaminaComponent") as StaminaComponent
-			if defender_stamina != null and defender_stamina.take_stamina_damage(attack_profile.stamina_damage):
-				result.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
-			else:
-				result.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
-				result.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
-		elif was_poise_broken:
-			result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
-		else:
-			result.defender_outcome = ContactResult.DefenderOutcome.HIT
+	var defender_current_state = context.defender_state_machine.current_state
+	if defender_current_state.has_method("get_attack_profile"):
+		context.defender_attack_profile = defender_current_state.get_attack_profile()
 
-	if result.defender_outcome != ContactResult.DefenderOutcome.BLOCKED and result.defender_outcome != ContactResult.DefenderOutcome.PARRY_SUCCESS:
-		var defender_health: HealthComponent = defender.find_child("HealthComponent") as HealthComponent
-		if defender_health is HealthComponent:
-			defender_health.take_damage(attack_profile.damage)
+	var result_for_attacker: ContactResult = defender_current_state.resolve_contact(context)
 
-	emit_signal("impact_resolved", result)
-
-	if defender.has_method("flash_red"):
-		defender.flash_red()
+	if result_for_attacker:
+		emit_signal("impact_resolved", result_for_attacker)

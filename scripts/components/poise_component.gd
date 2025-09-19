@@ -42,17 +42,12 @@ func add_momentum(amount: float):
 func reset_momentum():
 	poise_momentum = 0.0
 
-func _on_impact_resolved(result: ImpactResolver.ContactResult):
+func _on_impact_resolved(result: ContactResult):
 	var owner_node = get_parent()
 	
 	if result.attacker_node == owner_node:
-		if result.outcome == ImpactResolver.ContactResult.DefenderOutcome.HIT or result.outcome == ImpactResolver.ContactResult.DefenderOutcome.BLOCKED:
+		if result.defender_outcome == ContactResult.DefenderOutcome.HIT or \
+		   result.defender_outcome == ContactResult.DefenderOutcome.BLOCKED:
+			
 			if result.attack_profile:
 				add_momentum(result.attack_profile.poise_momentum_gain)
-
-	if result.defender_node == owner_node:
-		if result.outcome == ImpactResolver.ContactResult.DefenderOutcome.PARRY_SUCCESS:
-			var parry_state = state_machine.get_current_state() as ParryState
-			if parry_state and parry_state.parry_profile:
-				var profile = parry_state.parry_profile
-				apply_poise_bonus(profile.poise_bonus_value, profile.poise_bonus_duration)

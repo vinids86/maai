@@ -26,9 +26,9 @@ func _physics_process(delta: float):
 		current_stamina = min(max_stamina, current_stamina + regeneration_rate * delta)
 		emit_signal("stamina_changed", current_stamina, max_stamina)
 
-func _on_impact_resolved(result: ImpactResolver.ContactResult):
+func _on_impact_resolved(result: ContactResult):
 	if result.defender_node == get_parent():
-		if result.defender_outcome == ImpactResolver.ContactResult.DefenderOutcome.FINISHER_HIT:
+		if result.defender_outcome == ContactResult.DefenderOutcome.FINISHER_HIT:
 			restore_to_full()
 
 func try_consume(amount: float) -> bool:

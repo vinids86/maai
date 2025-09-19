@@ -27,7 +27,6 @@ func enter(args: Dictionary = {}) -> void:
 		return
 	
 	owner_node.facing_locked = true
-	print("STARTUP: ", Time.get_ticks_msec())
 	_change_phase(Phases.STARTUP)
 
 func exit() -> void:
@@ -36,7 +35,7 @@ func exit() -> void:
 		hitbox_shape.shape = null
 	owner_node.facing_locked = false
 
-func process_physics(delta: float, walk_direction: float, is_running: bool) -> void:
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> void:
 	if not current_profile:
 		return
 
@@ -46,11 +45,9 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> v
 		var time_exceeded: float = -time_left_in_phase
 		match current_phase:
 			Phases.STARTUP:
-				print("ACTIVE: ", Time.get_ticks_msec())
 				_change_phase(Phases.ACTIVE)
 				time_left_in_phase -= time_exceeded
 			Phases.ACTIVE:
-				print("RECOVERY: ", Time.get_ticks_msec())
 				_change_phase(Phases.RECOVERY)
 				time_left_in_phase -= time_exceeded
 			Phases.RECOVERY:
@@ -58,11 +55,9 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> v
 					state_machine.on_current_state_finished()
 					return
 				else:
-					print("LINK: ", Time.get_ticks_msec())
 					_change_phase(Phases.LINK)
 					time_left_in_phase -= time_exceeded
 			Phases.LINK:
-				print("EXIT: ", Time.get_ticks_msec())
 				state_machine.on_current_state_finished()
 				return
 	
@@ -73,13 +68,28 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> v
 	else:
 		owner_node.velocity = Vector2.ZERO
 
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var attack_profile = context.attack_profile
+	var defender_poise = get_current_poise()
+
+	var result = ContactResult.new()
+	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+
+	if attack_profile.poise_damage >= defender_poise:
+		context.defender_health_comp.take_damage(attack_profile.damage)
+		state_machine.on_current_state_finished({"outcome": "POISE_BROKEN"})
+	else:
+		context.defender_health_comp.take_damage(attack_profile.damage)
+
+	return result
+
+func get_attack_profile() -> AttackProfile:
+	return current_profile
+
 func get_current_poise() -> float:
 	if not current_profile:
 		return 0.0
 	return current_profile.action_poise
-	
-func can_buffer_attack() -> bool:
-	return current_phase == Phases.RECOVERY
 
 func allow_reentry() -> bool:
 	return true
@@ -99,23 +109,19 @@ func _change_phase(new_phase: Phases) -> void:
 	var sfx_to_play: AudioStream
 	match current_phase:
 		Phases.STARTUP:
-			print("startup_duration: ", current_profile.startup_duration)
 			time_left_in_phase = current_profile.startup_duration
 			sfx_to_play = current_profile.startup_sfx
 		Phases.ACTIVE:
-			print("active_duration: ", current_profile.active_duration)
 			time_left_in_phase = current_profile.active_duration
 			sfx_to_play = current_profile.active_sfx
 			_update_and_enable_hitbox()
 		Phases.RECOVERY:
-			print("recovery_duration: ", current_profile.recovery_duration)
 			time_left_in_phase = current_profile.recovery_duration
 			sfx_to_play = current_profile.recovery_sfx
 			if hitbox_shape != null:
 				hitbox_shape.disabled = true
 				hitbox_shape.shape = null
 		Phases.LINK:
-			print("link_duration: ", current_profile.link_duration)
 			time_left_in_phase = current_profile.link_duration
 			
 	var phase_data: Dictionary = {
@@ -131,6 +137,9 @@ func _change_phase(new_phase: Phases) -> void:
 	state_machine.emit_phase_change(phase_data)
 
 func _update_and_enable_hitbox() -> void:
+	if not is_instance_valid(hitbox) or not is_instance_valid(hitbox_shape):
+		return
+		
 	hitbox.attack_profile = current_profile
 	
 	var shape: RectangleShape2D = RectangleShape2D.new()

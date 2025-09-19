@@ -9,7 +9,6 @@ func enter(args: Dictionary = {}):
 	self.current_profile = args.get("profile")
 
 	if not current_profile:
-		push_warning("BlockStunState: Não recebeu um BlockStunProfile. A abortar.")
 		state_machine.on_current_state_finished()
 		return
 	
@@ -17,8 +16,7 @@ func enter(args: Dictionary = {}):
 	owner_node.velocity = Vector2.ZERO
 	_emit_phase_signal()
 
-
-func process_physics(delta: float, walk_direction: float, is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 	if not current_profile:
 		return
 
@@ -26,6 +24,26 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 	if time_left_in_phase <= 0:
 		state_machine.on_current_state_finished()
 
+func resolve_contact(context: ContactContext) -> ContactResult:
+	return _handle_default_hit(context)
+
+func _handle_default_hit(context: ContactContext) -> ContactResult:
+	var attack_profile = context.attack_profile
+	var was_poise_broken = false
+	if context.defender_poise_comp and attack_profile.poise_damage >= context.defender_poise_comp.get_effective_poise():
+		was_poise_broken = true
+	
+	context.defender_health_comp.take_damage(attack_profile.damage)
+	
+	var outcome = "HIT"
+	if was_poise_broken:
+		outcome = "POISE_BROKEN"
+	
+	state_machine.on_current_state_finished({"outcome": outcome})
+	
+	var result = ContactResult.new()
+	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+	return result
 
 func _emit_phase_signal():
 	var phase_data = {

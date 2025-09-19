@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=39 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -24,6 +24,7 @@
 [ext_resource type="Resource" uid="uid://b7kijgne205pc" path="res://resources/player/parry/default.tres" id="20_i4ail"]
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="21_4ni07"]
 [ext_resource type="Script" uid="uid://24v4chol2qs0" path="res://scripts/profiles/buffer_profile.gd" id="21_487ah"]
+[ext_resource type="Script" uid="uid://b31jt2qq4fmkr" path="res://scripts/components/poise_component.gd" id="22_bj30b"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="22_l71n6"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="22_md1ol"]
 [ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="23_ke2ow"]
@@ -117,6 +118,10 @@ script = ExtResource("2_g2els")
 [node name="BufferComponent" type="Node" parent="."]
 script = ExtResource("3_f1ej7")
 buffer_profile = SubResource("Resource_md1ol")
+
+[node name="PoiseComponent" type="Node" parent="."]
+script = ExtResource("22_bj30b")
+metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
 
 [node name="ComboComponent" type="Node" parent="."]
 script = ExtResource("22_md1ol")

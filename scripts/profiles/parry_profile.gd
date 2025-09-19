@@ -4,6 +4,7 @@ extends Resource
 @export_group("Phases")
 @export var active_duration: float = 0.15
 @export var recovery_duration: float = 0.3
+@export var success_duration: float = 0.2
 
 @export_group("Mechanics")
 @export var stamina_cost: float = 5.0

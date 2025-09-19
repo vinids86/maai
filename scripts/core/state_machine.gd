@@ -15,9 +15,9 @@ var stamina_component: StaminaComponent
 
 func _ready():
 	owner_node = get_parent()
-	movement_component = owner_node.find_child("MovementComponent") as MovementComponent
-	buffer_component = owner_node.find_child("BufferComponent") as BufferComponent
-	stamina_component = owner_node.find_child("StaminaComponent") as StaminaComponent
+	movement_component = owner_node.find_child("MovementComponent")
+	buffer_component = owner_node.find_child("BufferComponent")
+	stamina_component = owner_node.find_child("StaminaComponent")
 	
 	assert(owner_node != null, "StateMachine deve ser filha de um nó de ator (Player/Enemy).")
 	assert(movement_component != null, "Não foi encontrado um nó 'MovementComponent' como irmão da StateMachine.")
@@ -71,7 +71,6 @@ func on_attack_pressed(profile: AttackProfile):
 		var context = {"profile": profile}
 		buffer_component.capture(BufferComponent.BufferedAction.ATTACK, context)
 
-
 func on_parry_pressed(profile: ParryProfile):
 	if current_state.allow_parry():
 		if profile and stamina_component.try_consume(profile.stamina_cost):
@@ -81,40 +80,37 @@ func on_parry_pressed(profile: ParryProfile):
 		var context = {"profile": profile}
 		buffer_component.capture(BufferComponent.BufferedAction.PARRY, context)
 
-
-func _on_impact_resolved(result: ImpactResolver.ContactResult):
-	if result.defender_node == owner_node:
-		match result.defender_outcome:
-			ImpactResolver.ContactResult.DefenderOutcome.PARRY_SUCCESS:
-				if current_state is ParryState:
-					current_state.on_parry_success()
-			ImpactResolver.ContactResult.DefenderOutcome.BLOCKED:
-				var profile = owner_node.get_block_stun_profile()
-				transition_to("BlockStunState", {"profile": profile})
-			ImpactResolver.ContactResult.DefenderOutcome.GUARD_BROKEN:
-				var profile = owner_node.get_guard_broken_profile()
-				transition_to("GuardBrokenState", {"profile": profile})
-			ImpactResolver.ContactResult.DefenderOutcome.FINISHER_HIT:
-				var profile = owner_node.get_stagger_profile()
-				transition_to("StaggerState", {"profile": profile, "knockback_vector": result.knockback_vector})
-			ImpactResolver.ContactResult.DefenderOutcome.HIT:
-				var profile = owner_node.get_stagger_profile()
-				transition_to("StaggerState", {"profile": profile, "knockback_vector": result.knockback_vector})
-			ImpactResolver.ContactResult.DefenderOutcome.POISE_BROKEN:
-				var profile = owner_node.get_stagger_profile()
-				transition_to("StaggerState", {"profile": profile, "knockback_vector": result.knockback_vector})
-	
+func _on_impact_resolved(result: ContactResult):
 	if result.attacker_node == owner_node:
 		match result.attacker_outcome:
-			ImpactResolver.ContactResult.AttackerOutcome.PARRIED:
+			ContactResult.AttackerOutcome.PARRIED:
 				var profile = owner_node.get_parried_profile()
 				transition_to("ParriedState", {"profile": profile})
-			ImpactResolver.ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
+			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
 				var profile = owner_node.get_finisher_profile()
 				transition_to("FinisherReadyState", {"profile": profile})
 
+func on_current_state_finished(reason: Dictionary = {}):
+	var outcome = reason.get("outcome")
+	if outcome:
+		match outcome:
+			"BLOCKED":
+				var profile = owner_node.get_block_stun_profile()
+				transition_to("BlockStunState", {"profile": profile})
+				return
+			"GUARD_BROKEN":
+				var profile = owner_node.get_guard_broken_profile()
+				transition_to("GuardBrokenState", {"profile": profile})
+				return
+			"FINISHER_HIT":
+				var profile = owner_node.get_stagger_profile()
+				transition_to("StaggerState", {"profile": profile})
+				return
+			"HIT", "POISE_BROKEN":
+				var profile = owner_node.get_stagger_profile()
+				transition_to("StaggerState", {"profile": profile})
+				return
 
-func on_current_state_finished():
 	var buffered_data = buffer_component.consume()
 	if buffered_data:
 		match buffered_data.action:
@@ -145,9 +141,8 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 
 	var new_state = states[new_state_key]
 
-	if new_state == current_state:
-		if not current_state.allow_reentry():
-			return
+	if new_state == current_state and not current_state.allow_reentry():
+		return
 
 	var previous_state = current_state
 	

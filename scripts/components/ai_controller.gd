@@ -33,12 +33,12 @@ func on_incoming_attack(attacker: CharacterBody2D, hitbox: Hitbox):
 		if profile:
 			_state_machine.on_parry_pressed(profile)
 
-func _on_impact_resolved(result: ImpactResolver.ContactResult):
+func _on_impact_resolved(result: ContactResult):
 	if result == null or _owner_actor == null:
 		return
 
 	if result.defender_node == _owner_actor:
-		if result.defender_outcome == ImpactResolver.ContactResult.DefenderOutcome.PARRY_SUCCESS:
+		if result.defender_outcome == ContactResult.DefenderOutcome.PARRY_SUCCESS:
 			if _state_machine != null:
 				await get_tree().process_frame
 				var profile = _owner_actor.combo_component.get_next_attack_profile()

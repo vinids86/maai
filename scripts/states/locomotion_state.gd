@@ -16,7 +16,6 @@ func enter(args: Dictionary = {}):
 	
 	_change_phase(Phases.IDLE)
 
-
 func process_physics(delta: float, walk_direction: float, is_running: bool):
 	if not owner_node.is_on_floor():
 		owner_node.velocity.y += gravity * delta
@@ -30,6 +29,20 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 	
 	_update_and_emit_phase(walk_direction, is_running)
 
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var result_for_attacker = ContactResult.new()
+
+	if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
+		state_machine.on_current_state_finished({"outcome": "BLOCKED"})
+		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
+		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+	else:
+		state_machine.on_current_state_finished({"outcome": "GUARD_BROKEN"})
+		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
+		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
+	
+	return result_for_attacker
+
 func get_current_poise() -> float:
 	if not current_profile:
 		return 0.0
@@ -40,12 +53,6 @@ func allow_dodge() -> bool:
 
 func allow_attack() -> bool:
 	return owner_node.is_on_floor()
-
-func can_buffer_attack() -> bool:
-	return false
-	
-func allow_autoblock() -> bool:
-	return true
 	
 func allow_parry() -> bool:
 	return true

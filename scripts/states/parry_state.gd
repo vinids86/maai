@@ -19,12 +19,10 @@ func enter(args: Dictionary = {}):
 	owner_node.velocity = Vector2.ZERO
 	_change_phase(Phases.ACTIVE)
 
-
 func exit():
 	owner_node.facing_locked = false
 
-
-func process_physics(delta: float, walk_direction: float, is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 	if not current_profile:
 		return
 
@@ -44,12 +42,42 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 				state_machine.on_current_state_finished()
 				return
 
-func is_in_active_phase() -> bool:
-	return current_phase == Phases.ACTIVE
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var result_for_attacker = ContactResult.new()
+	
+	match current_phase:
+		Phases.ACTIVE:
+			var attack_profile = context.attack_profile
+			
+			if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
+				return _handle_default_hit(context)
+			else:
+				_change_phase(Phases.SUCCESS)
+				
+				if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.STANDARD:
+					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
+				else:
+					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+				return result_for_attacker
 
-func on_parry_success():
-	if current_phase == Phases.ACTIVE:
-		_change_phase(Phases.SUCCESS)
+		Phases.SUCCESS:
+			return _handle_default_hit(context)
+
+		Phases.RECOVERY:
+			if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+			else:
+				state_machine.on_current_state_finished({"outcome": "GUARD_BROKEN"})
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
+			return result_for_attacker
+			
+	return null
+
+func allow_attack() -> bool:
+	return false
+
+func allow_autoblock() -> bool:
+	return current_phase == Phases.RECOVERY
 
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
@@ -60,7 +88,7 @@ func _change_phase(new_phase: Phases):
 			time_left_in_phase = current_profile.active_duration
 			sfx_to_play = current_profile.active_sfx
 		Phases.SUCCESS:
-			time_left_in_phase = 0.1
+			time_left_in_phase = current_profile.success_duration
 			sfx_to_play = current_profile.success_sfx
 		Phases.RECOVERY:
 			time_left_in_phase = current_profile.recovery_duration
@@ -78,11 +106,20 @@ func _change_phase(new_phase: Phases):
 	
 	state_machine.emit_phase_change(phase_data)
 
-func allow_attack() -> bool:
-	return false
-
-func can_buffer_attack() -> bool:
-	return current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY
-
-func allow_autoblock() -> bool: 
-	return current_phase == Phases.RECOVERY
+func _handle_default_hit(context: ContactContext) -> ContactResult:
+	var attack_profile = context.attack_profile
+	var was_poise_broken = false
+	if context.defender_poise_comp and attack_profile.poise_damage >= context.defender_poise_comp.get_effective_poise():
+		was_poise_broken = true
+	
+	context.defender_health_comp.take_damage(attack_profile.damage)
+	
+	var outcome = "HIT"
+	if was_poise_broken:
+		outcome = "POISE_BROKEN"
+	
+	state_machine.on_current_state_finished({"outcome": outcome})
+	
+	var result = ContactResult.new()
+	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+	return result

@@ -14,19 +14,16 @@ func enter(args: Dictionary = {}):
 	var direction_vector = args.get("direction", Vector2.ZERO)
 
 	if not current_profile:
-		push_warning("DodgeState: Não recebeu um DodgeProfile para executar. A abortar.")
 		state_machine.on_current_state_finished()
 		return
 		
 	movement_component.apply_dodge_velocity(direction_vector, current_profile)
 	_change_phase(Phases.ACTIVE)
 
-
 func exit():
 	owner_node.facing_locked = false
 
-
-func process_physics(delta: float, walk_direction: float, is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 	if not current_profile:
 		return
 
@@ -46,8 +43,39 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 	if not current_profile.ignores_gravity:
 		movement_component.apply_gravity(delta)
 
-func allow_dodge() -> bool:
-	return false
+func resolve_contact(context: ContactContext) -> ContactResult:
+	if current_phase == Phases.ACTIVE:
+		var result_for_attacker = ContactResult.new()
+		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGED
+		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+		return result_for_attacker
+	
+	if current_phase == Phases.RECOVERY:
+		return _handle_default_hit(context)
+		
+	return null
+
+func _handle_default_hit(context: ContactContext) -> ContactResult:
+	var attack_profile = context.attack_profile
+	var was_poise_broken = false
+	if context.defender_poise_comp and attack_profile.poise_damage >= context.defender_poise_comp.get_effective_poise():
+		was_poise_broken = true
+	
+	context.defender_health_comp.take_damage(attack_profile.damage)
+	
+	var outcome = "HIT"
+	if was_poise_broken:
+		outcome = "POISE_BROKEN"
+	
+	state_machine.on_current_state_finished({"outcome": outcome})
+	
+	var result = ContactResult.new()
+	if was_poise_broken:
+		result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+	else:
+		result.defender_outcome = ContactResult.DefenderOutcome.HIT
+	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+	return result
 
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase

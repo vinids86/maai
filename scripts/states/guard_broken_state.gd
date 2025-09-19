@@ -9,7 +9,6 @@ func enter(args: Dictionary = {}):
 	self.current_profile = args.get("profile")
 
 	if not current_profile:
-		push_warning("GuardBrokenState: Não recebeu um GuardBrokenProfile. A abortar.")
 		state_machine.on_current_state_finished()
 		return
 
@@ -17,8 +16,7 @@ func enter(args: Dictionary = {}):
 	owner_node.velocity = Vector2.ZERO
 	_emit_phase_signal()
 
-
-func process_physics(delta: float, walk_direction: float, is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 	if not current_profile:
 		return
 
@@ -26,6 +24,16 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 	if time_left_in_phase <= 0:
 		state_machine.on_current_state_finished()
 
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var finisher_profile = owner_node.get_finisher_profile()
+	
+	context.defender_health_comp.take_damage(finisher_profile.attack_profile.damage)
+	state_machine.on_current_state_finished({"outcome": "FINISHER_HIT"})
+	
+	var result_for_attacker = ContactResult.new()
+	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.FINISHER_HIT
+	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.FINISHER_SUCCESS
+	return result_for_attacker
 
 func _emit_phase_signal():
 	var phase_data = {

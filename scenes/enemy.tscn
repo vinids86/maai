@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=41 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -34,12 +34,8 @@
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="20_2mchx"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="20_2pwtc"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="21_2mchx"]
+[ext_resource type="Script" uid="uid://b31jt2qq4fmkr" path="res://scripts/components/poise_component.gd" id="23_78kod"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
-
-[sub_resource type="Resource" id="Resource_2sbpf"]
-script = ExtResource("16_ekh6n")
-buffer_window = 0.5
-metadata/_custom_type_script = "uid://24v4chol2qs0"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c4w8v"]
 shader = ExtResource("2_5uy6h")
@@ -53,6 +49,11 @@ height = 64.0
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_8tegq"]
 radius = 16.0
 height = 64.0
+
+[sub_resource type="Resource" id="Resource_2sbpf"]
+script = ExtResource("16_ekh6n")
+buffer_window = 0.5
+metadata/_custom_type_script = "uid://24v4chol2qs0"
 
 [node name="Enemy" type="CharacterBody2D" node_paths=PackedStringArray("visual_node")]
 script = ExtResource("1_md0e3")
@@ -70,11 +71,6 @@ forward_dodge_profile = ExtResource("11_605iw")
 back_dodge_profile = ExtResource("12_x6q4o")
 up_dodge_profile = ExtResource("13_2tuss")
 down_dodge_profile = ExtResource("14_7v6cf")
-
-[node name="BufferComponent" type="Node" parent="."]
-script = ExtResource("10_w8i8w")
-buffer_profile = SubResource("Resource_2sbpf")
-metadata/_custom_type_script = "uid://beortrl7adiim"
 
 [node name="ColorRect" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_c4w8v")
@@ -97,12 +93,48 @@ script = ExtResource("2_4ra3w")
 visible = false
 shape = SubResource("CapsuleShape2D_8tegq")
 
+[node name="AttackHitbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 32
+monitoring = false
+script = ExtResource("20_2pwtc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
+
+[node name="SFXEnemy" type="AudioStreamPlayer2D" parent="."]
+
+[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("audio_player", "state_machine")]
+script = ExtResource("17_shcg2")
+audio_player = NodePath("../SFXEnemy")
+state_machine = NodePath("../StateMachine")
+metadata/_custom_type_script = "uid://nl1a7e12lrfa"
+
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("1_7p1mj")
 
+[node name="StaminaComponent" type="Node" parent="."]
+script = ExtResource("11_w8i8w")
+
+[node name="DelayTimer" type="Timer" parent="StaminaComponent"]
+
+[node name="BufferComponent" type="Node" parent="."]
+script = ExtResource("10_w8i8w")
+buffer_profile = SubResource("Resource_2sbpf")
+metadata/_custom_type_script = "uid://beortrl7adiim"
+
+[node name="MovementComponent" type="Node" parent="."]
+script = ExtResource("9_8qclf")
+
+[node name="ComboComponent" type="Node" parent="."]
+script = ExtResource("35_2sbpf")
+metadata/_custom_type_script = "uid://7awh4v6bsojt"
+
+[node name="PoiseComponent" type="Node" parent="."]
+script = ExtResource("23_78kod")
+metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
+
 [node name="AIController" type="Node" parent="."]
 script = ExtResource("5_md484")
-parry_chance = 0.45
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 
 [node name="StateMachine" type="Node" parent="."]
@@ -141,36 +173,8 @@ metadata/_custom_type_script = "uid://bnsx7y061rnqe"
 script = ExtResource("21_2mchx")
 metadata/_custom_type_script = "uid://bsk4xllkbirnu"
 
-[node name="MovementComponent" type="Node" parent="."]
-script = ExtResource("9_8qclf")
-
-[node name="StaminaComponent" type="Node" parent="."]
-script = ExtResource("11_w8i8w")
-
-[node name="DelayTimer" type="Timer" parent="StaminaComponent"]
-
 [node name="EnemyStatusUI" parent="." instance=ExtResource("12_otmr2")]
 offset_left = -75.0
 offset_top = -52.0
 offset_right = -35.0
 offset_bottom = -12.0
-
-[node name="SFXEnemy" type="AudioStreamPlayer2D" parent="."]
-
-[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("audio_player", "state_machine")]
-script = ExtResource("17_shcg2")
-audio_player = NodePath("../SFXEnemy")
-state_machine = NodePath("../StateMachine")
-metadata/_custom_type_script = "uid://nl1a7e12lrfa"
-
-[node name="AttackHitbox" type="Area2D" parent="."]
-collision_layer = 16
-collision_mask = 32
-monitoring = false
-script = ExtResource("20_2pwtc")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
-
-[node name="ComboComponent" type="Node" parent="."]
-script = ExtResource("35_2sbpf")
-metadata/_custom_type_script = "uid://7awh4v6bsojt"

@@ -13,7 +13,6 @@ func _physics_process(delta: float):
 	if _time_left > 0:
 		_time_left -= delta
 		if _time_left <= 0:
-			print("clear: ", Time.get_ticks_msec())
 			clear()
 
 func capture(action: BufferedAction, context: Dictionary = {}):
@@ -24,7 +23,6 @@ func capture(action: BufferedAction, context: Dictionary = {}):
 	_buffered_action = action
 	_buffered_context = context
 	_time_left = buffer_profile.buffer_window
-	print("capture: ", Time.get_ticks_msec())
 
 func consume() -> Dictionary:
 	if has_buffer():
@@ -33,7 +31,6 @@ func consume() -> Dictionary:
 			"context": _buffered_context
 		}
 		clear()
-		print("consume: ", Time.get_ticks_msec())
 		return buffered_data
 	return {}
 
