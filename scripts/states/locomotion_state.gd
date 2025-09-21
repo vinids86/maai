@@ -31,6 +31,9 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
 
 	if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
 		state_machine.on_current_state_finished({"outcome": "BLOCKED"})

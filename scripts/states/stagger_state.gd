@@ -4,6 +4,7 @@ extends State
 var current_profile: StaggerProfile
 
 var time_left_in_phase: float = 0.0
+var _knockback_velocity: Vector2
 
 func enter(args: Dictionary = {}):
 	self.current_profile = args.get("profile")
@@ -15,9 +16,9 @@ func enter(args: Dictionary = {}):
 	time_left_in_phase = current_profile.duration
 	
 	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
-	owner_node.velocity = knockback
+	_knockback_velocity = knockback
 	if knockback.x != 0:
-		owner_node.velocity.x *= -owner_node.facing_sign
+		_knockback_velocity.x *= -owner_node.facing_sign
 
 	var phase_data := {
 		"state_name": self.name,
@@ -34,7 +35,18 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0.0:
+		owner_node.velocity = Vector2.ZERO
 		state_machine.on_current_state_finished()
+		return
+	
+	if not owner_node.is_on_floor():
+		var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
+		_knockback_velocity.y += gravity * delta
+	
+	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
+	owner_node.velocity = _knockback_velocity
+		
+	owner_node.move_and_slide()
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	return _handle_default_hit(context)
@@ -50,12 +62,28 @@ func _handle_default_hit(context: ContactContext) -> ContactResult:
 	var outcome = "HIT"
 	if was_poise_broken:
 		outcome = "POISE_BROKEN"
-	
-	state_machine.on_current_state_finished({"outcome": outcome})
+
+	var reason = {
+		"outcome": outcome,
+		"knockback_vector": context.attack_profile.knockback_vector
+	}
+	state_machine.on_current_state_finished(reason)
 	
 	var result = ContactResult.new()
+	result.attacker_node = context.attacker_node
+	result.defender_node = context.defender_node
+	result.attack_profile = context.attack_profile
 	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+
+	if was_poise_broken:
+		result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+	else:
+		result.defender_outcome = ContactResult.DefenderOutcome.HIT
+		
 	return result
 
 func allow_attack() -> bool:
 	return false
+
+func allow_reentry() -> bool:
+	return true

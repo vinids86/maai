@@ -43,6 +43,9 @@ func _handle_default_hit(context: ContactContext) -> ContactResult:
 	
 	var result = ContactResult.new()
 	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+	result.attacker_node = context.attacker_node
+	result.defender_node = context.defender_node
+	result.attack_profile = context.attack_profile
 	return result
 
 func _emit_phase_signal():

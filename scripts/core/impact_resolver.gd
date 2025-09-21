@@ -33,6 +33,6 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 		context.defender_attack_profile = defender_current_state.get_attack_profile()
 
 	var result_for_attacker: ContactResult = defender_current_state.resolve_contact(context)
-	print("result attack contact: ", result_for_attacker)
+
 	if result_for_attacker:
 		emit_signal("impact_resolved", result_for_attacker)

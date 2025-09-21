@@ -11,7 +11,6 @@ func enter(args: Dictionary = {}):
 	self.current_profile = args.get("profile")
 	
 	if not current_profile:
-		push_warning("ParryState: Não recebeu um ParryProfile para executar. A abortar.")
 		state_machine.on_current_state_finished()
 		return
 	
@@ -42,43 +41,6 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 				state_machine.on_current_state_finished()
 				return
 
-func resolve_contact(context: ContactContext) -> ContactResult:
-	var result_for_attacker = ContactResult.new()
-	
-	match current_phase:
-		Phases.ACTIVE:
-			var attack_profile = context.attack_profile
-			
-			if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
-				return _handle_default_hit(context)
-			else:
-				_change_phase(Phases.SUCCESS)
-				
-				if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.STANDARD:
-					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
-				else:
-					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
-				return result_for_attacker
-
-		Phases.SUCCESS:
-			return _handle_default_hit(context)
-
-		Phases.RECOVERY:
-			if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
-				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
-			else:
-				state_machine.on_current_state_finished({"outcome": "GUARD_BROKEN"})
-				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
-			return result_for_attacker
-			
-	return null
-
-func allow_attack() -> bool:
-	return false
-
-func allow_autoblock() -> bool:
-	return current_phase == Phases.RECOVERY
-
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
 	
@@ -107,6 +69,11 @@ func _change_phase(new_phase: Phases):
 	state_machine.emit_phase_change(phase_data)
 
 func _handle_default_hit(context: ContactContext) -> ContactResult:
+	var result = ContactResult.new()
+	result.attacker_node = context.attacker_node
+	result.defender_node = context.defender_node
+	result.attack_profile = context.attack_profile
+	
 	var attack_profile = context.attack_profile
 	var was_poise_broken = false
 	if context.defender_poise_comp and attack_profile.poise_damage >= context.defender_poise_comp.get_effective_poise():
@@ -118,8 +85,61 @@ func _handle_default_hit(context: ContactContext) -> ContactResult:
 	if was_poise_broken:
 		outcome = "POISE_BROKEN"
 	
-	state_machine.on_current_state_finished({"outcome": outcome})
+	var reason = {"outcome": outcome, "knockback_vector": attack_profile.knockback_vector}
+	state_machine.on_current_state_finished(reason)
 	
-	var result = ContactResult.new()
 	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+	result.defender_outcome = was_poise_broken and ContactResult.DefenderOutcome.POISE_BROKEN or ContactResult.DefenderOutcome.HIT
 	return result
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var result_for_attacker = ContactResult.new()
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
+	
+	match current_phase:
+		Phases.ACTIVE:
+			var attack_profile = context.attack_profile
+			
+			if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
+				return _handle_default_hit(context)
+			else:
+				_change_phase(Phases.SUCCESS)
+				
+				if context.defender_poise_comp and current_profile:
+					context.defender_poise_comp.apply_poise_bonus(
+						current_profile.poise_bonus_on_success, 
+						current_profile.poise_bonus_duration
+					)
+				
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
+				if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.STANDARD:
+					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
+				else:
+					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+				return result_for_attacker
+
+		Phases.SUCCESS:
+			return _handle_default_hit(context)
+
+		Phases.RECOVERY:
+			if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
+			else:
+				state_machine.on_current_state_finished({"outcome": "GUARD_BROKEN"})
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
+			return result_for_attacker
+			
+	return null
+
+func allow_attack() -> bool:
+	return false
+
+func can_buffer_attack() -> bool:
+	return current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY
+
+func allow_autoblock() -> bool:
+	return current_phase == Phases.RECOVERY

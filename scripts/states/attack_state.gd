@@ -69,18 +69,27 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> v
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
-	var my_poise = get_current_poise()
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
+	
+	context.defender_health_comp.take_damage(context.attack_profile.damage)
+	
+	var my_poise = context.defender_poise_comp.get_effective_poise()
 	var incoming_poise_damage = context.attack_profile.poise_damage
 
 	if incoming_poise_damage >= my_poise:
-		context.defender_health_comp.take_damage(context.attack_profile.damage)
-		state_machine.on_current_state_finished({"outcome": "POISE_BROKEN"})
+		var knockback_value = context.attack_profile.knockback_vector
+		print("AttackState: Perdeu a troca. Tentando enviar knockback: ", knockback_value)
+		var reason = {
+			"outcome": "POISE_BROKEN",
+			"knockback_vector": knockback_value
+		}
+		state_machine.on_current_state_finished(reason)
 		
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 	else:
-		context.defender_health_comp.take_damage(context.attack_profile.damage)
-		
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.TRADE_LOST
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
 

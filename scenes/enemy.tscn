@@ -109,6 +109,10 @@ audio_player = NodePath("../SFXEnemy")
 state_machine = NodePath("../StateMachine")
 metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 
+[node name="AIController" type="Node" parent="."]
+script = ExtResource("5_md484")
+metadata/_custom_type_script = "uid://dewrlich57pgi"
+
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("1_7p1mj")
 
@@ -132,10 +136,6 @@ metadata/_custom_type_script = "uid://7awh4v6bsojt"
 [node name="PoiseComponent" type="Node" parent="."]
 script = ExtResource("23_78kod")
 metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
-
-[node name="AIController" type="Node" parent="."]
-script = ExtResource("5_md484")
-metadata/_custom_type_script = "uid://dewrlich57pgi"
 
 [node name="StateMachine" type="Node" parent="."]
 script = ExtResource("6_ipns3")

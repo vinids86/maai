@@ -8,6 +8,7 @@
 script = ExtResource("1_u1h6j")
 active_duration = 0.15
 recovery_duration = 0.3
+success_duration = 0.2
 stamina_cost = 0.0
 poise_bonus_on_success = 50.0
 poise_bonus_duration = 2.0

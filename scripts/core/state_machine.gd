@@ -93,6 +93,7 @@ func _on_impact_resolved(result: ContactResult):
 				var profile = owner_node.get_stagger_profile()
 				transition_to("StaggerState", {"profile": profile})
 
+
 func on_current_state_finished(reason: Dictionary = {}):
 	var outcome = reason.get("outcome")
 	if outcome:
@@ -106,12 +107,15 @@ func on_current_state_finished(reason: Dictionary = {}):
 				transition_to("GuardBrokenState", {"profile": profile})
 				return
 			"FINISHER_HIT":
+				stamina_component.restore_to_full()
 				var profile = owner_node.get_stagger_profile()
 				transition_to("StaggerState", {"profile": profile})
 				return
 			"HIT", "POISE_BROKEN":
 				var profile = owner_node.get_stagger_profile()
-				transition_to("StaggerState", {"profile": profile})
+				var knockback_value = reason.get("knockback_vector", Vector2.ZERO)
+				print("StateMachine: Recebeu knockback para Stagger: ", knockback_value)
+				transition_to("StaggerState", {"profile": profile, "knockback_vector": knockback_value})
 				return
 
 	var buffered_data = buffer_component.consume()

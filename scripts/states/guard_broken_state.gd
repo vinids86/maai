@@ -38,6 +38,9 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
 	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.FINISHER_SUCCESS
 	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.FINISHER_HIT
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
 	return result_for_attacker
 
 func _emit_phase_signal():
