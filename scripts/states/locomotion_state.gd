@@ -36,11 +36,24 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.attack_profile = context.attack_profile
 
 	if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
-		state_machine.on_current_state_finished({"outcome": "BLOCKED"})
+		var block_recoil_fraction: float = 0.2
+		var base_knockback: Vector2 = context.attack_profile.knockback_vector
+		var recoil_velocity: Vector2 = base_knockback * block_recoil_fraction
+		
+		var reason = {
+			"outcome": "BLOCKED",
+			"knockback_vector": recoil_velocity
+		}
+		state_machine.on_current_state_finished(reason)
+		
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 	else:
-		state_machine.on_current_state_finished({"outcome": "GUARD_BROKEN"})
+		var reason = {
+			"outcome": "GUARD_BROKEN",
+			"knockback_vector": context.attack_profile.knockback_vector
+		}
+		state_machine.on_current_state_finished(reason)
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 	

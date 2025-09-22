@@ -100,11 +100,13 @@ func on_current_state_finished(reason: Dictionary = {}):
 		match outcome:
 			"BLOCKED":
 				var profile = owner_node.get_block_stun_profile()
-				transition_to("BlockStunState", {"profile": profile})
+				var knockback_value = reason.get("knockback_vector", Vector2.ZERO)
+				transition_to("BlockStunState", {"profile": profile, "knockback_vector": knockback_value})
 				return
 			"GUARD_BROKEN":
 				var profile = owner_node.get_guard_broken_profile()
-				transition_to("GuardBrokenState", {"profile": profile})
+				var knockback_value = reason.get("knockback_vector", Vector2.ZERO)
+				transition_to("GuardBrokenState", {"profile": profile, "knockback_vector": knockback_value})
 				return
 			"FINISHER_HIT":
 				stamina_component.restore_to_full()
@@ -114,7 +116,6 @@ func on_current_state_finished(reason: Dictionary = {}):
 			"HIT", "POISE_BROKEN":
 				var profile = owner_node.get_stagger_profile()
 				var knockback_value = reason.get("knockback_vector", Vector2.ZERO)
-				print("StateMachine: Recebeu knockback para Stagger: ", knockback_value)
 				transition_to("StaggerState", {"profile": profile, "knockback_vector": knockback_value})
 				return
 
@@ -148,7 +149,7 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 
 	var new_state = states[new_state_key]
 
-	if new_state == current_state and not current_state.allow_reentry():
+	if new_state == current_state and not new_state.allow_reentry():
 		return
 
 	var previous_state = current_state

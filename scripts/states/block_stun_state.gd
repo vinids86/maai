@@ -4,6 +4,7 @@ extends State
 var current_profile: BlockStunProfile
 
 var time_left_in_phase: float = 0.0
+var _recoil_velocity: Vector2
 
 func enter(args: Dictionary = {}):
 	self.current_profile = args.get("profile")
@@ -13,7 +14,12 @@ func enter(args: Dictionary = {}):
 		return
 	
 	time_left_in_phase = current_profile.duration
-	owner_node.velocity = Vector2.ZERO
+	
+	var recoil: Vector2 = args.get("knockback_vector", Vector2.ZERO)
+	_recoil_velocity = recoil
+	if recoil.x != 0:
+		_recoil_velocity.x *= -owner_node.facing_sign
+	
 	_emit_phase_signal()
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool):
@@ -22,7 +28,21 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0:
+		owner_node.velocity = Vector2.ZERO
 		state_machine.on_current_state_finished()
+		return
+		
+	if not owner_node.is_on_floor():
+		var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
+		_recoil_velocity.y += gravity * delta
+	
+	_recoil_velocity = _recoil_velocity.lerp(Vector2.ZERO, 0.15)
+	owner_node.velocity = _recoil_velocity
+	
+	owner_node.move_and_slide()
+
+func allow_reentry() -> bool:
+	return true
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	return _handle_default_hit(context)
@@ -39,13 +59,23 @@ func _handle_default_hit(context: ContactContext) -> ContactResult:
 	if was_poise_broken:
 		outcome = "POISE_BROKEN"
 	
-	state_machine.on_current_state_finished({"outcome": outcome})
+	var reason = {
+		"outcome": outcome,
+		"knockback_vector": context.attack_profile.knockback_vector
+	}
+	state_machine.on_current_state_finished(reason)
 	
 	var result = ContactResult.new()
-	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
 	result.attacker_node = context.attacker_node
 	result.defender_node = context.defender_node
 	result.attack_profile = context.attack_profile
+	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+
+	if was_poise_broken:
+		result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+	else:
+		result.defender_outcome = ContactResult.DefenderOutcome.HIT
+		
 	return result
 
 func _emit_phase_signal():
