@@ -1,6 +1,8 @@
 class_name ParryState
 extends State
 
+const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(50, 0)
+
 var current_profile: ParryProfile
 
 enum Phases { ACTIVE, SUCCESS, RECOVERY }
@@ -116,6 +118,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
 				if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.STANDARD:
 					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
+					result_for_attacker.knockback_vector = ATTACKER_KNOCKBACK_ON_SUCCESS
 				else:
 					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 				return result_for_attacker
@@ -124,11 +127,19 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			return _handle_default_hit(context)
 
 		Phases.RECOVERY:
+			var block_recoil_fraction: float = 0.2
+			var attack_knockback = context.attack_profile.knockback_vector
+			
 			if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
+				var recoil_velocity = attack_knockback * block_recoil_fraction
+				var reason = {"outcome": "BLOCKED", "knockback_vector": recoil_velocity}
+				state_machine.on_current_state_finished(reason)
+
 				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
 			else:
-				state_machine.on_current_state_finished({"outcome": "GUARD_BROKEN"})
+				var reason = {"outcome": "GUARD_BROKEN", "knockback_vector": attack_knockback}
+				state_machine.on_current_state_finished(reason)
 				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
 			return result_for_attacker
@@ -137,6 +148,9 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 
 func allow_attack() -> bool:
 	return false
+
+func allow_reentry() -> bool:
+	return true
 
 func can_buffer_attack() -> bool:
 	return current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY

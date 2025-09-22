@@ -85,7 +85,8 @@ func _on_impact_resolved(result: ContactResult):
 		match result.attacker_outcome:
 			ContactResult.AttackerOutcome.PARRIED:
 				var profile = owner_node.get_parried_profile()
-				transition_to("ParriedState", {"profile": profile})
+				var knockback = result.knockback_vector
+				transition_to("ParriedState", {"profile": profile, "knockback_vector": knockback})
 			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
 				var profile = owner_node.get_finisher_profile()
 				transition_to("FinisherReadyState", {"profile": profile})
@@ -109,7 +110,6 @@ func on_current_state_finished(reason: Dictionary = {}):
 				transition_to("GuardBrokenState", {"profile": profile, "knockback_vector": knockback_value})
 				return
 			"FINISHER_HIT":
-				stamina_component.restore_to_full()
 				var profile = owner_node.get_stagger_profile()
 				transition_to("StaggerState", {"profile": profile})
 				return
