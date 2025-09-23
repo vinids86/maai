@@ -99,7 +99,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.attacker_node = context.attacker_node
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
-	
+
 	match current_phase:
 		Phases.ACTIVE:
 			if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:

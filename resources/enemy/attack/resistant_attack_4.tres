@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="AttackProfile" load_steps=3 format=3 uid="uid://dhdwkjgekngvi"]
+
+[ext_resource type="AudioStream" uid="uid://br3naex6ir5bb" path="res://audio/attack_5.wav" id="1_cafhc"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_m7xeg"]
+
+[resource]
+script = ExtResource("1_m7xeg")
+startup_duration = 0.7
+active_duration = 0.3
+recovery_duration = 0.3
+link_duration = 0.6
+animation_name = &""
+active_sfx = ExtResource("1_cafhc")
+hitbox_size = Vector2(32, 32)
+hitbox_position = Vector2(40, 0)
+damage = 10.0
+stamina_cost = 0.0
+stamina_damage = 10.0
+poise_shield_contribution = 10.0
+poise_impact_contribution = 1000.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+startup_movement_velocity = Vector2(-300, 0)
+active_movement_velocity = Vector2(1000, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"

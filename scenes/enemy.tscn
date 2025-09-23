@@ -1,4 +1,4 @@
-[gd_scene load_steps=41 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=44 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -12,6 +12,7 @@
 [ext_resource type="Resource" uid="uid://bqjgtxke4um5v" path="res://resources/player/parried/default.tres" id="7_ekh6n"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_2sbpf"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="9_8qclf"]
+[ext_resource type="Resource" uid="uid://b6vfpucmwtngk" path="res://resources/enemy/attack/special_set_1.tres" id="10_2tuss"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="10_78kod"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="10_s1ycm"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="10_w8i8w"]
@@ -34,8 +35,10 @@
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="20_2mchx"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="20_2pwtc"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="21_2mchx"]
+[ext_resource type="Script" uid="uid://b0lnh740qgaih" path="res://scripts/core/attack_executor.gd" id="22_605iw"]
 [ext_resource type="Script" uid="uid://b31jt2qq4fmkr" path="res://scripts/components/poise_component.gd" id="23_78kod"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
+[ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c4w8v"]
 shader = ExtResource("2_5uy6h")
@@ -67,6 +70,7 @@ parried_profile = ExtResource("7_ekh6n")
 guard_broken_profile = ExtResource("20_2mchx")
 locomotion_profile = ExtResource("9_2sbpf")
 base_poise = 10.0
+resistant_skill_set = ExtResource("10_2tuss")
 neutral_dodge_profile = ExtResource("10_78kod")
 forward_dodge_profile = ExtResource("11_605iw")
 back_dodge_profile = ExtResource("12_x6q4o")
@@ -110,10 +114,6 @@ audio_player = NodePath("../SFXEnemy")
 state_machine = NodePath("../StateMachine")
 metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 
-[node name="AIController" type="Node" parent="."]
-script = ExtResource("5_md484")
-metadata/_custom_type_script = "uid://dewrlich57pgi"
-
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("1_7p1mj")
 
@@ -121,6 +121,15 @@ script = ExtResource("1_7p1mj")
 script = ExtResource("11_w8i8w")
 
 [node name="DelayTimer" type="Timer" parent="StaminaComponent"]
+
+[node name="AIController" type="Node" parent="."]
+script = ExtResource("5_md484")
+parry_chance = 1.0
+metadata/_custom_type_script = "uid://dewrlich57pgi"
+
+[node name="AttackExecutor" type="Node" parent="."]
+script = ExtResource("22_605iw")
+metadata/_custom_type_script = "uid://b0lnh740qgaih"
 
 [node name="BufferComponent" type="Node" parent="."]
 script = ExtResource("10_w8i8w")
@@ -173,6 +182,10 @@ metadata/_custom_type_script = "uid://bnsx7y061rnqe"
 [node name="FinisherReadyState" type="Node" parent="StateMachine"]
 script = ExtResource("21_2mchx")
 metadata/_custom_type_script = "uid://bsk4xllkbirnu"
+
+[node name="SequenceState" type="Node" parent="StateMachine"]
+script = ExtResource("37_x6q4o")
+metadata/_custom_type_script = "uid://b72ucjj1gl7t2"
 
 [node name="EnemyStatusUI" parent="." instance=ExtResource("12_otmr2")]
 offset_left = -75.0

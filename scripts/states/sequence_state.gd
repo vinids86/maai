@@ -1,19 +1,15 @@
-class_name AttackState
+class_name SequenceState
 extends State
 
 var _attack_executor: AttackExecutor
-var _current_profile: AttackProfile
-
-enum LinkPhases { EXECUTING, LINK }
-var _current_phase: LinkPhases
-var _time_left_in_link: float = 0.0
+var _sequence_context: ActionSequence
 var _is_initialized: bool = false
 
 func _initialize_references():
 	if _is_initialized:
 		return
 	_attack_executor = owner_node.find_child("AttackExecutor")
-	assert(_attack_executor != null, "AttackState: Nó 'AttackExecutor' não encontrado.")
+	assert(_attack_executor != null, "SequenceState: Nó 'AttackExecutor' não encontrado.")
 	_is_initialized = true
 
 func enter(args: Dictionary = {}):
@@ -21,16 +17,15 @@ func enter(args: Dictionary = {}):
 	
 	_attack_executor.attack_phase_changed.connect(_on_attack_phase_changed)
 	_attack_executor.finished.connect(_on_attack_finished)
-	
-	self._current_profile = args.get("profile")
 
-	if not _current_profile:
+	self._sequence_context = args.get("sequence_context")
+	if not _sequence_context:
+		push_warning("SequenceState: Não recebeu um 'sequence_context'.")
 		state_machine.on_current_state_finished()
 		return
 	
 	owner_node.facing_locked = true
-	_current_phase = LinkPhases.EXECUTING
-	_attack_executor.execute(_current_profile)
+	_execute_next_attack_in_sequence()
 
 func exit():
 	if _attack_executor:
@@ -39,21 +34,9 @@ func exit():
 			_attack_executor.attack_phase_changed.disconnect(_on_attack_phase_changed)
 		if _attack_executor.is_connected("finished", Callable(self, "_on_attack_finished")):
 			_attack_executor.finished.disconnect(_on_attack_finished)
-
+			
 	owner_node.facing_locked = false
-	_current_phase = LinkPhases.EXECUTING
-	_current_profile = null
-
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
-	if _current_phase == LinkPhases.LINK:
-		_time_left_in_link -= delta
-		if _time_left_in_link <= 0.0:
-			state_machine.on_current_state_finished()
-			return
-		
-		var move_vel = _current_profile.link_movement_velocity
-		owner_node.velocity.x = move_vel.x * owner_node.facing_sign
-		owner_node.velocity.y = move_vel.y
+	_sequence_context = null
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result = ContactResult.new()
@@ -84,41 +67,32 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 func get_poise_shield_contribution() -> float:
 	var profile = _attack_executor.get_current_profile()
 	if not profile:
-		profile = _current_profile
-	if not profile:
 		return 0.0
 	return profile.poise_shield_contribution
 
 func get_poise_impact_contribution() -> float:
 	var profile = _attack_executor.get_current_profile()
 	if not profile:
-		profile = _current_profile
-	if not profile:
 		return 0.0
 	return profile.poise_impact_contribution
-
-func allow_reentry() -> bool:
-	return true
 	
-func allow_attack() -> bool:
-	return _current_phase == LinkPhases.LINK
-	
-func allow_parry() -> bool:
-	return _current_phase == LinkPhases.LINK
-
-func allow_dodge() -> bool:
-	var executor_phase = _attack_executor.get_current_phase_name()
-	var in_recovery = executor_phase == "RECOVERY"
-	var in_link = _current_phase == LinkPhases.LINK
-	return in_recovery or in_link
-
 func _on_attack_phase_changed(phase_data: Dictionary):
+	if not _sequence_context:
+		return
 	state_machine.emit_phase_change(phase_data)
 
 func _on_attack_finished():
-	if state_machine.buffer_component.has_buffer():
-		state_machine.on_current_state_finished()
+	if not _sequence_context:
 		return
+	_execute_next_attack_in_sequence()
+
+func _execute_next_attack_in_sequence():
+	var next_profile = _sequence_context.get_next_profile()
+	
+	if next_profile:
+		if state_machine.stamina_component.try_consume(next_profile.stamina_cost):
+			_attack_executor.execute(next_profile)
+		else:
+			state_machine.on_current_state_finished()
 	else:
-		_current_phase = LinkPhases.LINK
-		_time_left_in_link = _current_profile.link_duration
+		state_machine.on_current_state_finished()

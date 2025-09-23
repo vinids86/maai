@@ -5,6 +5,7 @@ extends CharacterBody2D
 @onready var hold_input_timer: Timer = $HoldInputTimer
 @onready var run_cancel_timer: Timer = $RunCancelTimer
 @onready var combo_component: ComboComponent = $ComboComponent
+@onready var attack_executor: AttackExecutor = $AttackExecutor
 
 @export_group("Combat Data")
 @export var attack_set: AttackSet
@@ -16,6 +17,7 @@ extends CharacterBody2D
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
 @export var base_poise: float
+@export var resistant_skill_set: AttackSet
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile
@@ -31,6 +33,7 @@ var facing_locked: bool = false
 func _ready():
 	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
 	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
+	attack_executor.setup(self) 
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
@@ -63,6 +66,12 @@ func _unhandled_input(event: InputEvent):
 			state_machine.on_attack_pressed(profile)
 		get_viewport().set_input_as_handled()
 		return
+
+	if event.is_action_pressed("skill_x"):
+		if Input.is_action_pressed("skill_modifier"):
+			state_machine.on_sequence_skill_pressed(resistant_skill_set)
+			get_viewport().set_input_as_handled()
+			return
 
 	if event.is_action_pressed("parry"):
 		var profile = get_parry_profile()

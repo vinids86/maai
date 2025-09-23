@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=41 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -15,7 +15,6 @@
 [ext_resource type="Resource" uid="uid://h5j4chnrxexj" path="res://resources/player/dodge/back.tres" id="9_3v2ag"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_487ah"]
 [ext_resource type="Resource" uid="uid://cfu400oitmjxr" path="res://resources/player/dodge/up.tres" id="10_jej6c"]
-[ext_resource type="Resource" uid="uid://b6vfpucmwtngk" path="res://resources/enemy/attack/special_set_1.tres" id="10_t4otl"]
 [ext_resource type="Resource" uid="uid://cxtoyg6r5qy34" path="res://resources/player/dodge/down.tres" id="11_f1ej7"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="12_jej6c"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_listener.gd" id="15_a8ls1"]
@@ -63,7 +62,6 @@ parried_profile = ExtResource("7_gl8cc")
 guard_broken_profile = ExtResource("27_wqfne")
 locomotion_profile = ExtResource("9_487ah")
 base_poise = 10.0
-resistant_skill_set = ExtResource("10_t4otl")
 neutral_dodge_profile = ExtResource("7_fjrip")
 forward_dodge_profile = ExtResource("8_d2wvv")
 back_dodge_profile = ExtResource("9_3v2ag")

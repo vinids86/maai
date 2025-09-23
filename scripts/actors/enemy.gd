@@ -7,6 +7,7 @@ extends CharacterBody2D
 @onready var stamina_component: StaminaComponent = $StaminaComponent
 @onready var status_ui: EnemyStatusUI = $EnemyStatusUI
 @onready var combo_component: ComboComponent = $ComboComponent
+@onready var attack_executor: AttackExecutor = $AttackExecutor
 
 @export var visual_node: CanvasItem
 
@@ -20,6 +21,7 @@ extends CharacterBody2D
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
 @export var base_poise: float
+@export var resistant_skill_set: AttackSet
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile
@@ -44,6 +46,7 @@ func _ready():
 		
 	health_component.health_changed.connect(status_ui.update_health)
 	stamina_component.stamina_changed.connect(status_ui.update_stamina)
+	attack_executor.setup(self)
 
 func _physics_process(delta: float):
 	var walk_direction = ai_controller.get_walk_direction()

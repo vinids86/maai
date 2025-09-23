@@ -37,8 +37,10 @@ func on_incoming_attack(attacker: CharacterBody2D, hitbox: Hitbox):
 func _on_phase_changed(phase_data: Dictionary):
 	if phase_data.get("state_name") == "ParryState" and phase_data.get("phase_name") == "SUCCESS":
 		await get_tree().process_frame
+		_state_machine.on_sequence_skill_pressed(_owner_actor.resistant_skill_set)
+		print("? ")
 		var combo_component = _owner_actor.find_child("ComboComponent")
 		if combo_component:
 			var profile = combo_component.get_next_attack_profile()
 			if profile:
-				_state_machine.on_attack_pressed(profile)
+				_state_machine.on_sequence_skill_pressed(_owner_actor.resistant_skill_set)
