@@ -2,7 +2,7 @@ class_name ContactResult
 extends Resource
 
 enum DefenderOutcome { HIT, POISE_BROKEN, PARRY_SUCCESS, BLOCKED, GUARD_BROKEN, DODGED, FINISHER_HIT }
-enum AttackerOutcome { NONE, PARRIED, GUARD_BREAK_SUCCESS, TRADE_LOST, FINISHER_SUCCESS }
+enum AttackerOutcome { NONE, PARRIED, DEFLECTED, GUARD_BREAK_SUCCESS, TRADE_LOST, FINISHER_SUCCESS }
 
 var attacker_node: Node
 var defender_node: Node

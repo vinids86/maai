@@ -106,22 +106,26 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			
 			if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
 				return _handle_default_hit(context)
+			
+			_change_phase(Phases.SUCCESS)
+			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
+			
+			if context.defender_poise_comp and current_profile:
+				context.defender_poise_comp.apply_poise_bonus(
+					current_profile.poise_bonus_on_success,
+					current_profile.poise_bonus_duration
+				)
+
+			var attacker_poise = attack_profile.action_poise
+			var defender_effective_poise = context.defender_poise_comp.get_effective_poise()
+			
+			if defender_effective_poise >= attacker_poise:
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
+				result_for_attacker.knockback_vector = ATTACKER_KNOCKBACK_ON_SUCCESS
 			else:
-				_change_phase(Phases.SUCCESS)
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.DEFLECTED
 				
-				if context.defender_poise_comp and current_profile:
-					context.defender_poise_comp.apply_poise_bonus(
-						current_profile.poise_bonus_on_success, 
-						current_profile.poise_bonus_duration
-					)
-				
-				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
-				if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.STANDARD:
-					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
-					result_for_attacker.knockback_vector = ATTACKER_KNOCKBACK_ON_SUCCESS
-				else:
-					result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
-				return result_for_attacker
+			return result_for_attacker
 
 		Phases.SUCCESS:
 			return _handle_default_hit(context)

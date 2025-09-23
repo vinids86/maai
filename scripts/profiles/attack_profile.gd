@@ -3,7 +3,6 @@ extends Resource
 
 enum ParryInteractionType {
 	STANDARD,
-	RESISTANT,
 	UNPARRYABLE
 }
 
