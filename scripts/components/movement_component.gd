@@ -9,7 +9,6 @@ func _ready():
 
 func calculate_walk_velocity(walk_direction: float, is_running: bool, profile: LocomotionProfile):
 	if not profile:
-		push_warning("MovementComponent recebeu um LocomotionProfile nulo.")
 		return
 
 	var target_speed = profile.speed
@@ -23,7 +22,6 @@ func calculate_walk_velocity(walk_direction: float, is_running: bool, profile: L
 
 func apply_dodge_velocity(direction: Vector2, profile: DodgeProfile):
 	if not profile:
-		push_warning("MovementComponent recebeu um DodgeProfile nulo.")
 		return
 	
 	owner_node.velocity = Vector2.ZERO

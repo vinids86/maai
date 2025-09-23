@@ -42,10 +42,13 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 
 	if not current_profile.ignores_gravity:
 		movement_component.apply_gravity(delta)
-
+		
 func resolve_contact(context: ContactContext) -> ContactResult:
 	if current_phase == Phases.ACTIVE:
 		var result_for_attacker = ContactResult.new()
+		result_for_attacker.attacker_node = context.attacker_node
+		result_for_attacker.defender_node = context.defender_node
+		result_for_attacker.attack_profile = context.attack_profile
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGED
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 		return result_for_attacker
@@ -67,9 +70,13 @@ func _handle_default_hit(context: ContactContext) -> ContactResult:
 	if was_poise_broken:
 		outcome = "POISE_BROKEN"
 	
-	state_machine.on_current_state_finished({"outcome": outcome})
+	var reason = {"outcome": outcome, "knockback_vector": attack_profile.knockback_vector}
+	state_machine.on_current_state_finished(reason)
 	
 	var result = ContactResult.new()
+	result.attacker_node = context.attacker_node
+	result.defender_node = context.defender_node
+	result.attack_profile = context.attack_profile
 	if was_poise_broken:
 		result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 	else:

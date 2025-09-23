@@ -10,7 +10,7 @@ enum Phases { STARTUP, ACTIVE, RECOVERY, LINK }
 var current_phase: Phases
 var time_left_in_phase: float = 0.0
 
-func enter(args: Dictionary = {}) -> void:
+func enter(args: Dictionary = {}):
 	if not hitbox:
 		hitbox = owner_node.find_child("AttackHitbox") as Area2D
 		if hitbox:
@@ -28,13 +28,13 @@ func enter(args: Dictionary = {}) -> void:
 	owner_node.facing_locked = true
 	_change_phase(Phases.STARTUP)
 
-func exit() -> void:
+func exit():
 	if hitbox_shape:
 		hitbox_shape.disabled = true
 		hitbox_shape.shape = null
 	owner_node.facing_locked = false
 
-func process_physics(delta: float, walk_direction: float, is_running: bool) -> void:
+func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 	if not current_profile:
 		return
 
@@ -60,12 +60,19 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> v
 				state_machine.on_current_state_finished()
 				return
 	
-	if current_phase == Phases.STARTUP or current_phase == Phases.ACTIVE:
-		var move_vel: Vector2 = current_profile.movement_velocity
-		owner_node.velocity.x = move_vel.x * owner_node.facing_sign
-		owner_node.velocity.y = move_vel.y
-	else:
-		owner_node.velocity = Vector2.ZERO
+	var move_vel = Vector2.ZERO
+	match current_phase:
+		Phases.STARTUP:
+			move_vel = current_profile.startup_movement_velocity
+		Phases.ACTIVE:
+			move_vel = current_profile.active_movement_velocity
+		Phases.RECOVERY:
+			move_vel = current_profile.recovery_movement_velocity
+		Phases.LINK:
+			move_vel = current_profile.link_movement_velocity
+			
+	owner_node.velocity.x = move_vel.x * owner_node.facing_sign
+	owner_node.velocity.y = move_vel.y
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
@@ -74,16 +81,14 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.attack_profile = context.attack_profile
 	
 	context.defender_health_comp.take_damage(context.attack_profile.damage)
-	
+
 	var my_poise = context.defender_poise_comp.get_effective_poise()
 	var incoming_poise_damage = context.attack_profile.poise_damage
 
 	if incoming_poise_damage >= my_poise:
-		var knockback_value = context.attack_profile.knockback_vector
-		print("AttackState: Perdeu a troca. Tentando enviar knockback: ", knockback_value)
 		var reason = {
 			"outcome": "POISE_BROKEN",
-			"knockback_vector": knockback_value
+			"knockback_vector": context.attack_profile.knockback_vector
 		}
 		state_machine.on_current_state_finished(reason)
 		
@@ -94,11 +99,6 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
 
 	return result_for_attacker
-
-func get_current_poise() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.action_poise
 
 func get_attack_profile() -> AttackProfile:
 	return current_profile

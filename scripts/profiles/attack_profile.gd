@@ -23,9 +23,6 @@ enum ParryInteractionType {
 @export var hitbox_size: Vector2 = Vector2(32, 32)
 @export var hitbox_position: Vector2 = Vector2(40, 0)
 
-@export_group("Movement")
-@export var movement_velocity: Vector2 = Vector2.ZERO
-
 @export_group("Mechanics")
 @export var damage: float = 10.0
 @export var stamina_cost: float = 0.0
@@ -35,3 +32,9 @@ enum ParryInteractionType {
 @export var action_poise: float = 10.0
 @export var knockback_vector: Vector2 = Vector2(150, -100)
 @export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
+
+@export_group("Movement")
+@export var startup_movement_velocity: Vector2 = Vector2.ZERO
+@export var active_movement_velocity: Vector2 = Vector2.ZERO
+@export var recovery_movement_velocity: Vector2 = Vector2.ZERO
+@export var link_movement_velocity: Vector2 = Vector2.ZERO
