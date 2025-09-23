@@ -18,7 +18,7 @@ func enter(args: Dictionary = {}):
 	_emit_phase_signal()
 
 
-func process_physics(delta: float, walk_direction: float, is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 	if not current_profile:
 		return
 
@@ -42,6 +42,11 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
 	return result_for_attacker
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
 
 func _emit_phase_signal():
 	var phase_data = {

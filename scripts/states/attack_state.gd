@@ -75,30 +75,40 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 	owner_node.velocity.y = move_vel.y
 
 func resolve_contact(context: ContactContext) -> ContactResult:
-	var result_for_attacker = ContactResult.new()
-	result_for_attacker.attacker_node = context.attacker_node
-	result_for_attacker.defender_node = context.defender_node
-	result_for_attacker.attack_profile = context.attack_profile
+	var result = ContactResult.new()
+	result.attacker_node = context.attacker_node
+	result.defender_node = context.defender_node
+	result.attack_profile = context.attack_profile
+	
+	var my_shield_poise = context.defender_poise_comp.get_effective_shield_poise()
+	var attacker_sword_poise = context.attacker_offensive_poise
 	
 	context.defender_health_comp.take_damage(context.attack_profile.damage)
-
-	var my_poise = context.defender_poise_comp.get_effective_poise()
-	var incoming_poise_damage = context.attack_profile.poise_damage
-
-	if incoming_poise_damage >= my_poise:
+	
+	if attacker_sword_poise >= my_shield_poise:
 		var reason = {
 			"outcome": "POISE_BROKEN",
 			"knockback_vector": context.attack_profile.knockback_vector
 		}
 		state_machine.on_current_state_finished(reason)
 		
-		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
-		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+		result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+		result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 	else:
-		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.TRADE_LOST
-		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
+		result.attacker_outcome = ContactResult.AttackerOutcome.TRADE_LOST
+		result.defender_outcome = ContactResult.DefenderOutcome.HIT
 
-	return result_for_attacker
+	return result
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func get_poise_impact_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_impact_contribution
 
 func get_attack_profile() -> AttackProfile:
 	return current_profile

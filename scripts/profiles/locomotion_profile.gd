@@ -6,7 +6,7 @@ extends Resource
 @export var run_speed: float = 500.0
 
 @export_group("Mechanics")
-@export var base_poise: float = 5.0
+@export var poise_shield_contribution: float = 30.0
 
 @export_group("Presentation")
 @export var idle_animation: StringName

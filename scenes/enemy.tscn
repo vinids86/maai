@@ -66,6 +66,7 @@ stagger_profile = ExtResource("12_rogs8")
 parried_profile = ExtResource("7_ekh6n")
 guard_broken_profile = ExtResource("20_2mchx")
 locomotion_profile = ExtResource("9_2sbpf")
+base_poise = 10.0
 neutral_dodge_profile = ExtResource("10_78kod")
 forward_dodge_profile = ExtResource("11_605iw")
 back_dodge_profile = ExtResource("12_x6q4o")

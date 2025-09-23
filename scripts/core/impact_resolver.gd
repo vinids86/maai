@@ -14,6 +14,12 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 	context.defender_node = defender
 	context.attack_profile = hitbox.attack_profile
 	
+	var attacker_poise_comp = attacker.find_child("PoiseComponent")
+	if attacker_poise_comp:
+		context.attacker_offensive_poise = attacker_poise_comp.get_effective_offensive_poise()
+	else:
+		context.attacker_offensive_poise = 0.0
+	
 	context.defender_health_comp = defender.find_child("HealthComponent")
 	context.defender_stamina_comp = defender.find_child("StaminaComponent")
 	context.defender_poise_comp = defender.find_child("PoiseComponent")

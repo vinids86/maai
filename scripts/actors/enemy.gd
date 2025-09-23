@@ -19,6 +19,7 @@ extends CharacterBody2D
 @export var parried_profile: ParriedProfile
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
+@export var base_poise: float
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile

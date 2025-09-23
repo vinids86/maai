@@ -76,18 +76,18 @@ func _handle_default_hit(context: ContactContext) -> ContactResult:
 	result.defender_node = context.defender_node
 	result.attack_profile = context.attack_profile
 	
-	var attack_profile = context.attack_profile
+	var defender_defensive_poise = context.defender_poise_comp.get_effective_shield_poise()
 	var was_poise_broken = false
-	if context.defender_poise_comp and attack_profile.poise_damage >= context.defender_poise_comp.get_effective_poise():
+	if context.attacker_offensive_poise >= defender_defensive_poise:
 		was_poise_broken = true
 	
-	context.defender_health_comp.take_damage(attack_profile.damage)
+	context.defender_health_comp.take_damage(context.attack_profile.damage)
 	
 	var outcome = "HIT"
 	if was_poise_broken:
 		outcome = "POISE_BROKEN"
 	
-	var reason = {"outcome": outcome, "knockback_vector": attack_profile.knockback_vector}
+	var reason = {"outcome": outcome, "knockback_vector": context.attack_profile.knockback_vector}
 	state_machine.on_current_state_finished(reason)
 	
 	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
@@ -102,24 +102,25 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	
 	match current_phase:
 		Phases.ACTIVE:
-			var attack_profile = context.attack_profile
-			
-			if attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
+			if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
 				return _handle_default_hit(context)
 			
 			_change_phase(Phases.SUCCESS)
 			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
 			
 			if context.defender_poise_comp and current_profile:
-				context.defender_poise_comp.apply_poise_bonus(
-					current_profile.poise_bonus_on_success,
-					current_profile.poise_bonus_duration
+				context.defender_poise_comp.apply_shield_bonus(
+					current_profile.shield_bonus_on_success,
+					current_profile.bonus_duration
+				)
+				context.defender_poise_comp.apply_sword_bonus(
+					current_profile.sword_bonus_on_success,
+					current_profile.bonus_duration
 				)
 
-			var attacker_poise = attack_profile.action_poise
-			var defender_effective_poise = context.defender_poise_comp.get_effective_poise()
+			var defender_defensive_poise = context.defender_poise_comp.get_effective_shield_poise()
 			
-			if defender_effective_poise >= attacker_poise:
+			if defender_defensive_poise >= context.attacker_offensive_poise:
 				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
 				result_for_attacker.knockback_vector = ATTACKER_KNOCKBACK_ON_SUCCESS
 			else:
@@ -149,6 +150,14 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			return result_for_attacker
 			
 	return null
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func get_poise_impact_contribution() -> float:
+	return 0.0
 
 func allow_attack() -> bool:
 	return false

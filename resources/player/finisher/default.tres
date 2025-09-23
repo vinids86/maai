@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("1_ytm4g")
 ready_duration = 2.0
-attack_profile = ExtResource("1_1ib33")
 animation_name = &""
+poise_shield_contribution = 100.0
+attack_profile = ExtResource("1_1ib33")
 metadata/_custom_type_script = "uid://doyh241a0qmbq"
