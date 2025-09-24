@@ -89,8 +89,5 @@ func get_poise_shield_contribution() -> float:
 		return 0.0
 	return current_profile.poise_shield_contribution
 
-func allow_attack() -> bool:
-	return false
-
 func allow_reentry() -> bool:
 	return true

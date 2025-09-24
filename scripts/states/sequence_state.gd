@@ -46,6 +46,21 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 			_current_phase = LinkPhases.FINISHED
 			state_machine.on_current_state_finished()
 
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	if _current_phase == LinkPhases.LINK:
+		return InputHandlerResult.ACCEPTED
+	return InputHandlerResult.REJECTED
+
+func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
+	if _current_phase == LinkPhases.LINK:
+		return InputHandlerResult.ACCEPTED
+	return InputHandlerResult.REJECTED
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	if _current_phase == LinkPhases.LINK:
+		return InputHandlerResult.ACCEPTED
+	return InputHandlerResult.REJECTED
+
 func _on_attack_finished():
 	_execute_next_attack()
 
@@ -112,15 +127,6 @@ func get_attack_profile() -> AttackProfile:
 
 func allow_reentry() -> bool:
 	return true
-
-func allow_attack() -> bool:
-	return _current_phase == LinkPhases.LINK
-	
-func allow_parry() -> bool:
-	return _current_phase == LinkPhases.LINK
-
-func allow_dodge() -> bool:
-	return _current_phase == LinkPhases.LINK
 
 func _on_phase_changed(phase_data: Dictionary):
 	state_machine.emit_phase_change(phase_data)

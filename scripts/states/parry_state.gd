@@ -43,6 +43,19 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 				state_machine.on_current_state_finished()
 				return
 
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	return InputHandlerResult.REJECTED
+
+func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
+	if current_phase == Phases.SUCCESS:
+		return InputHandlerResult.ACCEPTED
+	return InputHandlerResult.REJECTED
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	if current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY:
+		return InputHandlerResult.ACCEPTED
+	return InputHandlerResult.REJECTED
+
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
 	
@@ -159,17 +172,5 @@ func get_poise_shield_contribution() -> float:
 func get_poise_impact_contribution() -> float:
 	return 0.0
 
-func allow_attack() -> bool:
-	return false
-	
-func allow_parry() -> bool:
-	return current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY
-
 func allow_reentry() -> bool:
 	return true
-
-func can_buffer_attack() -> bool:
-	return current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY
-
-func allow_autoblock() -> bool:
-	return current_phase == Phases.RECOVERY

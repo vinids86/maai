@@ -55,6 +55,26 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 		owner_node.velocity.x = move_vel.x * owner_node.facing_sign
 		owner_node.velocity.y = move_vel.y
 
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	if _current_phase == LinkPhases.LINK:
+		return InputHandlerResult.ACCEPTED
+	return InputHandlerResult.REJECTED
+
+func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
+	if _current_phase == LinkPhases.LINK:
+		return InputHandlerResult.ACCEPTED
+	return InputHandlerResult.REJECTED
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	var executor_phase = _attack_executor.get_current_phase_name()
+	var in_recovery = executor_phase == "RECOVERY"
+	var in_link = _current_phase == LinkPhases.LINK
+	
+	if in_recovery or in_link:
+		return InputHandlerResult.ACCEPTED
+	
+	return InputHandlerResult.REJECTED
+
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result = ContactResult.new()
 	result.attacker_node = context.attacker_node
@@ -99,18 +119,6 @@ func get_poise_impact_contribution() -> float:
 
 func allow_reentry() -> bool:
 	return true
-	
-func allow_attack() -> bool:
-	return _current_phase == LinkPhases.LINK
-	
-func allow_parry() -> bool:
-	return _current_phase == LinkPhases.LINK
-
-func allow_dodge() -> bool:
-	var executor_phase = _attack_executor.get_current_phase_name()
-	var in_recovery = executor_phase == "RECOVERY"
-	var in_link = _current_phase == LinkPhases.LINK
-	return in_recovery or in_link
 
 func _on_attack_phase_changed(phase_data: Dictionary):
 	state_machine.emit_phase_change(phase_data)
