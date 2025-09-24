@@ -4,11 +4,14 @@ extends CharacterBody2D
 @onready var state_machine: StateMachine = $StateMachine
 @onready var hold_input_timer: Timer = $HoldInputTimer
 @onready var run_cancel_timer: Timer = $RunCancelTimer
-@onready var combo_component: ComboComponent = $ComboComponent
 @onready var attack_executor: AttackExecutor = $AttackExecutor
+@onready var combo_component: ComboComponent = $ComboComponent
+@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 
 @export_group("Combat Data")
+@export var base_poise: float
 @export var attack_set: AttackSet
+@export var skill_set: SkillSet
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var block_stun_profile: BlockStunProfile
@@ -16,8 +19,6 @@ extends CharacterBody2D
 @export var parried_profile: ParriedProfile
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
-@export var base_poise: float
-@export var resistant_skill_set: AttackSet
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile
@@ -31,9 +32,9 @@ var facing_sign: int = 1
 var facing_locked: bool = false
 
 func _ready():
+	attack_executor.setup(self)
 	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
 	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
-	attack_executor.setup(self) 
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
@@ -69,7 +70,9 @@ func _unhandled_input(event: InputEvent):
 
 	if event.is_action_pressed("skill_x"):
 		if Input.is_action_pressed("skill_modifier"):
-			state_machine.on_sequence_skill_pressed(resistant_skill_set)
+			var next_skill_phase_set = skill_combo_component.get_next_skill_phase()
+			if next_skill_phase_set:
+				state_machine.on_sequence_skill_pressed(next_skill_phase_set)
 			get_viewport().set_input_as_handled()
 			return
 

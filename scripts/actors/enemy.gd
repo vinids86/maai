@@ -6,13 +6,15 @@ extends CharacterBody2D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var stamina_component: StaminaComponent = $StaminaComponent
 @onready var status_ui: EnemyStatusUI = $EnemyStatusUI
-@onready var combo_component: ComboComponent = $ComboComponent
 @onready var attack_executor: AttackExecutor = $AttackExecutor
+@onready var combo_component: ComboComponent = $ComboComponent
+@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 
 @export var visual_node: CanvasItem
 
 @export_group("Combat Data")
 @export var attack_set: AttackSet
+@export var skill_set: SkillSet
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var block_stun_profile: BlockStunProfile
@@ -21,7 +23,6 @@ extends CharacterBody2D
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
 @export var base_poise: float
-@export var resistant_skill_set: AttackSet
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile
@@ -41,12 +42,13 @@ func _ready():
 	assert(status_ui != null, "Enemy: Nó EnemyStatusUI não encontrado.")
 	assert(combo_component != null, "Enemy: Nó ComboComponent não encontrado.")
 	
+	attack_executor.setup(self)
+
 	if visual_node.material is ShaderMaterial:
 		material_ref = visual_node.material
 		
 	health_component.health_changed.connect(status_ui.update_health)
 	stamina_component.stamina_changed.connect(status_ui.update_stamina)
-	attack_executor.setup(self)
 
 func _physics_process(delta: float):
 	var walk_direction = ai_controller.get_walk_direction()

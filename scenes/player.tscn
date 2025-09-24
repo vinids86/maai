@@ -1,9 +1,10 @@
-[gd_scene load_steps=42 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=43 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_oprun"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="3_f1ej7"]
+[ext_resource type="Resource" uid="uid://i53d8w6wxujc" path="res://resources/player/skills/sequence/default.tres" id="3_j2b1d"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="3_qfm1y"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="4_dqkch"]
@@ -15,7 +16,6 @@
 [ext_resource type="Resource" uid="uid://h5j4chnrxexj" path="res://resources/player/dodge/back.tres" id="9_3v2ag"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_487ah"]
 [ext_resource type="Resource" uid="uid://cfu400oitmjxr" path="res://resources/player/dodge/up.tres" id="10_jej6c"]
-[ext_resource type="Resource" uid="uid://b6vfpucmwtngk" path="res://resources/enemy/attack/special_set_1.tres" id="10_t4otl"]
 [ext_resource type="Resource" uid="uid://cxtoyg6r5qy34" path="res://resources/player/dodge/down.tres" id="11_f1ej7"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="12_jej6c"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_listener.gd" id="15_a8ls1"]
@@ -34,6 +34,7 @@
 [ext_resource type="Script" uid="uid://b0lnh740qgaih" path="res://scripts/core/attack_executor.gd" id="25_hax0n"]
 [ext_resource type="Resource" uid="uid://c13fhm2w824s2" path="res://resources/player/block/default.tres" id="25_pf23h"]
 [ext_resource type="Script" uid="uid://bnsx7y061rnqe" path="res://scripts/states/guard_broken_state.gd" id="26_dt7fs"]
+[ext_resource type="Script" uid="uid://dmqafi2pyifje" path="res://scripts/components/skill_combo_component.gd" id="26_j2b1d"]
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="27_wqfne"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="28_wnwbv"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="29_gl8cc"]
@@ -55,6 +56,7 @@ height = 64.0
 [node name="Player" type="CharacterBody2D"]
 script = ExtResource("1_4flbx")
 attack_set = ExtResource("2_oprun")
+skill_set = ExtResource("3_j2b1d")
 finisher_profile = ExtResource("29_gl8cc")
 parry_profile = ExtResource("20_i4ail")
 block_stun_profile = ExtResource("25_pf23h")
@@ -62,8 +64,6 @@ stagger_profile = ExtResource("23_ke2ow")
 parried_profile = ExtResource("7_gl8cc")
 guard_broken_profile = ExtResource("27_wqfne")
 locomotion_profile = ExtResource("9_487ah")
-base_poise = 10.0
-resistant_skill_set = ExtResource("10_t4otl")
 neutral_dodge_profile = ExtResource("7_fjrip")
 forward_dodge_profile = ExtResource("8_d2wvv")
 back_dodge_profile = ExtResource("9_3v2ag")
@@ -136,6 +136,10 @@ metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
 [node name="ComboComponent" type="Node" parent="."]
 script = ExtResource("22_md1ol")
 metadata/_custom_type_script = "uid://7awh4v6bsojt"
+
+[node name="SkillComboComponent" type="Node" parent="."]
+script = ExtResource("26_j2b1d")
+metadata/_custom_type_script = "uid://dmqafi2pyifje"
 
 [node name="AttackExecutor" type="Node" parent="."]
 script = ExtResource("25_hax0n")

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AttackSet" load_steps=4 format=3 uid="uid://i7anaqyax30p"]
+
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_icmxq"]
+[ext_resource type="Resource" uid="uid://dhdwkjgekngvi" path="res://resources/enemy/attack/resistant_attack_4.tres" id="2_1bi6g"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_ykcqn"]
+
+[resource]
+script = ExtResource("2_ykcqn")
+attacks = Array[ExtResource("1_icmxq")]([ExtResource("2_1bi6g")])
+metadata/_custom_type_script = "uid://bwq542vou2wu1"
