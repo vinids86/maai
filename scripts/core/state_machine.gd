@@ -81,21 +81,14 @@ func on_parry_pressed(profile: ParryProfile):
 		buffer_component.capture(BufferComponent.BufferedAction.PARRY, context)
 		
 func on_sequence_skill_pressed(skill_attack_set: AttackSet):
-	print("? T", current_state)
-	# Podemos reutilizar a mesma permissão do ataque normal por enquanto.
-	# No futuro, você pode criar uma "allow_skill()" se precisar de regras diferentes.
 	if current_state.allow_attack():
 		if skill_attack_set and not skill_attack_set.attacks.is_empty():
-			# Cria o objeto "roteiro" a partir do AttackSet da skill.
+			buffer_component.clear()
 			var sequence = ActionSequence.new(skill_attack_set.attacks)
-			
-			# A transição para o SequenceState, passando o roteiro para ele executar.
-			# Note que o custo de stamina é verificado dentro do próprio SequenceState
-			# para cada golpe da sequência.
 			transition_to("SequenceState", {"sequence_context": sequence})
-		
-		# Você pode adicionar lógica de buffer aqui se desejar que skills possam ser bufferadas.
-		# Por enquanto, manteremos simples e sem buffer.
+	else:
+		var context = {"skill_set": skill_attack_set}
+		buffer_component.capture(BufferComponent.BufferedAction.SEQUENCE_SKILL, context)
 
 func _on_impact_resolved(result: ContactResult):
 	if result.attacker_node == owner_node:
@@ -154,6 +147,12 @@ func on_current_state_finished(reason: Dictionary = {}):
 				var profile = buffered_data.context.get("profile")
 				if profile and stamina_component.try_consume(profile.stamina_cost):
 					transition_to("ParryState", {"profile": profile})
+					return
+			BufferComponent.BufferedAction.SEQUENCE_SKILL:
+				var skill_set = buffered_data.context.get("skill_set")
+				if skill_set and not skill_set.attacks.is_empty():
+					var sequence = ActionSequence.new(skill_set.attacks)
+					transition_to("SequenceState", {"sequence_context": sequence})
 					return
 
 	var profile = owner_node.get_locomotion_profile()

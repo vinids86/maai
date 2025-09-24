@@ -2,13 +2,13 @@
 
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_40ixf"]
 [ext_resource type="AudioStream" uid="uid://br3naex6ir5bb" path="res://audio/attack_5.wav" id="2_k5f6v"]
-[ext_resource type="AudioStream" uid="uid://dbm1xt5hw8dp0" path="res://audio/dodge.wav" id="3_dnjwo"]
+[ext_resource type="AudioStream" uid="uid://duggjplviepmn" path="res://audio/pre_sequence_skill.wav" id="3_dnjwo"]
 
 [resource]
 script = ExtResource("1_40ixf")
 startup_duration = 0.5
-active_duration = 0.1
-recovery_duration = 0.1
+active_duration = 0.2
+recovery_duration = 0.4
 link_duration = 0.0
 animation_name = &""
 startup_sfx = ExtResource("3_dnjwo")
@@ -24,8 +24,8 @@ poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
-startup_movement_velocity = Vector2(0, 0)
-active_movement_velocity = Vector2(0, 0)
+startup_movement_velocity = Vector2(-130, -100)
+active_movement_velocity = Vector2(500, 500)
 recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"

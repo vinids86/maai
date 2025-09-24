@@ -124,7 +124,7 @@ script = ExtResource("11_w8i8w")
 
 [node name="AIController" type="Node" parent="."]
 script = ExtResource("5_md484")
-parry_chance = 1.0
+parry_chance = 0.4
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 
 [node name="AttackExecutor" type="Node" parent="."]

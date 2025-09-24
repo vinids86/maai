@@ -161,6 +161,9 @@ func get_poise_impact_contribution() -> float:
 
 func allow_attack() -> bool:
 	return false
+	
+func allow_parry() -> bool:
+	return current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY
 
 func allow_reentry() -> bool:
 	return true
