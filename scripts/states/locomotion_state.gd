@@ -51,6 +51,14 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
 
+	if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
+		context.defender_health_comp.take_damage(context.attack_profile.damage)
+		var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
+		state_machine.on_current_state_finished(reason)
+		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+		return result_for_attacker
+
 	var defender_shield_poise = context.defender_poise_comp.get_effective_shield_poise()
 	var auto_block_succeeds = context.attacker_offensive_poise < defender_shield_poise
 

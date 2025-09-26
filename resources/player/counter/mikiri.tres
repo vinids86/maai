@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="AttackProfile" load_steps=3 format=3 uid="uid://5dqv7xvlptll"]
+
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_ffkid"]
+[ext_resource type="AudioStream" uid="uid://b8qbsbkvrqp0f" path="res://audio/mikiri.wav" id="2_dq3hp"]
+
+[resource]
+script = ExtResource("1_ffkid")
+startup_duration = 0.3
+active_duration = 0.1
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+startup_sfx = ExtResource("2_dq3hp")
+hitbox_size = Vector2(32, 32)
+hitbox_position = Vector2(40, 0)
+damage = 0.0
+stamina_cost = 0.0
+stamina_damage = 30.0
+poise_shield_contribution = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(200, -100)
+parry_interaction = 1
+unparryable_type = 0
+startup_movement_velocity = Vector2(100, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"

@@ -94,7 +94,7 @@ func on_parry_pressed(profile: ParryProfile):
 		
 func on_sequence_skill_pressed(skill_attack_set: AttackSet):
 	var result = current_state.handle_sequence_skill_input(skill_attack_set)
-	
+
 	match result:
 		State.InputHandlerResult.ACCEPTED:
 			if skill_attack_set and not skill_attack_set.attacks.is_empty():
@@ -120,12 +120,28 @@ func _on_impact_resolved(result: ContactResult):
 			ContactResult.AttackerOutcome.TRADE_LOST:
 				var profile = owner_node.get_stagger_profile()
 				transition_to("StaggerState", {"profile": profile})
+			ContactResult.AttackerOutcome.COUNTERED:
+				var profile = owner_node.get_locomotion_profile()
+				transition_to(initial_state_key, {"profile": profile})
 
 
 func on_current_state_finished(reason: Dictionary = {}):
 	var outcome = reason.get("outcome")
 	if outcome:
 		match outcome:
+			"COUNTER_SUCCESS":
+				var context = reason.get("context")
+				if context:
+					var target = context.attacker_node
+					var riposte_profile = owner_node.get_mikiri_riposte_profile()
+					var args = {"target": target, "profile": riposte_profile}
+					
+					var buffered_data = buffer_component.consume()
+					if buffered_data and buffered_data.action == BufferComponent.BufferedAction.ATTACK:
+						args["execute_immediately"] = true
+					
+					transition_to("ExecuteCounterState", args)
+				return
 			"BLOCKED":
 				var profile = owner_node.get_block_stun_profile()
 				var knockback_value = reason.get("knockback_vector", Vector2.ZERO)
@@ -147,6 +163,7 @@ func on_current_state_finished(reason: Dictionary = {}):
 				return
 
 	var buffered_data = buffer_component.consume()
+
 	if buffered_data:
 		match buffered_data.action:
 			BufferComponent.BufferedAction.ATTACK:

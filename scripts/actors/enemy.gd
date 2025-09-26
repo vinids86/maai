@@ -17,6 +17,7 @@ extends CharacterBody2D
 @export var skill_set: SkillSet
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
+@export var mikiri_riposte_profile: AttackProfile
 @export var block_stun_profile: BlockStunProfile
 @export var stagger_profile: StaggerProfile
 @export var parried_profile: ParriedProfile
@@ -56,6 +57,9 @@ func _physics_process(delta: float):
 	
 	state_machine.process_physics(delta, walk_direction, is_running)
 	move_and_slide()
+
+func get_mikiri_riposte_profile() -> AttackProfile:
+	return mikiri_riposte_profile
 	
 func get_finisher_profile() -> FinisherProfile:
 	return finisher_profile

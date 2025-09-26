@@ -61,7 +61,11 @@ func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	return InputHandlerResult.REJECTED
 
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
-	if _current_phase == LinkPhases.LINK:
+	var executor_phase = _attack_executor.get_current_phase_name()
+	var in_startup = executor_phase == "STARTUP"
+	var in_link = _current_phase == LinkPhases.LINK
+	
+	if in_startup or in_link:
 		return InputHandlerResult.ACCEPTED
 	return InputHandlerResult.REJECTED
 

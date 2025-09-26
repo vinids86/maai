@@ -14,6 +14,7 @@ extends CharacterBody2D
 @export var skill_set: SkillSet
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
+@export var mikiri_riposte_profile: AttackProfile
 @export var block_stun_profile: BlockStunProfile
 @export var stagger_profile: StaggerProfile
 @export var parried_profile: ParriedProfile
@@ -97,6 +98,9 @@ func _send_dodge_intention():
 	var profile = _get_dodge_profile_for_direction(direction)
 	if profile:
 		state_machine.on_dodge_pressed(direction, profile)
+
+func get_mikiri_riposte_profile() -> AttackProfile:
+	return mikiri_riposte_profile
 
 func get_finisher_profile() -> FinisherProfile:
 	return finisher_profile

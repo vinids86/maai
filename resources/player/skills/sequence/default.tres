@@ -8,5 +8,5 @@
 
 [resource]
 script = ExtResource("1_31br3")
-skill_phases = Array[ExtResource("2_c0hvh")]([ExtResource("3_c0hvh"), ExtResource("4_r37rv"), ExtResource("5_wra75")])
+skill_phases = Array[ExtResource("2_c0hvh")]([ExtResource("3_c0hvh"), ExtResource("4_r37rv"), ExtResource("5_wra75"), null])
 metadata/_custom_type_script = "uid://ci7xl0q4tlgj0"

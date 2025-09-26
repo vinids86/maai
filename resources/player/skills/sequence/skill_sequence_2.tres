@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_njio6"]
 [ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_7jixa"]
-[ext_resource type="Resource" uid="uid://l2rw8gs82st7" path="res://resources/player/attack/light_attack_3.tres" id="2_lcoql"]
+[ext_resource type="Resource" uid="uid://dsqiavumfixrm" path="res://resources/enemy/attack/resistant_attack_3.tres" id="2_lcoql"]
 
 [resource]
 script = ExtResource("2_7jixa")

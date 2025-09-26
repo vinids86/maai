@@ -1,4 +1,4 @@
-[gd_scene load_steps=43 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=45 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="4_dqkch"]
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="4_fulsm"]
+[ext_resource type="Resource" uid="uid://5dqv7xvlptll" path="res://resources/player/counter/mikiri.tres" id="6_giy8y"]
 [ext_resource type="Script" uid="uid://mqtxcxisr6ph" path="res://scripts/states/dodge_state.gd" id="6_tuyoq"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="7_fjrip"]
 [ext_resource type="Resource" uid="uid://bqjgtxke4um5v" path="res://resources/player/parried/default.tres" id="7_gl8cc"]
@@ -39,6 +40,7 @@
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="28_wnwbv"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="29_gl8cc"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
+[ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="40_giy8y"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qc3e3"]
 radius = 25.0
@@ -53,12 +55,14 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 radius = 16.0
 height = 64.0
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_4flbx")
+base_poise = 10.0
 attack_set = ExtResource("2_oprun")
 skill_set = ExtResource("3_j2b1d")
 finisher_profile = ExtResource("29_gl8cc")
 parry_profile = ExtResource("20_i4ail")
+mikiri_riposte_profile = ExtResource("6_giy8y")
 block_stun_profile = ExtResource("25_pf23h")
 stagger_profile = ExtResource("23_ke2ow")
 parried_profile = ExtResource("7_gl8cc")
@@ -70,16 +74,18 @@ back_dodge_profile = ExtResource("9_3v2ag")
 up_dodge_profile = ExtResource("10_jej6c")
 down_dodge_profile = ExtResource("11_f1ej7")
 
-[node name="Camera2D" type="Camera2D" parent="."]
-position_smoothing_enabled = true
+[node name="Visuals" type="Node2D" parent="."]
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="Visuals"]
 offset_left = -16.0
 offset_top = -32.0
 offset_right = 16.0
 offset_bottom = 32.0
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visible = false
@@ -109,9 +115,8 @@ script = ExtResource("15_a8ls1")
 animation_player = NodePath("../AnimationPlayer")
 state_machine = NodePath("../StateMachine")
 
-[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("audio_player", "state_machine")]
+[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("state_machine")]
 script = ExtResource("16_qfm1y")
-audio_player = NodePath("../SFXPlayer")
 state_machine = NodePath("../StateMachine")
 
 [node name="HealthComponent" type="Node" parent="."]
@@ -184,6 +189,10 @@ metadata/_custom_type_script = "uid://bsk4xllkbirnu"
 [node name="SequenceState" type="Node" parent="StateMachine"]
 script = ExtResource("36_t4otl")
 metadata/_custom_type_script = "uid://b72ucjj1gl7t2"
+
+[node name="ExecuteCounterState" type="Node" parent="StateMachine"]
+script = ExtResource("40_giy8y")
+metadata/_custom_type_script = "uid://cycmw65rta0mh"
 
 [node name="Hurtbox" type="Area2D" parent="."]
 visible = false

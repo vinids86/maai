@@ -37,8 +37,8 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 				_change_phase(Phases.RECOVERY)
 				time_left_in_phase -= time_exceeded
 			Phases.SUCCESS:
-				_change_phase(Phases.RECOVERY)
-				time_left_in_phase -= time_exceeded
+				state_machine.on_current_state_finished()
+				return
 			Phases.RECOVERY:
 				state_machine.on_current_state_finished()
 				return

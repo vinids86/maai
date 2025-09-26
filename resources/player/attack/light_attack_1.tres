@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_b4ycn")
-startup_duration = 0.3
+startup_duration = 0.15
 active_duration = 0.1
 recovery_duration = 0.2
 link_duration = 0.6
@@ -22,6 +22,7 @@ poise_momentum_gain = 5.0
 poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
+unparryable_type = 0
 startup_movement_velocity = Vector2(0, 0)
 active_movement_velocity = Vector2(500, 0)
 recovery_movement_velocity = Vector2(0, 0)

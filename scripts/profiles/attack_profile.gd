@@ -6,6 +6,12 @@ enum ParryInteractionType {
 	UNPARRYABLE
 }
 
+enum UnparryableType {
+	NONE,
+	THRUST,
+	SWEEP
+}
+
 @export_group("Phases")
 @export var startup_duration: float = 0.3
 @export var active_duration: float = 0.1
@@ -32,6 +38,7 @@ enum ParryInteractionType {
 @export var poise_momentum_duration: float = 1.5
 @export var knockback_vector: Vector2 = Vector2(150, -100)
 @export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
+@export var unparryable_type: UnparryableType = UnparryableType.NONE
 
 @export_group("Movement")
 @export var startup_movement_velocity: Vector2 = Vector2.ZERO

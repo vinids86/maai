@@ -1,13 +1,14 @@
-[gd_scene load_steps=45 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=47 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_2sbpf"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="2_4ra3w"]
 [ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="2_5uy6h"]
-[ext_resource type="Resource" uid="uid://i53d8w6wxujc" path="res://resources/player/skills/sequence/default.tres" id="3_7v6cf"]
+[ext_resource type="Resource" uid="uid://xbfx02lusg4p" path="res://resources/enemy/attack/skill_set2.tres" id="3_qiusc"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="3_thsr5"]
 [ext_resource type="Script" uid="uid://dewrlich57pgi" path="res://scripts/components/ai_controller.gd" id="5_md484"]
+[ext_resource type="Resource" uid="uid://5dqv7xvlptll" path="res://resources/player/counter/mikiri.tres" id="6_5ie7m"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="6_ipns3"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="7_8qclf"]
 [ext_resource type="Resource" uid="uid://bqjgtxke4um5v" path="res://resources/player/parried/default.tres" id="7_ekh6n"]
@@ -40,6 +41,7 @@
 [ext_resource type="Script" uid="uid://dmqafi2pyifje" path="res://scripts/components/skill_combo_component.gd" id="28_7v6cf"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
+[ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="42_hyejq"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c4w8v"]
 shader = ExtResource("2_5uy6h")
@@ -61,11 +63,12 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 
 [node name="Enemy" type="CharacterBody2D" node_paths=PackedStringArray("visual_node")]
 script = ExtResource("1_md0e3")
-visual_node = NodePath("ColorRect")
+visual_node = NodePath("Visuals/ColorRect")
 attack_set = ExtResource("2_2sbpf")
-skill_set = ExtResource("3_7v6cf")
+skill_set = ExtResource("3_qiusc")
 finisher_profile = ExtResource("3_thsr5")
 parry_profile = ExtResource("12_ile5s")
+mikiri_riposte_profile = ExtResource("6_5ie7m")
 block_stun_profile = ExtResource("18_wjec0")
 stagger_profile = ExtResource("12_rogs8")
 parried_profile = ExtResource("7_ekh6n")
@@ -78,7 +81,9 @@ back_dodge_profile = ExtResource("12_x6q4o")
 up_dodge_profile = ExtResource("13_2tuss")
 down_dodge_profile = ExtResource("14_7v6cf")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="Visuals" type="Node2D" parent="."]
+
+[node name="ColorRect" type="ColorRect" parent="Visuals"]
 material = SubResource("ShaderMaterial_c4w8v")
 offset_left = -16.0
 offset_top = -32.0
@@ -109,9 +114,8 @@ script = ExtResource("20_2pwtc")
 
 [node name="SFXEnemy" type="AudioStreamPlayer2D" parent="."]
 
-[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("audio_player", "state_machine")]
+[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("state_machine")]
 script = ExtResource("17_shcg2")
-audio_player = NodePath("../SFXEnemy")
 state_machine = NodePath("../StateMachine")
 metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 
@@ -125,7 +129,7 @@ script = ExtResource("11_w8i8w")
 
 [node name="AIController" type="Node" parent="."]
 script = ExtResource("5_md484")
-parry_chance = 0.0
+parry_chance = 0.7
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 
 [node name="AttackExecutor" type="Node" parent="."]
@@ -191,6 +195,10 @@ metadata/_custom_type_script = "uid://bsk4xllkbirnu"
 [node name="SequenceState" type="Node" parent="StateMachine"]
 script = ExtResource("37_x6q4o")
 metadata/_custom_type_script = "uid://b72ucjj1gl7t2"
+
+[node name="ExecuteCounterState" type="Node" parent="StateMachine"]
+script = ExtResource("42_hyejq")
+metadata/_custom_type_script = "uid://cycmw65rta0mh"
 
 [node name="EnemyStatusUI" parent="." instance=ExtResource("12_otmr2")]
 offset_left = -75.0

@@ -2,6 +2,7 @@ class_name DodgeState
 extends State
 
 var current_profile: DodgeProfile
+var _current_direction: Vector2
 
 enum Phases { ACTIVE, RECOVERY }
 var current_phase: Phases
@@ -11,13 +12,13 @@ func enter(args: Dictionary = {}):
 	owner_node.facing_locked = true
 	
 	self.current_profile = args.get("profile")
-	var direction_vector = args.get("direction", Vector2.ZERO)
+	self._current_direction = args.get("direction", Vector2.ZERO)
 
 	if not current_profile:
 		state_machine.on_current_state_finished()
 		return
 		
-	movement_component.apply_dodge_velocity(direction_vector, current_profile)
+	movement_component.apply_dodge_velocity(_current_direction, current_profile)
 	_change_phase(Phases.ACTIVE)
 
 func exit():
@@ -50,8 +51,24 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.attack_profile = context.attack_profile
 	
 	if current_phase == Phases.ACTIVE:
-		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGED
-		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+		var is_thrust = context.attack_profile.unparryable_type == AttackProfile.UnparryableType.THRUST
+		var is_forward_dodge = _current_direction.x * owner_node.facing_sign > 0
+
+		if is_thrust:
+			if is_forward_dodge:
+				state_machine.on_current_state_finished({"outcome": "COUNTER_SUCCESS", "context": context})
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.COUNTER_SUCCESS
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.COUNTERED
+			else:
+				context.defender_health_comp.take_damage(context.attack_profile.damage)
+				var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
+				state_machine.on_current_state_finished(reason)
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+		else:
+			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGED
+			result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+		
 		return result_for_attacker
 	
 	if current_phase == Phases.RECOVERY:
@@ -63,10 +80,8 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 				var block_recoil_fraction: float = 0.2
 				var base_knockback: Vector2 = context.attack_profile.knockback_vector
 				var recoil_velocity: Vector2 = base_knockback * block_recoil_fraction
-				
 				var reason = { "outcome": "BLOCKED", "knockback_vector": recoil_velocity }
 				state_machine.on_current_state_finished(reason)
-				
 				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
 				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 			else:
@@ -76,10 +91,8 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 		else:
 			context.defender_health_comp.take_damage(context.attack_profile.damage)
-			
 			var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
 			state_machine.on_current_state_finished(reason)
-	
 			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 			result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 		
