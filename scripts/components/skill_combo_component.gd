@@ -1,3 +1,4 @@
+# SkillComboComponent.gd (Corrigido)
 class_name SkillComboComponent
 extends Node
 
@@ -5,7 +6,10 @@ var _owner_actor: Node
 var _state_machine: StateMachine
 var _sequence_state: State
 
-var _combo_index: int = 0
+# Agora, guardamos o índice de combo para cada skill separadamente.
+# A chave será o Resource da skill, e o valor será o índice do combo.
+var _combo_indices: Dictionary = {}
+
 
 func _ready():
 	_owner_actor = get_parent()
@@ -19,37 +23,36 @@ func _ready():
 
 	_state_machine.transitioned.connect(_on_state_transitioned)
 
-func get_next_skill_phase() -> AttackSet:
-	var skill_set = _owner_actor.skill_set
-	if not skill_set or skill_set.skill_phases.is_empty():
+# A função agora recebe a skill que deve ser processada.
+func get_next_skill_phase(skill: SequenceSkill) -> AttackSet:
+	if not skill or skill.skill_phases.is_empty():
 		return null
+	
+	# Pega o índice atual para esta skill, ou 0 se não existir.
+	var current_index = _combo_indices.get(skill, 0)
 
 	var next_index: int
+	# A lógica de qual fase pegar permanece similar.
 	if not _is_in_combo_state():
 		next_index = 0
-	elif _has_next_phase(skill_set):
-		next_index = _combo_index + 1
+	elif current_index + 1 < skill.skill_phases.size():
+		next_index = current_index + 1
 	else:
 		next_index = 0
+	
+	# Atualizamos o índice para esta skill.
+	_combo_indices[skill] = next_index
+	
+	return skill.skill_phases[next_index]
 
-	return skill_set.skill_phases[next_index]
 
 func _on_state_transitioned(from_state: State, to_state: State):
-	if from_state == _sequence_state and to_state == _sequence_state:
-		if _has_next_phase(_owner_actor.skill_set):
-			_advance_combo()
-		else:
-			_combo_index = 0
-		return
-
+	# Quando saímos do estado de sequência, é mais seguro
+	# resetar todos os combos para o início.
 	if from_state == _sequence_state and to_state != _sequence_state:
-		_combo_index = 0
+		_combo_indices.clear()
 
+# --- FUNÇÃO ADICIONADA ---
+# Esta função verifica se o personagem já está no meio de um combo de skill.
 func _is_in_combo_state() -> bool:
 	return _state_machine.get_current_state() == _sequence_state
-
-func _has_next_phase(set: SkillSet) -> bool:
-	return _combo_index + 1 < set.skill_phases.size()
-
-func _advance_combo():
-	_combo_index += 1

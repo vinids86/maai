@@ -5,7 +5,6 @@
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_2sbpf"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="2_4ra3w"]
 [ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="2_5uy6h"]
-[ext_resource type="Resource" uid="uid://xbfx02lusg4p" path="res://resources/enemy/attack/skill_set2.tres" id="3_qiusc"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="3_thsr5"]
 [ext_resource type="Script" uid="uid://dewrlich57pgi" path="res://scripts/components/ai_controller.gd" id="5_md484"]
 [ext_resource type="Resource" uid="uid://5dqv7xvlptll" path="res://resources/player/counter/mikiri.tres" id="6_5ie7m"]
@@ -38,6 +37,7 @@
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="21_2mchx"]
 [ext_resource type="Script" uid="uid://b0lnh740qgaih" path="res://scripts/core/attack_executor.gd" id="22_605iw"]
 [ext_resource type="Script" uid="uid://b31jt2qq4fmkr" path="res://scripts/components/poise_component.gd" id="23_78kod"]
+[ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="24_5ie7m"]
 [ext_resource type="Script" uid="uid://dmqafi2pyifje" path="res://scripts/components/skill_combo_component.gd" id="28_7v6cf"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
@@ -65,7 +65,7 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 script = ExtResource("1_md0e3")
 visual_node = NodePath("Visuals/ColorRect")
 attack_set = ExtResource("2_2sbpf")
-skill_set = ExtResource("3_qiusc")
+skill_x = ExtResource("24_5ie7m")
 finisher_profile = ExtResource("3_thsr5")
 parry_profile = ExtResource("12_ile5s")
 mikiri_riposte_profile = ExtResource("6_5ie7m")

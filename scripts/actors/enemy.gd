@@ -14,7 +14,19 @@ extends CharacterBody2D
 
 @export_group("Combat Data")
 @export var attack_set: AttackSet
-@export var skill_set: SkillSet
+# A skill_set única foi removida.
+
+@export_group("Equipped Skills")
+# Adicionamos os 4 slots de skill, espelhando a estrutura do Player.
+@export var skill_x: BaseSkill
+@export var skill_y: BaseSkill
+@export var skill_a: BaseSkill
+@export var skill_b: BaseSkill
+
+# Dicionário privado para uso interno e pelo AIController.
+var _equipped_skills: Dictionary = {}
+
+@export_group("Profiles")
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var mikiri_riposte_profile: AttackProfile
@@ -44,6 +56,7 @@ func _ready():
 	assert(combo_component != null, "Enemy: Nó ComboComponent não encontrado.")
 	
 	attack_executor.setup(self)
+	_build_skill_dictionary()
 
 	if visual_node.material is ShaderMaterial:
 		material_ref = visual_node.material
@@ -57,6 +70,17 @@ func _physics_process(delta: float):
 	
 	state_machine.process_physics(delta, walk_direction, is_running)
 	move_and_slide()
+
+# Nova função para construir o dicionário a partir das variáveis exportadas.
+func _build_skill_dictionary():
+	if skill_x: _equipped_skills["skill_x"] = skill_x
+	if skill_y: _equipped_skills["skill_y"] = skill_y
+	if skill_a: _equipped_skills["skill_a"] = skill_a
+	if skill_b: _equipped_skills["skill_b"] = skill_b
+
+# Getter público para que o AIController possa consultar as skills disponíveis.
+func get_skill(action_name: String) -> BaseSkill:
+	return _equipped_skills.get(action_name)
 
 func get_mikiri_riposte_profile() -> AttackProfile:
 	return mikiri_riposte_profile

@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_oprun"]
+[ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="3_2dvfe"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="3_f1ej7"]
-[ext_resource type="Resource" uid="uid://i53d8w6wxujc" path="res://resources/player/skills/sequence/default.tres" id="3_j2b1d"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="3_qfm1y"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="4_dqkch"]
@@ -59,7 +59,7 @@ height = 64.0
 script = ExtResource("1_4flbx")
 base_poise = 10.0
 attack_set = ExtResource("2_oprun")
-skill_set = ExtResource("3_j2b1d")
+skill_x = ExtResource("3_2dvfe")
 finisher_profile = ExtResource("29_gl8cc")
 parry_profile = ExtResource("20_i4ail")
 mikiri_riposte_profile = ExtResource("6_giy8y")

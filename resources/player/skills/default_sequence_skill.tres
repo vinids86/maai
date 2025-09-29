@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SequenceSkill" load_steps=6 format=3 uid="uid://0pfl3fbcw24b"]
+
+[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="1_8s7ul"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_ns2ly"]
+[ext_resource type="Resource" uid="uid://dlojsay7vt6pa" path="res://resources/player/skills/sequence/skill_sequence_1.tres" id="3_vsuqq"]
+[ext_resource type="Resource" uid="uid://emp0ufukyet0" path="res://resources/player/skills/sequence/skill_sequence_2.tres" id="4_l8xua"]
+[ext_resource type="Resource" uid="uid://i7anaqyax30p" path="res://resources/player/skills/sequence/skill_sequence_3.tres" id="5_14l1p"]
+
+[resource]
+script = ExtResource("1_8s7ul")
+skill_phases = Array[ExtResource("2_ns2ly")]([ExtResource("3_vsuqq"), ExtResource("4_l8xua"), ExtResource("5_14l1p")])
+skill_name = ""
+metadata/_custom_type_script = "uid://cyu224lucyda8"
