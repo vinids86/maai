@@ -1,6 +1,10 @@
 class_name ComboComponent
 extends Node
 
+# --- A CORREÇÃO ---
+# O ComboComponent agora é dono dos seus próprios dados.
+@export var attack_set: AttackSet
+
 var _owner_actor: Node
 var _state_machine: StateMachine
 var _attack_state: State
@@ -20,14 +24,14 @@ func _ready():
 	_state_machine.transitioned.connect(_on_state_transitioned)
 
 func get_next_attack_profile() -> AttackProfile:
-	var attack_set = _owner_actor.attack_set
-	if not attack_set or attack_set.attacks.is_empty():
+	# A função agora usa a sua própria variável 'attack_set'.
+	if not attack_set or not "attacks" in attack_set or attack_set.attacks.is_empty():
 		return null
 
 	var next_index: int
 	if not _is_in_combo_state():
 		next_index = 0
-	elif _has_next_attack(attack_set):
+	elif _has_next_attack():
 		next_index = _combo_index + 1
 	else:
 		next_index = 0
@@ -36,7 +40,7 @@ func get_next_attack_profile() -> AttackProfile:
 
 func _on_state_transitioned(from_state: State, to_state: State):
 	if from_state == _attack_state and to_state == _attack_state:
-		if _has_next_attack(_owner_actor.attack_set):
+		if _has_next_attack():
 			_advance_combo()
 		else:
 			_combo_index = 0
@@ -48,8 +52,10 @@ func _on_state_transitioned(from_state: State, to_state: State):
 func _is_in_combo_state() -> bool:
 	return _state_machine.get_current_state() == _attack_state
 
-func _has_next_attack(set: AttackSet) -> bool:
-	return _combo_index + 1 < set.attacks.size()
+# A função já não precisa de receber o 'set' como parâmetro.
+func _has_next_attack() -> bool:
+	if not is_instance_valid(attack_set): return false
+	return _combo_index + 1 < attack_set.attacks.size()
 
 func _advance_combo():
 	_combo_index += 1

@@ -7,20 +7,19 @@ extends CharacterBody2D
 @onready var attack_executor: AttackExecutor = $AttackExecutor
 @onready var combo_component: ComboComponent = $ComboComponent
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
+@onready var visuals: Node2D = $Visuals
 
 @export_group("Combat Data")
 @export var base_poise: float
-@export var attack_set: AttackSet
+# A variável 'attack_set' foi removida. A sua responsabilidade foi movida
+# para o ComboComponent para uma arquitetura mais limpa.
 
 @export_group("Equipped Skills")
-# Exportamos cada slot de skill individualmente.
-# Agora você pode arrastar seus recursos de skill diretamente para estes campos no Inspector.
 @export var skill_x: BaseSkill
 @export var skill_y: BaseSkill
 @export var skill_a: BaseSkill
 @export var skill_b: BaseSkill
 
-# O dicionário agora é uma variável privada, construída no _ready.
 var _equipped_skills: Dictionary = {}
 
 @export_group("Profiles")
@@ -52,15 +51,21 @@ func _ready():
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
+	
+	_update_facing_direction()
+	
 	state_machine.process_physics(delta, walk_direction, is_running)
 	move_and_slide()
 
-# Nova função para construir o dicionário a partir das variáveis exportadas.
 func _build_skill_dictionary():
 	if skill_x: _equipped_skills["skill_x"] = skill_x
 	if skill_y: _equipped_skills["skill_y"] = skill_y
 	if skill_a: _equipped_skills["skill_a"] = skill_a
 	if skill_b: _equipped_skills["skill_b"] = skill_b
+
+func _update_facing_direction():
+	if visuals:
+		visuals.scale.x = facing_sign
 
 func _unhandled_input(event: InputEvent):
 	if event.is_action_pressed("dodge_run"):
@@ -89,8 +94,6 @@ func _unhandled_input(event: InputEvent):
 		get_viewport().set_input_as_handled()
 		return
 
-	# --- Bloco de Skills Refatorado ---
-	# O loop agora usa o dicionário privado _equipped_skills. A lógica não muda.
 	if Input.is_action_pressed("skill_modifier"):
 		for action_name in _equipped_skills.keys():
 			if event.is_action_pressed(action_name):
@@ -101,7 +104,6 @@ func _unhandled_input(event: InputEvent):
 				
 				get_viewport().set_input_as_handled()
 				return
-	# --- Fim do Bloco de Skills ---
 
 	if event.is_action_pressed("parry"):
 		var profile = get_parry_profile()

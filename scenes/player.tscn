@@ -58,7 +58,6 @@ height = 64.0
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_4flbx")
 base_poise = 10.0
-attack_set = ExtResource("2_oprun")
 skill_x = ExtResource("3_2dvfe")
 finisher_profile = ExtResource("29_gl8cc")
 parry_profile = ExtResource("20_i4ail")
@@ -83,6 +82,7 @@ offset_right = 16.0
 offset_bottom = 32.0
 
 [node name="Camera2D" type="Camera2D" parent="."]
+visible = false
 position_smoothing_enabled = true
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
@@ -140,6 +140,7 @@ metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
 
 [node name="ComboComponent" type="Node" parent="."]
 script = ExtResource("22_md1ol")
+attack_set = ExtResource("2_oprun")
 metadata/_custom_type_script = "uid://7awh4v6bsojt"
 
 [node name="SkillComboComponent" type="Node" parent="."]
@@ -195,7 +196,6 @@ script = ExtResource("40_giy8y")
 metadata/_custom_type_script = "uid://cycmw65rta0mh"
 
 [node name="Hurtbox" type="Area2D" parent="."]
-visible = false
 collision_layer = 32
 collision_mask = 16
 script = ExtResource("24_l71n6")

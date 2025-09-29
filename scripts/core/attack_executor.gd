@@ -82,6 +82,11 @@ func _stop_execution():
 	if _hitbox_shape and is_instance_valid(_hitbox_shape):
 		_hitbox_shape.set_deferred("disabled", true)
 		_hitbox_shape.shape = null
+	
+	# Reinicia a posição e a escala da hitbox para o seu estado padrão.
+	if is_instance_valid(_hitbox):
+		_hitbox.position = Vector2.ZERO
+		_hitbox.scale = Vector2.ONE
 
 func _change_phase(new_phase: Phases):
 	_current_phase = new_phase
@@ -121,6 +126,10 @@ func _update_and_enable_hitbox():
 	shape.size = _current_profile.hitbox_size
 	
 	_hitbox_shape.shape = shape
+	
+	# Lógica de orientação centralizada e agora correta
 	_hitbox.position = _current_profile.hitbox_position
 	_hitbox.position.x *= _owner_node.facing_sign
+	_hitbox.scale.x = _owner_node.facing_sign
+	
 	_hitbox_shape.set_deferred("disabled", false)

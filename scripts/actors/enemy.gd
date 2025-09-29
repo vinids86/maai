@@ -9,24 +9,19 @@ extends CharacterBody2D
 @onready var attack_executor: AttackExecutor = $AttackExecutor
 @onready var combo_component: ComboComponent = $ComboComponent
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
+@onready var detection_area: Area2D = $DetectionArea
 
-@export var visual_node: CanvasItem
-
-@export_group("Combat Data")
-@export var attack_set: AttackSet
-# A skill_set única foi removida.
+@onready var visuals: Node2D = $Visuals
 
 @export_group("Equipped Skills")
-# Adicionamos os 4 slots de skill, espelhando a estrutura do Player.
 @export var skill_x: BaseSkill
 @export var skill_y: BaseSkill
 @export var skill_a: BaseSkill
 @export var skill_b: BaseSkill
 
-# Dicionário privado para uso interno e pelo AIController.
-var _equipped_skills: Dictionary = {}
-
-@export_group("Profiles")
+@export_group("Combat Data")
+# A variável 'attack_set' foi removida. A sua responsabilidade pertence
+# agora ao ComboComponent, para consistência com o Player.
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var mikiri_riposte_profile: AttackProfile
@@ -44,22 +39,25 @@ var _equipped_skills: Dictionary = {}
 @export var up_dodge_profile: DodgeProfile
 @export var down_dodge_profile: DodgeProfile
 
+var _equipped_skills: Dictionary = {}
 var material_ref: ShaderMaterial
 var facing_sign: int = 1
 var facing_locked: bool = false
 
 func _ready():
-	assert(visual_node != null, "Enemy: O nó visual (visual_node) não foi atribuído no Inspetor.")
+	_build_skill_dictionary()
+	
+	assert(visuals != null, "Enemy: Nó 'Visuals' (Node2D) não encontrado como filho.")
 	assert(health_component != null, "Enemy: Nó HealthComponent não encontrado.")
 	assert(stamina_component != null, "Enemy: Nó StaminaComponent não encontrado.")
 	assert(status_ui != null, "Enemy: Nó EnemyStatusUI não encontrado.")
 	assert(combo_component != null, "Enemy: Nó ComboComponent não encontrado.")
+	assert(detection_area != null, "Enemy: Nó 'DetectionArea' (Area2D) não encontrado como filho.")
 	
 	attack_executor.setup(self)
-	_build_skill_dictionary()
 
-	if visual_node.material is ShaderMaterial:
-		material_ref = visual_node.material
+	if visuals.get_child_count() > 0 and visuals.get_child(0).material is ShaderMaterial:
+		material_ref = visuals.get_child(0).material
 		
 	health_component.health_changed.connect(status_ui.update_health)
 	stamina_component.stamina_changed.connect(status_ui.update_stamina)
@@ -68,19 +66,25 @@ func _physics_process(delta: float):
 	var walk_direction = ai_controller.get_walk_direction()
 	var is_running = ai_controller.is_running()
 	
+	_update_facing_direction()
+	
 	state_machine.process_physics(delta, walk_direction, is_running)
 	move_and_slide()
 
-# Nova função para construir o dicionário a partir das variáveis exportadas.
 func _build_skill_dictionary():
 	if skill_x: _equipped_skills["skill_x"] = skill_x
 	if skill_y: _equipped_skills["skill_y"] = skill_y
 	if skill_a: _equipped_skills["skill_a"] = skill_a
 	if skill_b: _equipped_skills["skill_b"] = skill_b
 
-# Getter público para que o AIController possa consultar as skills disponíveis.
 func get_skill(action_name: String) -> BaseSkill:
 	return _equipped_skills.get(action_name)
+
+func _update_facing_direction():
+	if visuals:
+		visuals.scale.x = facing_sign
+	if detection_area:
+		detection_area.scale.x = facing_sign
 
 func get_mikiri_riposte_profile() -> AttackProfile:
 	return mikiri_riposte_profile
