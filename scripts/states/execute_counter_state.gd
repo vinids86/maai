@@ -57,9 +57,9 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if _current_phase == Phases.WINDOW:
 		_execute_counter()
-		return InputHandlerResult.CONSUMED
+		return InputHandlerResult.new(InputHandlerResult.Status.CONSUMED)
 	
-	return InputHandlerResult.REJECTED
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func _execute_counter():
 	if _current_phase != Phases.WINDOW:

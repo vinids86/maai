@@ -48,18 +48,18 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if _current_phase == LinkPhases.LINK:
-		return InputHandlerResult.ACCEPTED
-	return InputHandlerResult.REJECTED
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
 	if _current_phase == LinkPhases.LINK:
-		return InputHandlerResult.ACCEPTED
-	return InputHandlerResult.REJECTED
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
 	if _current_phase == LinkPhases.LINK:
-		return InputHandlerResult.ACCEPTED
-	return InputHandlerResult.REJECTED
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func _on_attack_finished():
 	_execute_next_attack()

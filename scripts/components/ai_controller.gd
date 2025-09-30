@@ -9,8 +9,6 @@ var _rng: RandomNumberGenerator
 var _owner_actor: Node
 @onready var _state_machine: StateMachine = get_parent().find_child("StateMachine")
 
-# --- NOVAS REFERÊNCIAS ---
-# Precisamos de referências para a área de detecção e para o novo componente.
 @onready var _detection_area: Area2D = get_parent().find_child("DetectionArea")
 @onready var _facing_component: FacingComponent = get_parent().find_child("FacingComponent")
 
@@ -20,7 +18,6 @@ func _ready():
 	assert(_detection_area != null, "AIController: Nó 'DetectionArea' (Area2D) não encontrado no Inimigo.")
 	assert(_facing_component != null, "AIController: Nó 'FacingComponent' não encontrado no Inimigo.")
 
-	# Conecta os sinais da área de detecção às nossas funções de lógica.
 	_detection_area.body_entered.connect(_on_player_entered_detection_area)
 	_detection_area.body_exited.connect(_on_player_exited_detection_area)
 
@@ -30,9 +27,6 @@ func _ready():
 	if _state_machine:
 		_state_machine.phase_changed.connect(_on_phase_changed)
 
-# --- FUNÇÕES DE LÓGICA DE DETECÇÃO ---
-
-# Chamada quando algo entra na área.
 func _on_player_entered_detection_area(body: Node2D):
 	# Verifica se o corpo que entrou está no grupo "player".
 	if body.is_in_group("player"):
@@ -40,14 +34,11 @@ func _on_player_entered_detection_area(body: Node2D):
 		_facing_component.enable(body)
 		# (No futuro, aqui você poderia transicionar a IA para um estado de combate)
 
-# Chamada quando algo sai da área.
 func _on_player_exited_detection_area(body: Node2D):
 	if body.is_in_group("player"):
 		# Se for o jogador, DESLIGA o componente.
 		_facing_component.disable()
 		# (No futuro, aqui a IA poderia desistir da perseguição)
-
-# --- FUNÇÕES DE COMPORTAMENTO EM COMBATE ---
 
 func get_walk_direction() -> float:
 	return 0.0
@@ -65,14 +56,11 @@ func on_incoming_attack(_attacker: CharacterBody2D, _hitbox: Hitbox):
 			_state_machine.on_parry_pressed(profile)
 
 func _on_phase_changed(phase_data: Dictionary):
-	# Este é um "gatilho" para a IA tomar uma decisão.
-	# Atualmente, só acontece após um parry bem-sucedido.
 	if phase_data.get("state_name") == "ParryState" and phase_data.get("phase_name") == "SUCCESS":
 		await get_tree().process_frame
 		_decide_and_execute_action()
 
 func _decide_and_execute_action():
-	# 1. Monta uma lista de todas as ações possíveis que a IA pode tomar.
 	var possible_actions: Array[String] = ["normal_attack"]
 	
 	if _owner_actor.has_method("get_skill"):
@@ -83,10 +71,8 @@ func _decide_and_execute_action():
 	if possible_actions.is_empty():
 		return
 
-	# 3. Escolhe aleatoriamente uma ação da lista.
 	var chosen_action = possible_actions.pick_random()
 
-	# 4. Executa a ação escolhida.
 	match chosen_action:
 		"normal_attack":
 			_execute_normal_attack()

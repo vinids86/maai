@@ -1,12 +1,15 @@
-[gd_scene load_steps=49 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=57 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_2sbpf"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="2_4ra3w"]
 [ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="2_5uy6h"]
+[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="3_j0dkt"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="3_thsr5"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="4_sdxul"]
 [ext_resource type="Script" uid="uid://dewrlich57pgi" path="res://scripts/components/ai_controller.gd" id="5_md484"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="5_ya47j"]
 [ext_resource type="Resource" uid="uid://5dqv7xvlptll" path="res://resources/player/counter/mikiri.tres" id="6_5ie7m"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="6_ipns3"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="7_8qclf"]
@@ -44,6 +47,92 @@
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="42_hyejq"]
 
+[sub_resource type="Resource" id="Resource_e7lhw"]
+script = ExtResource("5_ya47j")
+startup_duration = 0.5
+active_duration = 0.1
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(32, 32)
+hitbox_position = Vector2(40, 0)
+damage = 10.0
+stamina_cost = 0.0
+stamina_damage = 10.0
+poise_shield_contribution = 10.0
+poise_impact_contribution = 100.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+unparryable_type = 0
+startup_movement_velocity = Vector2(300, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_gst0f"]
+script = ExtResource("5_ya47j")
+startup_duration = 0.1
+active_duration = 0.1
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(32, 32)
+hitbox_position = Vector2(40, 0)
+damage = 10.0
+stamina_cost = 0.0
+stamina_damage = 10.0
+poise_shield_contribution = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+unparryable_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(-100, 0)
+link_movement_velocity = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_sm4rh"]
+script = ExtResource("4_sdxul")
+attacks = Array[ExtResource("5_ya47j")]([SubResource("Resource_e7lhw"), SubResource("Resource_gst0f")])
+metadata/_custom_type_script = "uid://bwq542vou2wu1"
+
+[sub_resource type="Resource" id="Resource_5lniq"]
+script = ExtResource("3_j0dkt")
+skill_phases = Array[ExtResource("4_sdxul")]([SubResource("Resource_sm4rh")])
+skill_name = ""
+metadata/_custom_type_script = "uid://cyu224lucyda8"
+
+[sub_resource type="Resource" id="Resource_hyejq"]
+script = ExtResource("5_ya47j")
+startup_duration = 0.35
+active_duration = 0.1
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(32, 32)
+hitbox_position = Vector2(40, 0)
+damage = 10.0
+stamina_cost = 0.0
+stamina_damage = 10.0
+poise_shield_contribution = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+unparryable_type = 0
+startup_movement_velocity = Vector2(150, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c4w8v"]
 shader = ExtResource("2_5uy6h")
 shader_parameter/flash_color = Color(1, 0, 0, 1)
@@ -68,8 +157,10 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 [node name="Enemy" type="CharacterBody2D"]
 script = ExtResource("1_md0e3")
 skill_x = ExtResource("24_5ie7m")
+skill_y = SubResource("Resource_5lniq")
 finisher_profile = ExtResource("3_thsr5")
 parry_profile = ExtResource("12_ile5s")
+riposte_profile = SubResource("Resource_hyejq")
 mikiri_riposte_profile = ExtResource("6_5ie7m")
 block_stun_profile = ExtResource("18_wjec0")
 stagger_profile = ExtResource("12_rogs8")

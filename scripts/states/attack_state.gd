@@ -57,8 +57,8 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if _current_phase == LinkPhases.LINK:
-		return InputHandlerResult.ACCEPTED
-	return InputHandlerResult.REJECTED
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
 	var executor_phase = _attack_executor.get_current_phase_name()
@@ -66,8 +66,8 @@ func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
 	var in_link = _current_phase == LinkPhases.LINK
 	
 	if in_startup or in_link:
-		return InputHandlerResult.ACCEPTED
-	return InputHandlerResult.REJECTED
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
 	var executor_phase = _attack_executor.get_current_phase_name()
@@ -75,9 +75,9 @@ func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHan
 	var in_link = _current_phase == LinkPhases.LINK
 	
 	if in_recovery or in_link:
-		return InputHandlerResult.ACCEPTED
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	
-	return InputHandlerResult.REJECTED
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result = ContactResult.new()

@@ -21,6 +21,7 @@ extends CharacterBody2D
 @export_group("Combat Data")
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
+@export var riposte_profile: AttackProfile
 @export var mikiri_riposte_profile: AttackProfile
 @export var block_stun_profile: BlockStunProfile
 @export var stagger_profile: StaggerProfile
@@ -81,6 +82,9 @@ func _update_facing_direction():
 		visuals.scale.x = facing_sign
 	if detection_area:
 		detection_area.scale.x = facing_sign
+
+func get_riposte_profile() -> AttackProfile:
+	return riposte_profile
 
 func get_mikiri_riposte_profile() -> AttackProfile:
 	return mikiri_riposte_profile

@@ -30,20 +30,20 @@ func process_physics(delta: float, walk_direction: float, is_running: bool):
 	_update_and_emit_phase(walk_direction, is_running)
 
 func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	return InputHandlerResult.ACCEPTED
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if owner_node.is_on_floor():
-		return InputHandlerResult.ACCEPTED
-	return InputHandlerResult.REJECTED
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 	
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
-	return InputHandlerResult.ACCEPTED
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
 func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
 	if owner_node.is_on_floor():
-		return InputHandlerResult.ACCEPTED
-	return InputHandlerResult.REJECTED
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()

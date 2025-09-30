@@ -54,57 +54,63 @@ func get_current_state() -> State:
 	return current_state
 
 func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
-	var result = current_state.handle_dodge_input(direction, profile)
+	var result: InputHandlerResult = current_state.handle_dodge_input(direction, profile)
 	
-	match result:
-		State.InputHandlerResult.ACCEPTED:
+	match result.status:
+		InputHandlerResult.Status.ACCEPTED:
 			if profile and stamina_component.try_consume(profile.stamina_cost):
 				buffer_component.clear()
 				transition_to("DodgeState", {"direction": direction, "profile": profile})
-		State.InputHandlerResult.REJECTED:
+		InputHandlerResult.Status.REJECTED:
 			var context = {"direction": direction, "profile": profile}
 			buffer_component.capture(BufferComponent.BufferedAction.DODGE, context)
-		State.InputHandlerResult.CONSUMED:
+		InputHandlerResult.Status.CONSUMED:
 			pass
 
 func on_attack_pressed(profile: AttackProfile):
-	var result = current_state.handle_attack_input(profile)
+	var result: InputHandlerResult = current_state.handle_attack_input(profile)
 	
-	match result:
-		State.InputHandlerResult.ACCEPTED:
+	match result.status:
+		InputHandlerResult.Status.ACCEPTED:
 			if profile and stamina_component.try_consume(profile.stamina_cost):
 				buffer_component.clear()
 				transition_to("AttackState", {"profile": profile})
-		State.InputHandlerResult.REJECTED:
-			var context = {"profile": profile}
-			buffer_component.capture(BufferComponent.BufferedAction.ATTACK, context)
-		State.InputHandlerResult.CONSUMED:
+		InputHandlerResult.Status.REJECTED:
+			var profile_to_buffer: AttackProfile
+			if result.context.has("override_profile"):
+				profile_to_buffer = result.context["override_profile"]
+			else:
+				profile_to_buffer = profile
+			
+			var context_to_buffer = {"profile": profile_to_buffer}
+			buffer_component.capture(BufferComponent.BufferedAction.ATTACK, context_to_buffer)
+		InputHandlerResult.Status.CONSUMED:
 			pass
 
 func on_parry_pressed(profile: ParryProfile):
-	var result = current_state.handle_parry_input(profile)
+	var result: InputHandlerResult = current_state.handle_parry_input(profile)
 	
-	match result:
-		State.InputHandlerResult.ACCEPTED:
+	match result.status:
+		InputHandlerResult.Status.ACCEPTED:
 			if profile and stamina_component.try_consume(profile.stamina_cost):
 				buffer_component.clear()
 				transition_to("ParryState", {"profile": profile})
-		State.InputHandlerResult.CONSUMED:
+		InputHandlerResult.Status.CONSUMED:
 			pass
 		
 func on_sequence_skill_pressed(skill_attack_set: AttackSet):
-	var result = current_state.handle_sequence_skill_input(skill_attack_set)
+	var result: InputHandlerResult = current_state.handle_sequence_skill_input(skill_attack_set)
 
-	match result:
-		State.InputHandlerResult.ACCEPTED:
+	match result.status:
+		InputHandlerResult.Status.ACCEPTED:
 			if skill_attack_set and not skill_attack_set.attacks.is_empty():
 				buffer_component.clear()
 				var sequence = ActionSequence.new(skill_attack_set.attacks)
 				transition_to("SequenceState", {"sequence_context": sequence})
-		State.InputHandlerResult.REJECTED:
+		InputHandlerResult.Status.REJECTED:
 			var context = {"skill_set": skill_attack_set}
 			buffer_component.capture(BufferComponent.BufferedAction.SEQUENCE_SKILL, context)
-		State.InputHandlerResult.CONSUMED:
+		InputHandlerResult.Status.CONSUMED:
 			pass
 
 func _on_impact_resolved(result: ContactResult):

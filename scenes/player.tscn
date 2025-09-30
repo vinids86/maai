@@ -1,4 +1,4 @@
-[gd_scene load_steps=45 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=47 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="4_dqkch"]
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="4_fulsm"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="5_giy8y"]
 [ext_resource type="Resource" uid="uid://5dqv7xvlptll" path="res://resources/player/counter/mikiri.tres" id="6_giy8y"]
 [ext_resource type="Script" uid="uid://mqtxcxisr6ph" path="res://scripts/states/dodge_state.gd" id="6_tuyoq"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="7_fjrip"]
@@ -42,6 +43,31 @@
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="40_giy8y"]
 
+[sub_resource type="Resource" id="Resource_fdfoy"]
+script = ExtResource("5_giy8y")
+startup_duration = 0.3
+active_duration = 0.1
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(32, 32)
+hitbox_position = Vector2(40, 0)
+damage = 10.0
+stamina_cost = 0.0
+stamina_damage = 10.0
+poise_shield_contribution = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+unparryable_type = 0
+startup_movement_velocity = Vector2(150, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_qc3e3"]
 radius = 25.0
 height = 64.0
@@ -61,6 +87,7 @@ base_poise = 10.0
 skill_x = ExtResource("3_2dvfe")
 finisher_profile = ExtResource("29_gl8cc")
 parry_profile = ExtResource("20_i4ail")
+riposte_profile = SubResource("Resource_fdfoy")
 mikiri_riposte_profile = ExtResource("6_giy8y")
 block_stun_profile = ExtResource("25_pf23h")
 stagger_profile = ExtResource("23_ke2ow")
