@@ -215,8 +215,10 @@ shape = SubResource("RectangleShape2D_ya47j")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 
-[node name="AnimationListener" type="Node" parent="."]
+[node name="AnimationListener" type="Node" parent="." node_paths=PackedStringArray("animation_player", "state_machine")]
 script = ExtResource("22_sdxul")
+animation_player = NodePath("../AnimationPlayer")
+state_machine = NodePath("../StateMachine")
 metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
 
 [node name="SFXEnemy" type="AudioStreamPlayer2D" parent="."]
