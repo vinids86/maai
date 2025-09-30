@@ -1,4 +1,4 @@
-[gd_scene load_steps=58 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=62 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -37,6 +37,7 @@
 [ext_resource type="Script" uid="uid://bnsx7y061rnqe" path="res://scripts/states/guard_broken_state.gd" id="19_i4rgx"]
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="20_2mchx"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="20_2pwtc"]
+[ext_resource type="Texture2D" uid="uid://iv3mkbhyvk87" path="res://assets/enemy/spritesheetreiddlemale.png" id="20_e7lhw"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="21_2mchx"]
 [ext_resource type="Script" uid="uid://b0lnh740qgaih" path="res://scripts/core/attack_executor.gd" id="22_605iw"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_listener.gd" id="22_sdxul"]
@@ -55,8 +56,8 @@ active_duration = 0.1
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &""
-hitbox_size = Vector2(32, 32)
-hitbox_position = Vector2(40, 0)
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(90, -64)
 damage = 10.0
 stamina_cost = 0.0
 stamina_damage = 10.0
@@ -80,8 +81,8 @@ active_duration = 0.1
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &""
-hitbox_size = Vector2(32, 32)
-hitbox_position = Vector2(40, 0)
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(90, -64)
 damage = 10.0
 stamina_cost = 0.0
 stamina_damage = 10.0
@@ -116,8 +117,8 @@ active_duration = 0.1
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &""
-hitbox_size = Vector2(32, 32)
-hitbox_position = Vector2(40, 0)
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(90, -64)
 damage = 10.0
 stamina_cost = 0.0
 stamina_damage = 10.0
@@ -128,8 +129,8 @@ poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
 unparryable_type = 0
-startup_movement_velocity = Vector2(150, 0)
-active_movement_velocity = Vector2(0, 0)
+startup_movement_velocity = Vector2(-50, 0)
+active_movement_velocity = Vector2(300, 0)
 recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
@@ -139,16 +140,53 @@ shader = ExtResource("2_5uy6h")
 shader_parameter/flash_color = Color(1, 0, 0, 1)
 shader_parameter/flash_modifier = 0.0
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_7p1mj"]
-radius = 25.0
-height = 64.0
+[sub_resource type="Animation" id="Animation_gst0f"]
+resource_name = "Idle"
+length = 2.50002
+loop_mode = 1
+step = 0.166667
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Visuals/Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.166667, 0.333333, 0.5, 0.666667, 0.833333, 1, 1.16667, 1.33333, 1.5, 1.66667, 1.83333, 2, 2.16667, 2.33333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+}
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_8tegq"]
-radius = 16.0
-height = 64.0
+[sub_resource type="Animation" id="Animation_sm4rh"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Visuals/Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_5lniq"]
+_data = {
+&"Idle": SubResource("Animation_gst0f"),
+&"RESET": SubResource("Animation_sm4rh")
+}
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_e7lhw"]
+size = Vector2(130, 200)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gst0f"]
+size = Vector2(130, 200)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ya47j"]
-size = Vector2(528, 93)
+size = Vector2(750, 200)
 
 [sub_resource type="Resource" id="Resource_2sbpf"]
 script = ExtResource("16_ekh6n")
@@ -178,6 +216,7 @@ down_dodge_profile = ExtResource("14_7v6cf")
 [node name="Visuals" type="Node2D" parent="."]
 
 [node name="ColorRect" type="ColorRect" parent="Visuals"]
+visible = false
 material = SubResource("ShaderMaterial_c4w8v")
 offset_left = -16.0
 offset_top = -32.0
@@ -185,18 +224,36 @@ offset_right = 16.0
 offset_bottom = 32.0
 color = Color(0.627451, 0.627451, 0.627451, 1)
 
+[node name="Sprite2D" type="Sprite2D" parent="Visuals"]
+position = Vector2(0, -44)
+scale = Vector2(0.4, 0.4)
+texture = ExtResource("20_e7lhw")
+hframes = 4
+vframes = 4
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_5lniq")
+}
+
+[node name="AnimationListener" type="Node" parent="." node_paths=PackedStringArray("animation_player", "state_machine")]
+script = ExtResource("22_sdxul")
+animation_player = NodePath("../AnimationPlayer")
+state_machine = NodePath("../StateMachine")
+metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
+
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visible = false
-shape = SubResource("CapsuleShape2D_7p1mj")
+shape = SubResource("RectangleShape2D_e7lhw")
 
 [node name="Hurtbox" type="Area2D" parent="."]
+visible = false
 collision_layer = 8
 collision_mask = 4
 script = ExtResource("2_4ra3w")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
-visible = false
-shape = SubResource("CapsuleShape2D_8tegq")
+shape = SubResource("RectangleShape2D_gst0f")
 
 [node name="AttackHitbox" type="Area2D" parent="."]
 collision_layer = 16
@@ -210,16 +267,8 @@ script = ExtResource("20_2pwtc")
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea"]
-position = Vector2(179, -14.5)
+position = Vector2(181, -2)
 shape = SubResource("RectangleShape2D_ya47j")
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
-
-[node name="AnimationListener" type="Node" parent="." node_paths=PackedStringArray("animation_player", "state_machine")]
-script = ExtResource("22_sdxul")
-animation_player = NodePath("../AnimationPlayer")
-state_machine = NodePath("../StateMachine")
-metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
 
 [node name="SFXEnemy" type="AudioStreamPlayer2D" parent="."]
 
@@ -315,7 +364,7 @@ script = ExtResource("42_hyejq")
 metadata/_custom_type_script = "uid://cycmw65rta0mh"
 
 [node name="EnemyStatusUI" parent="." instance=ExtResource("12_otmr2")]
-offset_left = -75.0
-offset_top = -52.0
-offset_right = -35.0
-offset_bottom = -12.0
+offset_left = -87.0
+offset_top = -122.0
+offset_right = -47.0
+offset_bottom = -82.0

@@ -8,8 +8,10 @@
 [node name="PlayerHUD" type="Control"]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 4.0
+offset_left = 703.0
+offset_top = 1043.0
+offset_right = 743.0
+offset_bottom = 1047.0
 rotation = -0.0037477
 script = ExtResource("1_mlvnn")
 

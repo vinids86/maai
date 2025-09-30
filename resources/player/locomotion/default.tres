@@ -6,8 +6,8 @@
 script = ExtResource("1_y4vqf")
 speed = 100.0
 run_speed = 250.0
-base_poise = 5.0
-idle_animation = &""
-walk_animation = &""
+poise_shield_contribution = 30.0
+idle_animation = &"Idle"
+walk_animation = &"Walk"
 run_animation = &""
 metadata/_custom_type_script = "uid://m6k761rpsw2b"

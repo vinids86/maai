@@ -20,21 +20,21 @@ position = Vector2(96, 454)
 position = Vector2(469, 569)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
-position = Vector2(-441, -1)
+position = Vector2(-443, 353)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
 position = Vector2(823.75, 631.5)
 shape = SubResource("RectangleShape2D_8jaed")
 
 [node name="StaticBody2D2" type="StaticBody2D" parent="."]
-position = Vector2(833, -74)
+position = Vector2(814, 246)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
 position = Vector2(384.5, 631.5)
 shape = SubResource("RectangleShape2D_8jaed")
 
 [node name="StaticBody2D3" type="StaticBody2D" parent="."]
-position = Vector2(1670, -75)
+position = Vector2(1652, 250)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3"]
 position = Vector2(381.5, 631.5)
@@ -43,7 +43,7 @@ shape = SubResource("RectangleShape2D_8jaed")
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="PlayerHUD" parent="CanvasLayer" instance=ExtResource("4_o4ihr")]
-offset_left = 341.0
-offset_top = 552.0
-offset_right = 425.0
-offset_bottom = 590.0
+offset_left = 730.0
+offset_top = 917.0
+offset_right = 814.0
+offset_bottom = 955.0
