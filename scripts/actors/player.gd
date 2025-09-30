@@ -11,8 +11,6 @@ extends CharacterBody2D
 
 @export_group("Combat Data")
 @export var base_poise: float
-# A variável 'attack_set' foi removida. A sua responsabilidade foi movida
-# para o ComboComponent para uma arquitetura mais limpa.
 
 @export_group("Equipped Skills")
 @export var skill_x: BaseSkill
@@ -51,9 +49,7 @@ func _ready():
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
-	
 	_update_facing_direction()
-	
 	state_machine.process_physics(delta, walk_direction, is_running)
 	move_and_slide()
 

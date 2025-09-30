@@ -10,7 +10,6 @@ extends CharacterBody2D
 @onready var combo_component: ComboComponent = $ComboComponent
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var detection_area: Area2D = $DetectionArea
-
 @onready var visuals: Node2D = $Visuals
 
 @export_group("Equipped Skills")
@@ -20,8 +19,6 @@ extends CharacterBody2D
 @export var skill_b: BaseSkill
 
 @export_group("Combat Data")
-# A variável 'attack_set' foi removida. A sua responsabilidade pertence
-# agora ao ComboComponent, para consistência com o Player.
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var mikiri_riposte_profile: AttackProfile
@@ -51,7 +48,6 @@ func _ready():
 	assert(health_component != null, "Enemy: Nó HealthComponent não encontrado.")
 	assert(stamina_component != null, "Enemy: Nó StaminaComponent não encontrado.")
 	assert(status_ui != null, "Enemy: Nó EnemyStatusUI não encontrado.")
-	assert(combo_component != null, "Enemy: Nó ComboComponent não encontrado.")
 	assert(detection_area != null, "Enemy: Nó 'DetectionArea' (Area2D) não encontrado como filho.")
 	
 	attack_executor.setup(self)
