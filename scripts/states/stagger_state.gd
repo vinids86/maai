@@ -59,7 +59,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 
 	if auto_block_succeeds:
 		if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
-			var block_recoil_fraction: float = 0.2
+			var block_recoil_fraction: float = 0.4
 			var base_knockback: Vector2 = context.attack_profile.knockback_vector
 			var recoil_velocity: Vector2 = base_knockback * block_recoil_fraction
 			

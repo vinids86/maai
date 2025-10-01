@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=7 format=3 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="Script" uid="uid://coil0eyucsysb" path="res://scripts/scenes/testing_dojo.gd" id="1_r8dm2"]
@@ -6,7 +6,10 @@
 [ext_resource type="PackedScene" uid="uid://cpt4x4lssyjav" path="res://scenes/player_hud.tscn" id="4_o4ihr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8jaed"]
-size = Vector2(763, 33)
+size = Vector2(6416, 33)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_o4ihr"]
+size = Vector2(820, 49)
 
 [node name="Node2D" type="Node2D" node_paths=PackedStringArray("player", "hud")]
 script = ExtResource("1_r8dm2")
@@ -14,30 +17,16 @@ player = NodePath("Player")
 hud = NodePath("CanvasLayer/PlayerHUD")
 
 [node name="Player" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(96, 454)
+position = Vector2(103, 893)
 
 [node name="Enemy" parent="." instance=ExtResource("2_7od0s")]
-position = Vector2(469, 569)
+position = Vector2(467, 861)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
 position = Vector2(-443, 353)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
-position = Vector2(823.75, 631.5)
-shape = SubResource("RectangleShape2D_8jaed")
-
-[node name="StaticBody2D2" type="StaticBody2D" parent="."]
-position = Vector2(814, 246)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
-position = Vector2(384.5, 631.5)
-shape = SubResource("RectangleShape2D_8jaed")
-
-[node name="StaticBody2D3" type="StaticBody2D" parent="."]
-position = Vector2(1652, 250)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3"]
-position = Vector2(381.5, 631.5)
+position = Vector2(1044, 631.5)
 shape = SubResource("RectangleShape2D_8jaed")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
@@ -47,3 +36,9 @@ offset_left = 730.0
 offset_top = 917.0
 offset_right = 814.0
 offset_bottom = 955.0
+
+[node name="StaticBody2D2" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
+position = Vector2(-724, 773.5)
+shape = SubResource("RectangleShape2D_o4ihr")

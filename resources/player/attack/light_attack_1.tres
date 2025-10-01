@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_b4ycn")
-startup_duration = 0.15
+startup_duration = 0.3
 active_duration = 0.1
 recovery_duration = 0.2
 link_duration = 0.6
@@ -13,14 +13,14 @@ animation_name = &"light_attack_1"
 active_sfx = ExtResource("1_6g5v0")
 hitbox_size = Vector2(90, 64)
 hitbox_position = Vector2(90, -64)
-damage = 10.0
+damage = 1.0
 stamina_cost = 0.0
 stamina_damage = 10.0
 poise_shield_contribution = 10.0
 poise_impact_contribution = 10.0
 poise_momentum_gain = 5.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(150, -100)
+knockback_vector = Vector2(250, -100)
 parry_interaction = 0
 unparryable_type = 0
 startup_movement_velocity = Vector2(600, 0)

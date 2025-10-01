@@ -4,6 +4,11 @@
 
 [resource]
 script = ExtResource("1_xvk4x")
-duration = 0.2
 animation_name = &""
+recoil_duration = 0.15
+reactive_duration = 0.25
+poise_shield_contribution = 0.0
+poise_shield_debuff = 20.0
+poise_sword_debuff = 20.0
+debuff_duration = 1.0
 metadata/_custom_type_script = "uid://w08cxomxigmg"

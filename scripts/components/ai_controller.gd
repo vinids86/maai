@@ -2,7 +2,7 @@ class_name AIController
 extends Node
 
 @export_group("Behavioral Strategy")
-@export var parry_chance: float = 0.30
+@export var parry_chance: float = 0.70
 @export var riposte_action_name: String = "skill_x"
 
 var _rng: RandomNumberGenerator

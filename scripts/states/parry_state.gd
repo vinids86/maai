@@ -1,7 +1,7 @@
 class_name ParryState
 extends State
 
-const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(50, 0)
+const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(250, 0)
 
 var current_profile: ParryProfile
 
@@ -152,7 +152,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			return _handle_default_hit(context)
 
 		Phases.RECOVERY:
-			var block_recoil_fraction: float = 0.2
+			var block_recoil_fraction: float = 0.4
 			var attack_knockback = context.attack_profile.knockback_vector
 			
 			if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):

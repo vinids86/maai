@@ -29,7 +29,7 @@ enum UnparryableType {
 @export var hitbox_position: Vector2 = Vector2(90, -64)
 
 @export_group("Mechanics")
-@export var damage: float = 10.0
+@export var damage: float = 1.0
 @export var stamina_cost: float = 0.0
 @export var stamina_damage: float = 10.0
 @export var poise_shield_contribution: float = 10.0

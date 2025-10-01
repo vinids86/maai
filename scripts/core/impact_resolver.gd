@@ -37,7 +37,8 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 	var defender_current_state = context.defender_state_machine.current_state
 	if defender_current_state.has_method("get_attack_profile"):
 		context.defender_attack_profile = defender_current_state.get_attack_profile()
-
+	print("attacker: ", attacker)
+	print("defender: ", defender, " defender_current_state: ", defender_current_state)
 	var result_for_attacker: ContactResult = defender_current_state.resolve_contact(context)
 
 	if result_for_attacker:

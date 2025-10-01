@@ -1,20 +1,25 @@
-[gd_scene load_steps=62 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=74 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_2sbpf"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="2_4ra3w"]
 [ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="2_5uy6h"]
-[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="3_j0dkt"]
+[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_gst0f"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="3_sm4rh"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="3_thsr5"]
-[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="4_sdxul"]
+[ext_resource type="AudioStream" uid="uid://bp66sw0k32ttq" path="res://audio/attack_3.wav" id="4_j0dkt"]
+[ext_resource type="AudioStream" uid="uid://curr3hsosggk4" path="res://audio/attack_2.wav" id="5_5lniq"]
 [ext_resource type="Script" uid="uid://dewrlich57pgi" path="res://scripts/components/ai_controller.gd" id="5_md484"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="5_ya47j"]
 [ext_resource type="Resource" uid="uid://5dqv7xvlptll" path="res://resources/player/counter/mikiri.tres" id="6_5ie7m"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="6_ipns3"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="7_8qclf"]
 [ext_resource type="Resource" uid="uid://bqjgtxke4um5v" path="res://resources/player/parried/default.tres" id="7_ekh6n"]
+[ext_resource type="AudioStream" uid="uid://br3naex6ir5bb" path="res://audio/attack_5.wav" id="7_sm4rh"]
+[ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="8_5lniq"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_2sbpf"]
+[ext_resource type="AudioStream" uid="uid://duggjplviepmn" path="res://audio/pre_sequence_skill.wav" id="9_7w3jn"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="9_8qclf"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="10_78kod"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="10_s1ycm"]
@@ -42,23 +47,75 @@
 [ext_resource type="Script" uid="uid://b0lnh740qgaih" path="res://scripts/core/attack_executor.gd" id="22_605iw"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_listener.gd" id="22_sdxul"]
 [ext_resource type="Script" uid="uid://b31jt2qq4fmkr" path="res://scripts/components/poise_component.gd" id="23_78kod"]
-[ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="24_5ie7m"]
 [ext_resource type="Script" uid="uid://dmqafi2pyifje" path="res://scripts/components/skill_combo_component.gd" id="28_7v6cf"]
 [ext_resource type="Script" uid="uid://cqen1cgottixs" path="res://scripts/components/facing_component.gd" id="31_5ie7m"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="42_hyejq"]
 
-[sub_resource type="Resource" id="Resource_e7lhw"]
+[sub_resource type="Resource" id="Resource_7w3jn"]
 script = ExtResource("5_ya47j")
-startup_duration = 0.5
+startup_duration = 0.4
+active_duration = 0.1
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &"skill_x_1"
+active_sfx = ExtResource("5_5lniq")
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(90, -64)
+damage = 1.0
+stamina_cost = 0.0
+stamina_damage = 10.0
+poise_shield_contribution = 10.0
+poise_impact_contribution = 100.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+unparryable_type = 0
+startup_movement_velocity = Vector2(-100, 0)
+active_movement_velocity = Vector2(600, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_uiwvf"]
+script = ExtResource("5_ya47j")
+startup_duration = 0.1
 active_duration = 0.1
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &""
+active_sfx = ExtResource("4_j0dkt")
 hitbox_size = Vector2(90, 64)
 hitbox_position = Vector2(90, -64)
-damage = 10.0
+damage = 1.0
+stamina_cost = 0.0
+stamina_damage = 10.0
+poise_shield_contribution = 10.0
+poise_impact_contribution = 100.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+unparryable_type = 0
+startup_movement_velocity = Vector2(500, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_0pw1s"]
+script = ExtResource("5_ya47j")
+startup_duration = 0.2
+active_duration = 0.1
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+active_sfx = ExtResource("5_5lniq")
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(90, -64)
+damage = 1.0
 stamina_cost = 0.0
 stamina_damage = 10.0
 poise_shield_contribution = 10.0
@@ -74,52 +131,91 @@ recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
-[sub_resource type="Resource" id="Resource_gst0f"]
+[sub_resource type="Resource" id="Resource_5lniq"]
 script = ExtResource("5_ya47j")
 startup_duration = 0.1
 active_duration = 0.1
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &""
+active_sfx = ExtResource("7_sm4rh")
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(90, -64)
+damage = 1.0
+stamina_cost = 0.0
+stamina_damage = 10.0
+poise_shield_contribution = 10.0
+poise_impact_contribution = 100.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+unparryable_type = 0
+startup_movement_velocity = Vector2(400, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_b5geg"]
+script = ExtResource("3_sm4rh")
+attacks = Array[ExtResource("5_ya47j")]([SubResource("Resource_7w3jn"), SubResource("Resource_uiwvf"), SubResource("Resource_0pw1s"), SubResource("Resource_5lniq")])
+metadata/_custom_type_script = "uid://bwq542vou2wu1"
+
+[sub_resource type="Resource" id="Resource_g0yyi"]
+script = ExtResource("2_gst0f")
+skill_phases = Array[ExtResource("3_sm4rh")]([SubResource("Resource_b5geg")])
+skill_name = ""
+metadata/_custom_type_script = "uid://cyu224lucyda8"
+
+[sub_resource type="Resource" id="Resource_5utat"]
+script = ExtResource("5_ya47j")
+startup_duration = 0.7
+active_duration = 0.3
+recovery_duration = 0.4
+link_duration = 0.6
+animation_name = &"skill_a_1"
+startup_sfx = ExtResource("9_7w3jn")
 hitbox_size = Vector2(90, 64)
 hitbox_position = Vector2(90, -64)
 damage = 10.0
 stamina_cost = 0.0
 stamina_damage = 10.0
 poise_shield_contribution = 10.0
-poise_impact_contribution = 10.0
+poise_impact_contribution = 1000.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(150, -100)
-parry_interaction = 0
-unparryable_type = 0
-startup_movement_velocity = Vector2(0, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(-100, 0)
+knockback_vector = Vector2(500, -200)
+parry_interaction = 1
+unparryable_type = 1
+startup_movement_velocity = Vector2(-300, 0)
+active_movement_velocity = Vector2(1000, -200)
+recovery_movement_velocity = Vector2(0, 200)
 link_movement_velocity = Vector2(0, 0)
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
-[sub_resource type="Resource" id="Resource_sm4rh"]
-script = ExtResource("4_sdxul")
-attacks = Array[ExtResource("5_ya47j")]([SubResource("Resource_e7lhw"), SubResource("Resource_gst0f")])
+[sub_resource type="Resource" id="Resource_0b4fd"]
+script = ExtResource("3_sm4rh")
+attacks = Array[ExtResource("5_ya47j")]([SubResource("Resource_5utat")])
 metadata/_custom_type_script = "uid://bwq542vou2wu1"
 
-[sub_resource type="Resource" id="Resource_5lniq"]
-script = ExtResource("3_j0dkt")
-skill_phases = Array[ExtResource("4_sdxul")]([SubResource("Resource_sm4rh")])
+[sub_resource type="Resource" id="Resource_13roy"]
+script = ExtResource("2_gst0f")
+skill_phases = Array[ExtResource("3_sm4rh")]([SubResource("Resource_0b4fd")])
 skill_name = ""
 metadata/_custom_type_script = "uid://cyu224lucyda8"
 
 [sub_resource type="Resource" id="Resource_hyejq"]
 script = ExtResource("5_ya47j")
-startup_duration = 0.35
+startup_duration = 0.4
 active_duration = 0.1
 recovery_duration = 0.2
 link_duration = 0.6
-animation_name = &""
+animation_name = &"riposte"
+active_sfx = ExtResource("4_j0dkt")
 hitbox_size = Vector2(90, 64)
 hitbox_position = Vector2(90, -64)
-damage = 10.0
+damage = 1.0
 stamina_cost = 0.0
 stamina_damage = 10.0
 poise_shield_contribution = 10.0
@@ -129,8 +225,8 @@ poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
 unparryable_type = 0
-startup_movement_velocity = Vector2(-50, 0)
-active_movement_velocity = Vector2(300, 0)
+startup_movement_velocity = Vector2(-100, 0)
+active_movement_velocity = Vector2(600, 0)
 recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
@@ -172,11 +268,268 @@ tracks/0/keys = {
 "update": 1,
 "values": [0]
 }
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Visuals/Sprite2D:texture")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [ExtResource("20_e7lhw")]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Visuals/Sprite2D:self_modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Visuals/Sprite2D:modulate")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_j0dkt"]
+resource_name = "riposte"
+length = 2.50002
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [ExtResource("20_e7lhw")]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Visuals/Sprite2D:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.166667, 0.333334, 0.500001, 0.666668, 0.833335, 1, 1.16667, 1.33334, 1.5, 1.66667, 1.83334, 2, 2.16667, 2.33334),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Visuals/Sprite2D:self_modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.14, 0.15, 0.35),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(0, 0, 1, 1), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_5lniq"]
+resource_name = "skill_x_1"
+length = 0.65
+step = 0.166667
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [ExtResource("20_e7lhw")]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Visuals/Sprite2D:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0.001, 0.166667, 0.333333, 0.5, 0.65),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 6]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Visuals/Sprite2D:self_modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.15, 0.65),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 0, 0, 1), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_a5akt"]
+resource_name = "skill_a_1"
+length = 1.50002
+step = 0.166667
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [ExtResource("20_e7lhw")]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [4]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Visuals/Sprite2D:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.166667, 0.333333, 0.5, 0.666667, 0.833333, 1, 1.16667, 1.33333, 1.33335),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Visuals/Sprite2D:modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.5, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(0, 0, 0, 1), Color(1, 1, 1, 1)]
+}
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_5lniq"]
 _data = {
 &"Idle": SubResource("Animation_gst0f"),
-&"RESET": SubResource("Animation_sm4rh")
+&"RESET": SubResource("Animation_sm4rh"),
+&"riposte": SubResource("Animation_j0dkt"),
+&"skill_a_1": SubResource("Animation_a5akt"),
+&"skill_x_1": SubResource("Animation_5lniq")
 }
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_e7lhw"]
@@ -196,8 +549,9 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 
 [node name="Enemy" type="CharacterBody2D"]
 script = ExtResource("1_md0e3")
-skill_x = ExtResource("24_5ie7m")
-skill_y = SubResource("Resource_5lniq")
+skill_x = SubResource("Resource_g0yyi")
+skill_y = ExtResource("8_5lniq")
+skill_a = SubResource("Resource_13roy")
 finisher_profile = ExtResource("3_thsr5")
 parry_profile = ExtResource("12_ile5s")
 riposte_profile = SubResource("Resource_hyejq")
@@ -288,7 +642,6 @@ script = ExtResource("11_w8i8w")
 
 [node name="AIController" type="Node" parent="."]
 script = ExtResource("5_md484")
-parry_chance = 0.7
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 
 [node name="AttackExecutor" type="Node" parent="."]
