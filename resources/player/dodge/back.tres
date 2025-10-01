@@ -11,6 +11,6 @@ speed = 150.0
 ignores_gravity = true
 stamina_cost = 15.0
 poise_shield_contribution = 5.0
-animation_name = &""
+animation_name = &"dash_back"
 active_sfx = ExtResource("1_e5l5m")
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"

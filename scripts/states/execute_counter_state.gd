@@ -66,14 +66,7 @@ func _execute_counter():
 		return
 	
 	_current_phase = Phases.EXECUTING
-	
-	var desired_offset = Vector2(_profile.hitbox_position.x * owner_node.facing_sign, 0)
-	var end_position = _target_enemy.global_position - desired_offset
-	var move_duration = 0.1
-
-	var move_tween = get_tree().create_tween().set_trans(Tween.TRANS_SINE)
-	move_tween.tween_property(owner_node, "global_position", end_position, move_duration)
-	move_tween.tween_callback(func(): _attack_executor.execute(_profile))
+	_attack_executor.execute(_profile)
 
 func _on_attack_executor_finished():
 	state_machine.on_current_state_finished()

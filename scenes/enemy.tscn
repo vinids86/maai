@@ -179,8 +179,9 @@ _data = {
 &"RESET": SubResource("Animation_sm4rh")
 }
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_e7lhw"]
-size = Vector2(130, 200)
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_e7lhw"]
+radius = 84.0
+height = 192.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gst0f"]
 size = Vector2(130, 200)
@@ -244,7 +245,7 @@ metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visible = false
-shape = SubResource("RectangleShape2D_e7lhw")
+shape = SubResource("CapsuleShape2D_e7lhw")
 
 [node name="Hurtbox" type="Area2D" parent="."]
 visible = false

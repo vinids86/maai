@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_ffkid")
-startup_duration = 0.3
+startup_duration = 0.5
 active_duration = 0.1
 recovery_duration = 0.2
 link_duration = 0.6
@@ -15,12 +15,12 @@ hitbox_size = Vector2(90, 64)
 hitbox_position = Vector2(90, -64)
 damage = 20.0
 stamina_cost = 0.0
-stamina_damage = 30.0
+stamina_damage = 0.0
 poise_shield_contribution = 10.0
 poise_impact_contribution = 10.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(200, -100)
+knockback_vector = Vector2(250, -100)
 parry_interaction = 1
 unparryable_type = 0
 startup_movement_velocity = Vector2(100, 0)
