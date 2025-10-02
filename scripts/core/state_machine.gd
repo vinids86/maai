@@ -159,8 +159,9 @@ func on_current_state_finished(reason: Dictionary = {}):
 				transition_to("GuardBrokenState", {"profile": profile, "knockback_vector": knockback_value})
 				return
 			"FINISHER_HIT":
-				var profile = owner_node.get_stagger_profile()
-				transition_to("StaggerState", {"profile": profile})
+				var args = reason
+				args["profile"] = owner_node.get_stagger_profile()
+				transition_to("StaggerState", args)
 				return
 			"HIT", "POISE_BROKEN":
 				var profile = owner_node.get_stagger_profile()

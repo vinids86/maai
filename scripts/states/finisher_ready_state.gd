@@ -2,7 +2,6 @@ class_name FinisherReadyState
 extends State
 
 var current_profile: FinisherProfile
-
 var time_left_in_phase: float = 0.0
 
 func enter(args: Dictionary = {}):
@@ -22,6 +21,16 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0:
 		state_machine.on_current_state_finished()
+
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	var finisher_attack_profile = owner_node.get_finisher_attack_profile()
+
+	if finisher_attack_profile:
+		state_machine.transition_to("AttackState", {"profile": finisher_attack_profile})
+		
+		return InputHandlerResult.new(InputHandlerResult.Status.CONSUMED)
+
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
@@ -66,9 +75,6 @@ func get_poise_shield_contribution() -> float:
 
 func get_poise_impact_contribution() -> float:
 	return 0.0
-
-func allow_attack() -> bool:
-	return true
 
 func _emit_phase_signal():
 	var phase_data = {

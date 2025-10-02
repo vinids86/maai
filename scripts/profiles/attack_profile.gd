@@ -23,6 +23,7 @@ enum UnparryableType {
 @export var startup_sfx: AudioStream
 @export var active_sfx: AudioStream
 @export var recovery_sfx: AudioStream
+@export var impact_sfx: AudioStream 
 
 @export_group("Hitbox")
 @export var hitbox_size: Vector2 = Vector2(90, 64)

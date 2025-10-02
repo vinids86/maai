@@ -20,11 +20,13 @@ func enter(args: Dictionary = {}):
 	if knockback.x != 0:
 		_knockback_velocity.x *= -owner_node.facing_sign
 
+	var sfx_to_play = args.get("override_sfx", current_profile.enter_sfx)
+
 	var phase_data := {
 		"state_name": self.name,
 		"phase_name": "STUN",
 		"profile": current_profile,
-		"sfx_to_play": current_profile.enter_sfx,
+		"sfx_to_play": sfx_to_play,
 		"animation_to_play": current_profile.animation_name
 	}
 	state_machine.emit_phase_change(phase_data)

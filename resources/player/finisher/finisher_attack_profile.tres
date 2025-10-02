@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="AttackProfile" load_steps=3 format=3 uid="uid://06fqvorpx30u"]
+[gd_resource type="Resource" script_class="AttackProfile" load_steps=4 format=3 uid="uid://06fqvorpx30u"]
 
 [ext_resource type="AudioStream" uid="uid://cwftjlj373ksh" path="res://audio/finisher.wav" id="1_3gkfb"]
+[ext_resource type="AudioStream" uid="uid://br3naex6ir5bb" path="res://audio/attack_5.wav" id="1_4d7ny"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_dreuq"]
 
 [resource]
@@ -10,11 +11,12 @@ active_duration = 0.1
 recovery_duration = 0.3
 link_duration = 0.6
 animation_name = &""
-active_sfx = ExtResource("1_3gkfb")
-hitbox_size = Vector2(32, 32)
-hitbox_position = Vector2(32, 0)
+active_sfx = ExtResource("1_4d7ny")
+impact_sfx = ExtResource("1_3gkfb")
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(90, -64)
 damage = 30.0
-stamina_cost = 10.0
+stamina_cost = 0.0
 stamina_damage = 10.0
 poise_shield_contribution = 10.0
 poise_impact_contribution = 10.0

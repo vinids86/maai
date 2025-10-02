@@ -33,7 +33,12 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	
 	context.defender_stamina_comp.restore_to_full()
 	
-	state_machine.on_current_state_finished({"outcome": "FINISHER_HIT"})
+	var reason = {"outcome": "FINISHER_HIT"}
+
+	if context.attack_profile.impact_sfx != null:
+		reason["override_sfx"] = context.attack_profile.impact_sfx
+
+	state_machine.on_current_state_finished(reason)
 	
 	var result_for_attacker = ContactResult.new()
 	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.FINISHER_SUCCESS
