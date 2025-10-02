@@ -5,11 +5,13 @@ var current_profile: CounteredProfile
 var time_left_in_phase: float = 0.0
 
 func enter(args: Dictionary = {}):
+	print("Enter")
 	self.current_profile = args.get("profile")
 
 	if not current_profile:
 		push_warning("CounteredState: Não recebeu um CounteredProfile.")
 		state_machine.on_current_state_finished()
+		print("exit1")
 		return
 
 	time_left_in_phase = current_profile.duration
@@ -32,6 +34,7 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0.0:
 		state_machine.on_current_state_finished()
+		print("exit2")
 		return
 
 func resolve_contact(context: ContactContext) -> ContactResult:
@@ -45,7 +48,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 
 	var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
 	state_machine.on_current_state_finished(reason)
-
+	print("exit3")
 	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 	

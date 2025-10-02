@@ -24,6 +24,10 @@ func _ready():
 	assert(buffer_component != null, "Não foi encontrado um nó 'BufferComponent' como irmão da StateMachine.")
 	assert(stamina_component != null, "Não foi encontrado um nó 'StaminaComponent' como irmão da StateMachine.")
 
+	var health_component = owner_node.find_child("HealthComponent")
+	if health_component:
+		health_component.died.connect(_on_owner_died)
+
 	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
 
 	for child in get_children():
@@ -38,6 +42,12 @@ func _ready():
 	else:
 		push_error("StateMachine Error: Initial state '%s' not found." % initial_state_key)
 
+func _on_owner_died():
+	if current_state is DeathState:
+		return
+	
+	var profile = owner_node.get_death_profile()
+	transition_to("DeathState", {"profile": profile})
 
 func process_physics(delta: float, walk_direction: float, is_running: bool):
 	if current_state:
@@ -95,6 +105,9 @@ func on_parry_pressed(profile: ParryProfile):
 			if profile and stamina_component.try_consume(profile.stamina_cost):
 				buffer_component.clear()
 				transition_to("ParryState", {"profile": profile})
+		InputHandlerResult.Status.REJECTED:
+			var context = {"profile": profile}
+			buffer_component.capture(BufferComponent.BufferedAction.PARRY, context)
 		InputHandlerResult.Status.CONSUMED:
 			pass
 		

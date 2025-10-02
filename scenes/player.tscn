@@ -1,4 +1,4 @@
-[gd_scene load_steps=66 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=67 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -51,6 +51,7 @@
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="40_giy8y"]
 [ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="50_6e8lb"]
+[ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="52_sc3ue"]
 
 [sub_resource type="Resource" id="Resource_6e8lb"]
 script = ExtResource("3_u2ulf")
@@ -565,7 +566,7 @@ script = ExtResource("4_fulsm")
 
 [node name="StaminaComponent" type="Node" parent="."]
 script = ExtResource("19_4r5pv")
-regeneration_delay = 3.0
+regeneration_delay = 2.0
 
 [node name="DelayTimer" type="Timer" parent="StaminaComponent"]
 
@@ -640,3 +641,7 @@ metadata/_custom_type_script = "uid://cycmw65rta0mh"
 [node name="CounteredState" type="Node" parent="StateMachine"]
 script = ExtResource("50_6e8lb")
 metadata/_custom_type_script = "uid://80lq1gnacaa2"
+
+[node name="DeathState" type="Node" parent="StateMachine"]
+script = ExtResource("52_sc3ue")
+metadata/_custom_type_script = "uid://cjolmubu1vmxi"

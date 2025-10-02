@@ -31,6 +31,7 @@ var _equipped_skills: Dictionary = {}
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
 @export var countered_profile: CounteredProfile
+@export var death_profile: DeathProfile
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile
@@ -158,6 +159,9 @@ func get_locomotion_profile() -> LocomotionProfile:
 	
 func get_countered_profile() -> CounteredProfile:
 	return countered_profile
+	
+func get_death_profile() -> DeathProfile:
+	return death_profile
 
 func _get_dodge_direction_from_input() -> Vector2:
 	var direction = Vector2.ZERO

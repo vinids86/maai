@@ -29,6 +29,7 @@ extends CharacterBody2D
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
 @export var countered_profile: CounteredProfile
+@export var death_profile: DeathProfile
 @export var base_poise: float
 
 @export_group("Dodge Profiles")
@@ -118,6 +119,9 @@ func get_locomotion_profile() -> LocomotionProfile:
 
 func get_countered_profile() -> CounteredProfile:
 	return countered_profile
+	
+func get_death_profile() -> DeathProfile:
+	return death_profile
 
 func flash_red():
 	if not material_ref:
