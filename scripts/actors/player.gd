@@ -30,6 +30,7 @@ var _equipped_skills: Dictionary = {}
 @export var parried_profile: ParriedProfile
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
+@export var countered_profile: CounteredProfile
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile
@@ -154,6 +155,9 @@ func get_guard_broken_profile() -> GuardBrokenProfile:
 
 func get_locomotion_profile() -> LocomotionProfile:
 	return locomotion_profile
+	
+func get_countered_profile() -> CounteredProfile:
+	return countered_profile
 
 func _get_dodge_direction_from_input() -> Vector2:
 	var direction = Vector2.ZERO

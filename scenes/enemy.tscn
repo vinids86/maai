@@ -1,4 +1,4 @@
-[gd_scene load_steps=74 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=77 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -38,6 +38,7 @@
 [ext_resource type="Script" uid="uid://24v4chol2qs0" path="res://scripts/profiles/buffer_profile.gd" id="16_ekh6n"]
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="17_6awcb"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="17_shcg2"]
+[ext_resource type="Script" uid="uid://bupjea265f4xy" path="res://scripts/profiles/countered_profile.gd" id="18_0pw1s"]
 [ext_resource type="Resource" uid="uid://c13fhm2w824s2" path="res://resources/player/block/default.tres" id="18_wjec0"]
 [ext_resource type="Script" uid="uid://bnsx7y061rnqe" path="res://scripts/states/guard_broken_state.gd" id="19_i4rgx"]
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="20_2mchx"]
@@ -52,6 +53,7 @@
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="42_hyejq"]
+[ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="52_uiwvf"]
 
 [sub_resource type="Resource" id="Resource_7w3jn"]
 script = ExtResource("5_ya47j")
@@ -99,9 +101,9 @@ poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
 unparryable_type = 0
-startup_movement_velocity = Vector2(500, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
+startup_movement_velocity = Vector2(500, -100)
+active_movement_velocity = Vector2(0, 50)
+recovery_movement_velocity = Vector2(0, 50)
 link_movement_velocity = Vector2(0, 0)
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
@@ -125,8 +127,8 @@ poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
 unparryable_type = 0
-startup_movement_velocity = Vector2(300, 0)
-active_movement_velocity = Vector2(0, 0)
+startup_movement_velocity = Vector2(-300, 0)
+active_movement_velocity = Vector2(600, 0)
 recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
@@ -179,7 +181,7 @@ startup_sfx = ExtResource("9_7w3jn")
 hitbox_size = Vector2(90, 64)
 hitbox_position = Vector2(90, -64)
 damage = 10.0
-stamina_cost = 0.0
+stamina_cost = 5.0
 stamina_damage = 10.0
 poise_shield_contribution = 10.0
 poise_impact_contribution = 1000.0
@@ -230,6 +232,13 @@ active_movement_velocity = Vector2(600, 0)
 recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_a5akt"]
+script = ExtResource("18_0pw1s")
+duration = 1.0
+animation_name = &""
+poise_shield_contribution = 0.0
+metadata/_custom_type_script = "uid://bupjea265f4xy"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c4w8v"]
 shader = ExtResource("2_5uy6h")
@@ -561,6 +570,7 @@ stagger_profile = ExtResource("12_rogs8")
 parried_profile = ExtResource("7_ekh6n")
 guard_broken_profile = ExtResource("20_2mchx")
 locomotion_profile = ExtResource("9_2sbpf")
+countered_profile = SubResource("Resource_a5akt")
 base_poise = 10.0
 neutral_dodge_profile = ExtResource("10_78kod")
 forward_dodge_profile = ExtResource("11_605iw")
@@ -637,6 +647,7 @@ script = ExtResource("1_7p1mj")
 
 [node name="StaminaComponent" type="Node" parent="."]
 script = ExtResource("11_w8i8w")
+regeneration_delay = 3.0
 
 [node name="DelayTimer" type="Timer" parent="StaminaComponent"]
 
@@ -716,6 +727,10 @@ metadata/_custom_type_script = "uid://b72ucjj1gl7t2"
 [node name="ExecuteCounterState" type="Node" parent="StateMachine"]
 script = ExtResource("42_hyejq")
 metadata/_custom_type_script = "uid://cycmw65rta0mh"
+
+[node name="CounteredState" type="Node" parent="StateMachine"]
+script = ExtResource("52_uiwvf")
+metadata/_custom_type_script = "uid://80lq1gnacaa2"
 
 [node name="EnemyStatusUI" parent="." instance=ExtResource("12_otmr2")]
 offset_left = -87.0

@@ -127,8 +127,8 @@ func _on_impact_resolved(result: ContactResult):
 				var profile = owner_node.get_stagger_profile()
 				transition_to("StaggerState", {"profile": profile})
 			ContactResult.AttackerOutcome.COUNTERED:
-				var profile = owner_node.get_locomotion_profile()
-				transition_to(initial_state_key, {"profile": profile})
+				var profile = owner_node.get_countered_profile()
+				transition_to("CounteredState", {"profile": profile})
 
 
 func on_current_state_finished(reason: Dictionary = {}):

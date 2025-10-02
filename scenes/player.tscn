@@ -1,4 +1,4 @@
-[gd_scene load_steps=63 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=66 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
@@ -21,6 +21,7 @@
 [ext_resource type="Resource" uid="uid://cfu400oitmjxr" path="res://resources/player/dodge/up.tres" id="10_jej6c"]
 [ext_resource type="Resource" uid="uid://cxtoyg6r5qy34" path="res://resources/player/dodge/down.tres" id="11_f1ej7"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="12_jej6c"]
+[ext_resource type="Script" uid="uid://bupjea265f4xy" path="res://scripts/profiles/countered_profile.gd" id="13_2gdjj"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_listener.gd" id="15_a8ls1"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="16_qfm1y"]
 [ext_resource type="Texture2D" uid="uid://bqpwrbau08mpn" path="res://assets/player/spritesheetiddle.png" id="17_fdfoy"]
@@ -49,6 +50,7 @@
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="29_gl8cc"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="40_giy8y"]
+[ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="50_6e8lb"]
 
 [sub_resource type="Resource" id="Resource_6e8lb"]
 script = ExtResource("3_u2ulf")
@@ -79,6 +81,13 @@ active_movement_velocity = Vector2(0, 0)
 recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_sc3ue"]
+script = ExtResource("13_2gdjj")
+duration = 1.0
+animation_name = &""
+poise_shield_contribution = 0.0
+metadata/_custom_type_script = "uid://bupjea265f4xy"
 
 [sub_resource type="Animation" id="Animation_fdfoy"]
 resource_name = "idle"
@@ -482,6 +491,7 @@ stagger_profile = ExtResource("23_ke2ow")
 parried_profile = ExtResource("7_gl8cc")
 guard_broken_profile = ExtResource("27_wqfne")
 locomotion_profile = ExtResource("9_487ah")
+countered_profile = SubResource("Resource_sc3ue")
 neutral_dodge_profile = ExtResource("7_fjrip")
 forward_dodge_profile = ExtResource("8_d2wvv")
 back_dodge_profile = ExtResource("9_3v2ag")
@@ -555,6 +565,7 @@ script = ExtResource("4_fulsm")
 
 [node name="StaminaComponent" type="Node" parent="."]
 script = ExtResource("19_4r5pv")
+regeneration_delay = 3.0
 
 [node name="DelayTimer" type="Timer" parent="StaminaComponent"]
 
@@ -625,3 +636,7 @@ metadata/_custom_type_script = "uid://b72ucjj1gl7t2"
 [node name="ExecuteCounterState" type="Node" parent="StateMachine"]
 script = ExtResource("40_giy8y")
 metadata/_custom_type_script = "uid://cycmw65rta0mh"
+
+[node name="CounteredState" type="Node" parent="StateMachine"]
+script = ExtResource("50_6e8lb")
+metadata/_custom_type_script = "uid://80lq1gnacaa2"

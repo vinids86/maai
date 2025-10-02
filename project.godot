@@ -29,6 +29,10 @@ window/size/mode=2
 
 project/assembly_name="Maai"
 
+[editor]
+
+movie_writer/movie_file="C:/Users/Administrador/Documents/maai/test.avi"
+
 [input]
 
 move_left={

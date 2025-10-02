@@ -75,7 +75,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 	else:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
-		
+
 		var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
 		state_machine.on_current_state_finished(reason)
 
