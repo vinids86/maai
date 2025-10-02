@@ -90,28 +90,19 @@ func _change_phase(new_phase: Phases):
 	
 	state_machine.emit_phase_change(phase_data)
 
-func _handle_default_hit(context: ContactContext) -> ContactResult:
+func _handle_unblockable_hit(context: ContactContext) -> ContactResult:
 	var result = ContactResult.new()
 	result.attacker_node = context.attacker_node
 	result.defender_node = context.defender_node
 	result.attack_profile = context.attack_profile
-	
-	var defender_defensive_poise = context.defender_poise_comp.get_effective_shield_poise()
-	var was_poise_broken = false
-	if context.attacker_offensive_poise >= defender_defensive_poise:
-		was_poise_broken = true
-	
+
 	context.defender_health_comp.take_damage(context.attack_profile.damage)
 	
-	var outcome = "HIT"
-	if was_poise_broken:
-		outcome = "POISE_BROKEN"
-	
-	var reason = {"outcome": outcome, "knockback_vector": context.attack_profile.knockback_vector}
+	var reason = {"outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector}
 	state_machine.on_current_state_finished(reason)
 	
 	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
-	result.defender_outcome = was_poise_broken and ContactResult.DefenderOutcome.POISE_BROKEN or ContactResult.DefenderOutcome.HIT
+	result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 	return result
 
 func resolve_contact(context: ContactContext) -> ContactResult:
@@ -120,11 +111,12 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
 
+
+	if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
+		return _handle_unblockable_hit(context)
+	
 	match current_phase:
 		Phases.ACTIVE:
-			if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
-				return _handle_default_hit(context)
-			
 			_change_phase(Phases.SUCCESS)
 			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
 			
@@ -149,7 +141,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			return result_for_attacker
 
 		Phases.SUCCESS:
-			return _handle_default_hit(context)
+			return _handle_unblockable_hit(context)
 
 		Phases.RECOVERY:
 			var block_recoil_fraction: float = 0.4
