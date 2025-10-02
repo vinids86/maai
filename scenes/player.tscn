@@ -70,7 +70,6 @@ hitbox_position = Vector2(90, -64)
 damage = 1.0
 stamina_cost = 0.0
 stamina_damage = 10.0
-poise_shield_contribution = 40.0
 poise_impact_contribution = 10.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
@@ -81,6 +80,9 @@ startup_movement_velocity = Vector2(150, 0)
 active_movement_velocity = Vector2(0, 0)
 recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
 [sub_resource type="Resource" id="Resource_sc3ue"]

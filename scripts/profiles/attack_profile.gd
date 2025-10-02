@@ -23,7 +23,7 @@ enum UnparryableType {
 @export var startup_sfx: AudioStream
 @export var active_sfx: AudioStream
 @export var recovery_sfx: AudioStream
-@export var impact_sfx: AudioStream 
+@export var impact_sfx: AudioStream
 
 @export_group("Hitbox")
 @export var hitbox_size: Vector2 = Vector2(90, 64)
@@ -33,7 +33,6 @@ enum UnparryableType {
 @export var damage: float = 1.0
 @export var stamina_cost: float = 0.0
 @export var stamina_damage: float = 10.0
-@export var poise_shield_contribution: float = 10.0
 @export var poise_impact_contribution: float = 10.0
 @export var poise_momentum_gain: float = 0.0
 @export var poise_momentum_duration: float = 1.5
@@ -46,3 +45,8 @@ enum UnparryableType {
 @export var active_movement_velocity: Vector2 = Vector2.ZERO
 @export var recovery_movement_velocity: Vector2 = Vector2.ZERO
 @export var link_movement_velocity: Vector2 = Vector2.ZERO
+
+@export_group("Poise Contributions per Phase (Defensivo)")
+@export var startup_poise_shield: float = 10.0
+@export var active_poise_shield: float = 10.0
+@export var recovery_poise_shield: float = 300.0

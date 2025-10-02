@@ -10,7 +10,4 @@ extends Resource
 @export var reactive_duration: float = 0.25
 
 @export_group("Mechanics")
-@export var poise_shield_contribution: float = 0.0
-@export var poise_shield_debuff: float = 20.0
-@export var poise_sword_debuff: float = 20.0
-@export var debuff_duration: float = 1.0
+@export var poise_shield_contribution: float = 500.0

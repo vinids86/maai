@@ -85,33 +85,60 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result.defender_node = context.defender_node
 	result.attack_profile = context.attack_profile
 	
-	var defender_shield_poise = context.defender_poise_comp.get_effective_shield_poise()
-	var attacker_offensive_poise = context.attacker_offensive_poise
-	
-	context.defender_health_comp.take_damage(context.attack_profile.damage)
-	
-	if attacker_offensive_poise >= defender_shield_poise:
-		var reason = {
-			"outcome": "POISE_BROKEN",
-			"knockback_vector": context.attack_profile.knockback_vector
-		}
-		state_machine.on_current_state_finished(reason)
-		
-		result.attacker_outcome = ContactResult.AttackerOutcome.NONE
-		result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+	var executor_phase = _attack_executor.get_current_phase_name()
+
+	if executor_phase == "RECOVERY" or _current_phase == LinkPhases.LINK:
+		var auto_block_succeeds = context.attacker_offensive_poise < context.defender_poise_comp.get_effective_shield_poise()
+		if auto_block_succeeds:
+			if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
+				var reason = {"outcome": "BLOCKED"}
+				state_machine.on_current_state_finished(reason)
+				result.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
+			else:
+				var reason = {"outcome": "GUARD_BROKEN"}
+				state_machine.on_current_state_finished(reason)
+				result.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
+				result.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
+		else:
+			context.defender_health_comp.take_damage(context.attack_profile.damage)
+			var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
+			state_machine.on_current_state_finished(reason)
+			result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 	else:
-		result.attacker_outcome = ContactResult.AttackerOutcome.TRADE_LOST
-		result.defender_outcome = ContactResult.DefenderOutcome.HIT
+		var defender_shield_poise = context.defender_poise_comp.get_effective_shield_poise()
+		var attacker_offensive_poise = context.attacker_offensive_poise
+		
+		context.defender_health_comp.take_damage(context.attack_profile.damage)
+		
+		if attacker_offensive_poise >= defender_shield_poise:
+			var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
+			state_machine.on_current_state_finished(reason)
+			result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+			result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+		else:
+			result.attacker_outcome = ContactResult.AttackerOutcome.TRADE_LOST
+			result.defender_outcome = ContactResult.DefenderOutcome.HIT
 
 	return result
 
 func get_poise_shield_contribution() -> float:
-	var profile = _attack_executor.get_current_profile()
-	if not profile:
-		profile = _current_profile
-	if not profile:
+	if not _current_profile:
 		return 0.0
-	return profile.poise_shield_contribution
+
+	if _current_phase == LinkPhases.LINK:
+		return _current_profile.recovery_poise_shield
+
+	var executor_phase = _attack_executor.get_current_phase_name()
+	
+	match executor_phase:
+		"STARTUP":
+			return _current_profile.startup_poise_shield
+		"ACTIVE":
+			return _current_profile.active_poise_shield
+		"RECOVERY":
+			return _current_profile.recovery_poise_shield
+		_:
+			return 0.0
 
 func get_poise_impact_contribution() -> float:
 	var profile = _attack_executor.get_current_profile()

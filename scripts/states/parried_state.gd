@@ -21,17 +21,6 @@ func enter(args: Dictionary = {}):
 	if knockback.x != 0:
 		_knockback_velocity.x *= -owner_node.facing_sign
 
-	var poise_comp = owner_node.find_child("PoiseComponent")
-	if poise_comp:
-		poise_comp.apply_shield_bonus(
-			-current_profile.poise_shield_debuff, 
-			current_profile.debuff_duration
-		)
-		poise_comp.apply_sword_bonus(
-			-current_profile.poise_sword_debuff, 
-			current_profile.debuff_duration
-		)
-
 	_change_phase(Phases.RECOIL)
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool):
