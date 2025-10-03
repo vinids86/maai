@@ -9,8 +9,7 @@ signal segment_completed(completed_segments)
 @export var decay_delay: float = 3.0
 
 @export_group("Focus Gain")
-@export var focus_gain_on_parry: int = 50
-@export var focus_gain_on_poise_break: int = 100
+@export var focus_gain_on_parry: int = 10
 
 var current_focus: int = 0
 
@@ -27,9 +26,14 @@ func _ready() -> void:
 	emit_signal("segment_completed", 0)
 
 func _on_impact_resolved(result: ContactResult) -> void:
-	if result.defender_node == owner:
-		if result.defender_outcome == ContactResult.DefenderOutcome.PARRY_SUCCESS:
-			gain_focus(focus_gain_on_parry)
+	if result.attacker_node != owner:
+		return
+	
+	if result.attack_profile and result.attack_profile.focus_cost > 0:
+		return
+		
+	if result.attack_profile and "focus_gain_on_hit" in result.attack_profile:
+		gain_focus(result.attack_profile.focus_gain_on_hit)
 
 func gain_focus(amount: int) -> void:
 	var old_focus = current_focus

@@ -119,6 +119,10 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			_change_phase(Phases.SUCCESS)
 			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
 			
+			var focus_comp = owner_node.find_child("FocusComponent")
+			if focus_comp:
+				focus_comp.gain_focus(focus_comp.focus_gain_on_parry)
+			
 			if context.defender_poise_comp and current_profile:
 				context.defender_poise_comp.apply_shield_bonus(
 					current_profile.shield_bonus_on_success,
