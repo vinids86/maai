@@ -90,7 +90,7 @@ func _change_phase(new_phase: Phases):
 	
 	state_machine.emit_phase_change(phase_data)
 
-func _handle_unblockable_hit(context: ContactContext) -> ContactResult:
+func _handle_direct_hit(context: ContactContext) -> ContactResult:
 	var result = ContactResult.new()
 	result.attacker_node = context.attacker_node
 	result.defender_node = context.defender_node
@@ -110,13 +110,12 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.attacker_node = context.attacker_node
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
-
-
-	if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
-		return _handle_unblockable_hit(context)
 	
 	match current_phase:
 		Phases.ACTIVE:
+			if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
+				return _handle_direct_hit(context)
+			
 			_change_phase(Phases.SUCCESS)
 			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
 			
@@ -141,25 +140,10 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			return result_for_attacker
 
 		Phases.SUCCESS:
-			return _handle_unblockable_hit(context)
+			return _handle_direct_hit(context)
 
 		Phases.RECOVERY:
-			var block_recoil_fraction: float = 0.4
-			var attack_knockback = context.attack_profile.knockback_vector
-			
-			if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
-				var recoil_velocity = attack_knockback * block_recoil_fraction
-				var reason = {"outcome": "BLOCKED", "knockback_vector": recoil_velocity}
-				state_machine.on_current_state_finished(reason)
-
-				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
-				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
-			else:
-				var reason = {"outcome": "GUARD_BROKEN", "knockback_vector": attack_knockback}
-				state_machine.on_current_state_finished(reason)
-				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
-				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
-			return result_for_attacker
+			return _resolve_default_contact(context)
 			
 	return null
 

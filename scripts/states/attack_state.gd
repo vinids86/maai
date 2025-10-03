@@ -80,31 +80,16 @@ func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHan
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func resolve_contact(context: ContactContext) -> ContactResult:
-	var result = ContactResult.new()
-	result.attacker_node = context.attacker_node
-	result.defender_node = context.defender_node
-	result.attack_profile = context.attack_profile
-	
 	var executor_phase = _attack_executor.get_current_phase_name()
 
 	if executor_phase == "RECOVERY" or _current_phase == LinkPhases.LINK:
-		var auto_block_succeeds = context.attacker_offensive_poise < context.defender_poise_comp.get_effective_shield_poise()
-		if auto_block_succeeds:
-			if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
-				var reason = {"outcome": "BLOCKED"}
-				state_machine.on_current_state_finished(reason)
-				result.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
-			else:
-				var reason = {"outcome": "GUARD_BROKEN"}
-				state_machine.on_current_state_finished(reason)
-				result.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
-				result.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
-		else:
-			context.defender_health_comp.take_damage(context.attack_profile.damage)
-			var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
-			state_machine.on_current_state_finished(reason)
-			result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+		return _resolve_default_contact(context)
 	else:
+		var result = ContactResult.new()
+		result.attacker_node = context.attacker_node
+		result.defender_node = context.defender_node
+		result.attack_profile = context.attack_profile
+		
 		var defender_shield_poise = context.defender_poise_comp.get_effective_shield_poise()
 		var attacker_offensive_poise = context.attacker_offensive_poise
 		
@@ -119,7 +104,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			result.attacker_outcome = ContactResult.AttackerOutcome.TRADE_LOST
 			result.defender_outcome = ContactResult.DefenderOutcome.HIT
 
-	return result
+		return result
 
 func get_poise_shield_contribution() -> float:
 	if not _current_profile:
