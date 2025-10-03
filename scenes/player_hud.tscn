@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://cpt4x4lssyjav"]
+[gd_scene load_steps=6 format=3 uid="uid://cpt4x4lssyjav"]
 
 [ext_resource type="Script" uid="uid://3ardk5ddx5yn" path="res://scripts/ui/hud_controller.gd" id="1_mlvnn"]
 [ext_resource type="Texture2D" uid="uid://dnd5if5ok4tck" path="res://assets/under.png" id="2_er5qu"]
 [ext_resource type="Texture2D" uid="uid://by5iff8a6w436" path="res://assets/progress_stamina.png" id="3_or0tx"]
 [ext_resource type="Texture2D" uid="uid://b6in2fan4sl6f" path="res://assets/progress_health.png" id="3_qcjqi"]
+[ext_resource type="Texture2D" uid="uid://do2y2oc4b30g2" path="res://assets/progress_focus.png" id="5_qcjqi"]
 
 [node name="PlayerHUD" type="Control"]
 layout_mode = 3
@@ -30,3 +31,27 @@ offset_right = 403.0
 offset_bottom = 43.0
 texture_under = ExtResource("2_er5qu")
 texture_progress = ExtResource("3_or0tx")
+
+[node name="FocusBar" type="TextureProgressBar" parent="."]
+layout_mode = 0
+offset_left = -1.08244
+offset_top = 21.9961
+offset_right = 401.918
+offset_bottom = 61.9961
+max_value = 300.0
+texture_under = ExtResource("2_er5qu")
+texture_progress = ExtResource("5_qcjqi")
+
+[node name="FocusSegmentsContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ColorRect" type="ColorRect" parent="FocusSegmentsContainer"]
+layout_mode = 2
+
+[node name="ColorRect2" type="ColorRect" parent="FocusSegmentsContainer"]
+layout_mode = 2
+
+[node name="ColorRect3" type="ColorRect" parent="FocusSegmentsContainer"]
+layout_mode = 2

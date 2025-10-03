@@ -9,8 +9,8 @@ signal segment_completed(completed_segments)
 @export var decay_delay: float = 3.0
 
 @export_group("Focus Gain")
-@export var focus_gain_on_parry: int = 20
-@export var focus_gain_on_poise_break: int = 10
+@export var focus_gain_on_parry: int = 50
+@export var focus_gain_on_poise_break: int = 100
 
 var current_focus: int = 0
 
@@ -21,6 +21,7 @@ func _ready() -> void:
 	decay_timer.one_shot = true
 	
 	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+	decay_timer.timeout.connect(_on_DecayTimer_timeout)
 	
 	emit_signal("focus_changed", current_focus, max_focus)
 	emit_signal("segment_completed", 0)
@@ -29,10 +30,6 @@ func _on_impact_resolved(result: ContactResult) -> void:
 	if result.defender_node == owner:
 		if result.defender_outcome == ContactResult.DefenderOutcome.PARRY_SUCCESS:
 			gain_focus(focus_gain_on_parry)
-			
-	if result.attacker_node == owner:
-		if result.defender_outcome == ContactResult.DefenderOutcome.POISE_BROKEN:
-			gain_focus(focus_gain_on_poise_break)
 
 func gain_focus(amount: int) -> void:
 	var old_focus = current_focus

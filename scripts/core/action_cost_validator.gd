@@ -7,7 +7,6 @@ var focus_component: FocusComponent
 func _ready() -> void:
 	stamina_component = owner.get_node_or_null("StaminaComponent")
 	focus_component = owner.get_node_or_null("FocusComponent")
-	print(stamina_component, focus_component)
 
 func try_pay_costs(profile: Resource) -> bool:
 	if not profile:

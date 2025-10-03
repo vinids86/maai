@@ -8,6 +8,7 @@ extends CharacterBody2D
 @onready var combo_component: ComboComponent = $ComboComponent
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var visuals: Node2D = $Visuals
+@onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
 
 @export_group("Combat Data")
 @export var base_poise: float
@@ -45,6 +46,9 @@ var facing_sign: int = 1
 var facing_locked: bool = false
 
 func _ready():
+	if hud:
+		await hud.ready
+		hud.initialize_hud(self)
 	attack_executor.setup(self)
 	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
 	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)

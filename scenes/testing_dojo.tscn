@@ -31,7 +31,7 @@ shape = SubResource("RectangleShape2D_8jaed")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="PlayerHUD" parent="CanvasLayer" instance=ExtResource("4_o4ihr")]
+[node name="PlayerHUD" parent="CanvasLayer" groups=["hud"] instance=ExtResource("4_o4ihr")]
 offset_left = 730.0
 offset_top = 917.0
 offset_right = 814.0

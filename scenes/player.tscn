@@ -642,6 +642,7 @@ script = ExtResource("53_lxlsd")
 metadata/_custom_type_script = "uid://cdtcv6tkc4hp1"
 
 [node name="DecayTimer" type="Timer" parent="FocusComponent"]
+one_shot = true
 
 [node name="AttackExecutor" type="Node" parent="."]
 script = ExtResource("25_hax0n")
