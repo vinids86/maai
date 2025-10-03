@@ -106,7 +106,7 @@ metadata/_custom_type_script = "uid://dyhsqdl12br5e"
 [sub_resource type="Resource" id="Resource_fdfoy"]
 script = ExtResource("5_giy8y")
 startup_duration = 0.3
-active_duration = 0.1
+active_duration = 0.2
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &""
@@ -615,7 +615,6 @@ script = ExtResource("4_fulsm")
 
 [node name="StaminaComponent" type="Node" parent="."]
 script = ExtResource("19_4r5pv")
-regeneration_delay = 2.0
 
 [node name="DelayTimer" type="Timer" parent="StaminaComponent"]
 

@@ -62,7 +62,7 @@
 [sub_resource type="Resource" id="Resource_7w3jn"]
 script = ExtResource("5_ya47j")
 startup_duration = 0.4
-active_duration = 0.1
+active_duration = 0.2
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &"skill_x_1"
@@ -92,7 +92,7 @@ metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 [sub_resource type="Resource" id="Resource_uiwvf"]
 script = ExtResource("5_ya47j")
 startup_duration = 0.1
-active_duration = 0.1
+active_duration = 0.2
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &""
@@ -152,7 +152,7 @@ metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 [sub_resource type="Resource" id="Resource_5lniq"]
 script = ExtResource("5_ya47j")
 startup_duration = 0.1
-active_duration = 0.1
+active_duration = 0.2
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &""
@@ -215,9 +215,9 @@ startup_movement_velocity = Vector2(-300, 0)
 active_movement_velocity = Vector2(1000, -200)
 recovery_movement_velocity = Vector2(0, 200)
 link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
+startup_poise_shield = 1000.0
+active_poise_shield = 1000.0
+recovery_poise_shield = 10.0
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
 [sub_resource type="Resource" id="Resource_0b4fd"]
@@ -234,7 +234,7 @@ metadata/_custom_type_script = "uid://cyu224lucyda8"
 [sub_resource type="Resource" id="Resource_hyejq"]
 script = ExtResource("5_ya47j")
 startup_duration = 0.4
-active_duration = 0.1
+active_duration = 0.2
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &"riposte"
@@ -682,7 +682,6 @@ script = ExtResource("1_7p1mj")
 
 [node name="StaminaComponent" type="Node" parent="."]
 script = ExtResource("11_w8i8w")
-regeneration_delay = 2.0
 
 [node name="DelayTimer" type="Timer" parent="StaminaComponent"]
 

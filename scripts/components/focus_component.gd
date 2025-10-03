@@ -7,11 +7,13 @@ signal segment_completed(completed_segments)
 @export var max_focus: int = 300
 @export var segments: int = 3
 @export var decay_delay: float = 3.0
+@export var decay_rate: float = 25.0
 
 @export_group("Focus Gain")
 @export var focus_gain_on_parry: int = 10
 
-var current_focus: int = 0
+var current_focus: float = 0.0
+var _is_decaying: bool = false 
 
 @onready var decay_timer: Timer = $DecayTimer
 
@@ -24,6 +26,27 @@ func _ready() -> void:
 	
 	emit_signal("focus_changed", current_focus, max_focus)
 	emit_signal("segment_completed", 0)
+
+func _physics_process(delta: float) -> void:
+	if not _is_decaying:
+		return
+
+	var focus_per_segment = get_focus_per_segment()
+	if focus_per_segment == 0:
+		_is_decaying = false
+		return
+	
+	var target_focus = floor(current_focus / focus_per_segment) * focus_per_segment
+
+	current_focus -= decay_rate * delta
+	
+	if current_focus <= target_focus:
+		current_focus = target_focus
+		_is_decaying = false
+		_check_segment_completion()
+	
+	emit_signal("focus_changed", current_focus, max_focus)
+
 
 func _on_impact_resolved(result: ContactResult) -> void:
 	if result.attacker_node != owner:
@@ -40,12 +63,14 @@ func gain_focus(amount: int) -> void:
 	current_focus = min(current_focus + amount, max_focus)
 	
 	if current_focus > old_focus:
+		_is_decaying = false
 		decay_timer.start()
 		_check_segment_completion()
 		emit_signal("focus_changed", current_focus, max_focus)
 
 func consume_focus(cost: int) -> void:
 	current_focus -= cost
+	_is_decaying = false
 	decay_timer.start()
 	emit_signal("focus_changed", current_focus, max_focus)
 	_check_segment_completion()
@@ -69,12 +94,8 @@ func _on_DecayTimer_timeout() -> void:
 	var focus_per_segment = get_focus_per_segment()
 	if focus_per_segment == 0: return
 
-	var focus_in_current_segment = current_focus % focus_per_segment
-	
-	if focus_in_current_segment == 0 and current_focus > 0 and current_focus == max_focus:
-		return
-	
-	var new_focus = current_focus - focus_in_current_segment
-	if new_focus != current_focus:
-		current_focus = new_focus
-		emit_signal("focus_changed", current_focus, max_focus)
+	var completed_segments = floor(current_focus / focus_per_segment)
+	var focus_at_completed_segments = completed_segments * focus_per_segment
+
+	if current_focus > focus_at_completed_segments:
+		_is_decaying = true
