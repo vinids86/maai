@@ -31,8 +31,15 @@ func _on_impact_resolved(result: ContactResult):
 		if result.defender_outcome == ContactResult.DefenderOutcome.FINISHER_HIT:
 			restore_to_full()
 
+func has_enough_stamina(amount: float) -> bool:
+	return current_stamina >= amount
+
+func consume_stamina(amount: float) -> void:
+	if has_enough_stamina(amount):
+		_update_stamina(current_stamina - amount)
+
 func try_consume(amount: float) -> bool:
-	if amount > current_stamina:
+	if not has_enough_stamina(amount):
 		return false
 	
 	_update_stamina(current_stamina - amount)

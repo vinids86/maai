@@ -6,6 +6,7 @@ var _current_phase: LinkPhases = LinkPhases.FINISHED
 var _time_left_in_link: float = 0.0
 
 var _attack_executor: AttackExecutor
+var _cost_validator: ActionCostValidator
 var _is_initialized: bool = false
 
 var _skill_sequence: ActionSequence
@@ -14,7 +15,9 @@ var _current_profile: AttackProfile
 func enter(args: Dictionary = {}):
 	if not _is_initialized:
 		_attack_executor = owner_node.find_child("AttackExecutor")
+		_cost_validator = owner_node.find_child("ActionCostValidator")
 		assert(_attack_executor != null, "SequenceState: Nó 'AttackExecutor' não encontrado como irmão.")
+		assert(_cost_validator != null, "SequenceState: Nó 'ActionCostValidator' não encontrado como irmão.")
 		_is_initialized = true
 		
 	_attack_executor.finished.connect(_on_attack_finished)
@@ -71,7 +74,7 @@ func _execute_next_attack():
 	var next_profile = _skill_sequence.get_next_profile()
 
 	if next_profile:
-		if state_machine.stamina_component.try_consume(next_profile.stamina_cost):
+		if _cost_validator.try_pay_costs(next_profile):
 			_current_profile = next_profile
 			_attack_executor.execute(_current_profile)
 		else:
@@ -133,7 +136,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 		return result
 
 func get_poise_shield_contribution() -> float:
-	if not _current_profile: 
+	if not _current_profile:
 		return 0.0
 
 	if _current_phase == LinkPhases.LINK:

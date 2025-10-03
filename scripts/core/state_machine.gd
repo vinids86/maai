@@ -11,18 +11,18 @@ var current_state: State
 var owner_node: Node
 var movement_component: Node
 var buffer_component: BufferComponent
-var stamina_component: StaminaComponent
+var action_cost_validator: ActionCostValidator
 
 func _ready():
 	owner_node = get_parent()
 	movement_component = owner_node.find_child("MovementComponent")
 	buffer_component = owner_node.find_child("BufferComponent")
-	stamina_component = owner_node.find_child("StaminaComponent")
+	action_cost_validator = owner_node.find_child("ActionCostValidator")
 	
 	assert(owner_node != null, "StateMachine deve ser filha de um nó de ator (Player/Enemy).")
 	assert(movement_component != null, "Não foi encontrado um nó 'MovementComponent' como irmão da StateMachine.")
 	assert(buffer_component != null, "Não foi encontrado um nó 'BufferComponent' como irmão da StateMachine.")
-	assert(stamina_component != null, "Não foi encontrado um nó 'StaminaComponent' como irmão da StateMachine.")
+	assert(action_cost_validator != null, "Não foi encontrado um nó 'ActionCostValidator' como irmão da StateMachine.")
 
 	var health_component = owner_node.find_child("HealthComponent")
 	if health_component:
@@ -68,7 +68,7 @@ func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 	
 	match result.status:
 		InputHandlerResult.Status.ACCEPTED:
-			if profile and stamina_component.try_consume(profile.stamina_cost):
+			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
 				transition_to("DodgeState", {"direction": direction, "profile": profile})
 		InputHandlerResult.Status.REJECTED:
@@ -82,7 +82,7 @@ func on_attack_pressed(profile: AttackProfile):
 	
 	match result.status:
 		InputHandlerResult.Status.ACCEPTED:
-			if profile and stamina_component.try_consume(profile.stamina_cost):
+			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
 				transition_to("AttackState", {"profile": profile})
 		InputHandlerResult.Status.REJECTED:
@@ -102,7 +102,7 @@ func on_parry_pressed(profile: ParryProfile):
 	
 	match result.status:
 		InputHandlerResult.Status.ACCEPTED:
-			if profile and stamina_component.try_consume(profile.stamina_cost):
+			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
 				transition_to("ParryState", {"profile": profile})
 		InputHandlerResult.Status.REJECTED:
@@ -188,18 +188,18 @@ func on_current_state_finished(reason: Dictionary = {}):
 		match buffered_data.action:
 			BufferComponent.BufferedAction.ATTACK:
 				var profile = buffered_data.context.get("profile")
-				if profile and stamina_component.try_consume(profile.stamina_cost):
+				if action_cost_validator.try_pay_costs(profile):
 					transition_to("AttackState", {"profile": profile})
 					return
 			BufferComponent.BufferedAction.DODGE:
 				var direction = buffered_data.context.get("direction")
 				var profile = buffered_data.context.get("profile")
-				if profile and stamina_component.try_consume(profile.stamina_cost):
+				if action_cost_validator.try_pay_costs(profile):
 					transition_to("DodgeState", {"direction": direction, "profile": profile})
 					return
 			BufferComponent.BufferedAction.PARRY:
 				var profile = buffered_data.context.get("profile")
-				if profile and stamina_component.try_consume(profile.stamina_cost):
+				if action_cost_validator.try_pay_costs(profile):
 					transition_to("ParryState", {"profile": profile})
 					return
 			BufferComponent.BufferedAction.SEQUENCE_SKILL:
