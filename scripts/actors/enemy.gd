@@ -11,7 +11,7 @@ extends CharacterBody2D
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var detection_area: Area2D = $DetectionArea
 @onready var visuals: Node2D = $Visuals
-@onready var path_target: Node2D = $Visuals/PathTarget
+@onready var path_target: Node2D = $PathTarget
 
 @export_group("Equipped Skills")
 @export var skill_x: BaseSkill

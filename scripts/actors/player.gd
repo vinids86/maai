@@ -9,7 +9,7 @@ extends CharacterBody2D
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var visuals: Node2D = $Visuals
 @onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
-@onready var path_target: Node2D = $Visuals/PathTarget
+@onready var path_target: Node2D = $PathTarget
 
 @export_group("Combat Data")
 @export var base_poise: float
