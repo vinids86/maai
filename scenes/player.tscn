@@ -247,7 +247,7 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("PathTarget:position")
+tracks/4/path = NodePath("Visuals/PathTarget:position")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
@@ -362,7 +362,7 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("PathTarget:position")
+tracks/4/path = NodePath("Visuals/PathTarget:position")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
@@ -531,7 +531,7 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("PathTarget:position")
+tracks/4/path = NodePath("Visuals/PathTarget:position")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
@@ -599,6 +599,14 @@ texture = ExtResource("17_fdfoy")
 hframes = 4
 vframes = 4
 
+[node name="PathTarget" type="Node2D" parent="Visuals"]
+
+[node name="ColorRect" type="ColorRect" parent="Visuals/PathTarget"]
+offset_left = -50.0
+offset_top = -132.0
+offset_right = 40.0
+offset_bottom = 65.0
+
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
 &"": SubResource("AnimationLibrary_hhpqf")
@@ -608,14 +616,6 @@ libraries = {
 script = ExtResource("15_a8ls1")
 animation_player = NodePath("../AnimationPlayer")
 state_machine = NodePath("../StateMachine")
-
-[node name="PathTarget" type="Node2D" parent="."]
-
-[node name="ColorRect" type="ColorRect" parent="PathTarget"]
-offset_left = -50.0
-offset_top = -132.0
-offset_right = 40.0
-offset_bottom = 65.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visible = false
