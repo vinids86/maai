@@ -43,3 +43,6 @@ func calculate_target_velocity(delta: float) -> Vector2:
 	_last_target_local_position = current_target_local_position
 	
 	return calculated_velocity
+
+func is_active() -> bool:
+	return _is_active

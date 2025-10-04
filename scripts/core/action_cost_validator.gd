@@ -4,9 +4,9 @@ extends Node
 var stamina_component: StaminaComponent
 var focus_component: FocusComponent
 
-func _ready() -> void:
-	stamina_component = owner.get_node_or_null("StaminaComponent")
-	focus_component = owner.get_node_or_null("FocusComponent")
+func setup(stamina_comp: StaminaComponent, focus_comp: FocusComponent):
+	stamina_component = stamina_comp
+	focus_component = focus_comp
 
 func try_pay_costs(profile: Resource) -> bool:
 	if not profile:

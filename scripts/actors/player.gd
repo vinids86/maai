@@ -9,7 +9,13 @@ extends CharacterBody2D
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var visuals: Node2D = $Visuals
 @onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
-@onready var path_target: Node2D = $Visuals/PathTarget
+@onready var path_target: Node2D = get_parent().get_node("PathTarget")
+@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
+@onready var stamina_component: StaminaComponent = $StaminaComponent
+@onready var focus_component: FocusComponent = $FocusComponent
+@onready var physics_component: PhysicsComponent = $PhysicsComponent
+@onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
+@onready var buffer_component: BufferComponent = $BufferComponent
 
 @export_group("Combat Data")
 @export var base_poise: float
@@ -47,6 +53,17 @@ var facing_sign: int = 1
 var facing_locked: bool = false
 
 func _ready():
+	GameManager.player_node = self
+	
+	action_cost_validator.setup(stamina_component, focus_component)
+	state_machine.setup(
+		self,
+		physics_component,
+		path_follower_component,
+		buffer_component,
+		action_cost_validator
+	)
+	
 	if hud:
 		await hud.ready
 		hud.initialize_hud(self)
@@ -55,13 +72,15 @@ func _ready():
 	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
 	_build_skill_dictionary()
 
+func _exit_tree():
+	if GameManager.player_node == self:
+		GameManager.unregister_player()
+
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
 	_update_facing_direction()
 	
-	var calculated_velocity = state_machine.process_physics(delta, walk_direction, is_running)
-	if calculated_velocity is Vector2:
-		velocity = calculated_velocity
+	velocity = state_machine.process_physics(delta, walk_direction, is_running)
 	
 	move_and_slide()
 

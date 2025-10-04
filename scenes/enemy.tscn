@@ -1,50 +1,40 @@
-[gd_scene load_steps=83 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=61 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_2sbpf"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="2_4ra3w"]
 [ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="2_5uy6h"]
-[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_gst0f"]
-[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="3_sm4rh"]
+[ext_resource type="Resource" uid="uid://dyb1h7belqw60" path="res://resources/enemy/attack/skill_x.tres" id="2_gst0f"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="3_thsr5"]
-[ext_resource type="AudioStream" uid="uid://bp66sw0k32ttq" path="res://audio/attack_3.wav" id="4_j0dkt"]
-[ext_resource type="AudioStream" uid="uid://curr3hsosggk4" path="res://audio/attack_2.wav" id="5_5lniq"]
+[ext_resource type="Resource" uid="uid://dxwv1at0sn6o4" path="res://resources/enemy/attack/skill_a.tres" id="4_sm4rh"]
 [ext_resource type="Script" uid="uid://dewrlich57pgi" path="res://scripts/components/ai_controller.gd" id="5_md484"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="5_ya47j"]
 [ext_resource type="Resource" uid="uid://5dqv7xvlptll" path="res://resources/player/counter/mikiri.tres" id="6_5ie7m"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="6_ipns3"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="7_8qclf"]
 [ext_resource type="Resource" uid="uid://bqjgtxke4um5v" path="res://resources/player/parried/default.tres" id="7_ekh6n"]
-[ext_resource type="AudioStream" uid="uid://br3naex6ir5bb" path="res://audio/attack_5.wav" id="7_sm4rh"]
 [ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="8_5lniq"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_2sbpf"]
-[ext_resource type="AudioStream" uid="uid://duggjplviepmn" path="res://audio/pre_sequence_skill.wav" id="9_7w3jn"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="9_8qclf"]
-[ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="10_78kod"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="10_s1ycm"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="10_w8i8w"]
-[ext_resource type="Resource" uid="uid://brr4qpn5yk0mn" path="res://resources/player/dodge/forward.tres" id="11_605iw"]
 [ext_resource type="Script" uid="uid://6j164hqmaqt2" path="res://scripts/states/parry_state.gd" id="11_shcg2"]
 [ext_resource type="Script" uid="uid://hhcv8mh33t6y" path="res://scripts/components/stamina_component.gd" id="11_w8i8w"]
+[ext_resource type="Resource" uid="uid://of3fc8ba47yj" path="res://resources/player/riposte/default.tres" id="12_13roy"]
 [ext_resource type="Resource" uid="uid://b7kijgne205pc" path="res://resources/player/parry/default.tres" id="12_ile5s"]
 [ext_resource type="PackedScene" uid="uid://ciepgnvn26lbl" path="res://scenes/enemy_status_ui.tscn" id="12_otmr2"]
 [ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="12_rogs8"]
-[ext_resource type="Resource" uid="uid://h5j4chnrxexj" path="res://resources/player/dodge/back.tres" id="12_x6q4o"]
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="13_1x4g4"]
-[ext_resource type="Resource" uid="uid://cfu400oitmjxr" path="res://resources/player/dodge/up.tres" id="13_2tuss"]
-[ext_resource type="Resource" uid="uid://cxtoyg6r5qy34" path="res://resources/player/dodge/down.tres" id="14_7v6cf"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="15_1x4g4"]
 [ext_resource type="Script" uid="uid://24v4chol2qs0" path="res://scripts/profiles/buffer_profile.gd" id="16_ekh6n"]
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="17_6awcb"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="17_shcg2"]
-[ext_resource type="Script" uid="uid://bupjea265f4xy" path="res://scripts/profiles/countered_profile.gd" id="18_0pw1s"]
 [ext_resource type="Resource" uid="uid://c13fhm2w824s2" path="res://resources/player/block/default.tres" id="18_wjec0"]
-[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="19_5utat"]
+[ext_resource type="Resource" uid="uid://dl072xuq1tgt8" path="res://resources/player/countered/default.tres" id="19_a5akt"]
 [ext_resource type="Script" uid="uid://bnsx7y061rnqe" path="res://scripts/states/guard_broken_state.gd" id="19_i4rgx"]
-[ext_resource type="AudioStream" uid="uid://bgiotnuc2o8gq" path="res://audio/male_die.mp3" id="20_0b4fd"]
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="20_2mchx"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="20_2pwtc"]
+[ext_resource type="Resource" uid="uid://cer2y2x0eksg5" path="res://resources/player/death/default.tres" id="20_4lt7r"]
 [ext_resource type="Texture2D" uid="uid://iv3mkbhyvk87" path="res://assets/enemy/spritesheetreiddlemale.png" id="20_e7lhw"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="21_2mchx"]
 [ext_resource type="Script" uid="uid://b0lnh740qgaih" path="res://scripts/core/attack_executor.gd" id="22_605iw"]
@@ -60,221 +50,6 @@
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="54_b5geg"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="58_0b4fd"]
 
-[sub_resource type="Resource" id="Resource_7w3jn"]
-script = ExtResource("5_ya47j")
-startup_duration = 0.4
-active_duration = 0.2
-recovery_duration = 0.2
-link_duration = 0.6
-animation_name = &"skill_x_1"
-active_sfx = ExtResource("5_5lniq")
-hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(90, -64)
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 5
-stamina_damage = 10.0
-poise_impact_contribution = 100.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(150, -100)
-parry_interaction = 0
-unparryable_type = 0
-startup_movement_velocity = Vector2(-100, 0)
-active_movement_velocity = Vector2(600, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_uiwvf"]
-script = ExtResource("5_ya47j")
-startup_duration = 0.1
-active_duration = 0.2
-recovery_duration = 0.2
-link_duration = 0.6
-animation_name = &""
-active_sfx = ExtResource("4_j0dkt")
-hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(90, -64)
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 5
-stamina_damage = 10.0
-poise_impact_contribution = 100.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(150, -100)
-parry_interaction = 0
-unparryable_type = 0
-startup_movement_velocity = Vector2(500, -100)
-active_movement_velocity = Vector2(0, 50)
-recovery_movement_velocity = Vector2(0, 50)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_0pw1s"]
-script = ExtResource("5_ya47j")
-startup_duration = 0.2
-active_duration = 0.1
-recovery_duration = 0.2
-link_duration = 0.6
-animation_name = &""
-active_sfx = ExtResource("5_5lniq")
-hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(90, -64)
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 5
-stamina_damage = 10.0
-poise_impact_contribution = 100.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(150, -100)
-parry_interaction = 0
-unparryable_type = 0
-startup_movement_velocity = Vector2(-300, 0)
-active_movement_velocity = Vector2(600, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_5lniq"]
-script = ExtResource("5_ya47j")
-startup_duration = 0.1
-active_duration = 0.2
-recovery_duration = 0.2
-link_duration = 0.6
-animation_name = &""
-active_sfx = ExtResource("7_sm4rh")
-hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(90, -64)
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 5
-stamina_damage = 10.0
-poise_impact_contribution = 100.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(150, -100)
-parry_interaction = 0
-unparryable_type = 0
-startup_movement_velocity = Vector2(400, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_b5geg"]
-script = ExtResource("3_sm4rh")
-attacks = Array[ExtResource("5_ya47j")]([SubResource("Resource_7w3jn"), SubResource("Resource_uiwvf"), SubResource("Resource_0pw1s"), SubResource("Resource_5lniq")])
-metadata/_custom_type_script = "uid://bwq542vou2wu1"
-
-[sub_resource type="Resource" id="Resource_g0yyi"]
-script = ExtResource("2_gst0f")
-skill_phases = Array[ExtResource("3_sm4rh")]([SubResource("Resource_b5geg")])
-skill_name = ""
-metadata/_custom_type_script = "uid://cyu224lucyda8"
-
-[sub_resource type="Resource" id="Resource_5utat"]
-script = ExtResource("5_ya47j")
-startup_duration = 0.7
-active_duration = 0.3
-recovery_duration = 0.4
-link_duration = 0.6
-animation_name = &"skill_a_1"
-startup_sfx = ExtResource("9_7w3jn")
-hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(90, -64)
-damage = 20.0
-stamina_cost = 5.0
-focus_cost = 0
-focus_gain_on_hit = 5
-stamina_damage = 10.0
-poise_impact_contribution = 1000.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(500, -200)
-parry_interaction = 1
-unparryable_type = 1
-startup_movement_velocity = Vector2(-300, 0)
-active_movement_velocity = Vector2(1000, -200)
-recovery_movement_velocity = Vector2(0, 200)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 1000.0
-active_poise_shield = 1000.0
-recovery_poise_shield = 10.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_0b4fd"]
-script = ExtResource("3_sm4rh")
-attacks = Array[ExtResource("5_ya47j")]([SubResource("Resource_5utat")])
-metadata/_custom_type_script = "uid://bwq542vou2wu1"
-
-[sub_resource type="Resource" id="Resource_13roy"]
-script = ExtResource("2_gst0f")
-skill_phases = Array[ExtResource("3_sm4rh")]([SubResource("Resource_0b4fd")])
-skill_name = ""
-metadata/_custom_type_script = "uid://cyu224lucyda8"
-
-[sub_resource type="Resource" id="Resource_hyejq"]
-script = ExtResource("5_ya47j")
-startup_duration = 0.4
-active_duration = 0.2
-recovery_duration = 0.2
-link_duration = 0.6
-animation_name = &"riposte"
-active_sfx = ExtResource("4_j0dkt")
-hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(90, -64)
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 5
-stamina_damage = 10.0
-poise_impact_contribution = 10.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(150, -100)
-parry_interaction = 0
-unparryable_type = 0
-startup_movement_velocity = Vector2(-100, 0)
-active_movement_velocity = Vector2(600, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_a5akt"]
-script = ExtResource("18_0pw1s")
-duration = 1.0
-animation_name = &""
-poise_shield_contribution = 0.0
-metadata/_custom_type_script = "uid://bupjea265f4xy"
-
-[sub_resource type="Resource" id="Resource_4lt7r"]
-script = ExtResource("19_5utat")
-animation_name = &""
-sfx = ExtResource("20_0b4fd")
-metadata/_custom_type_script = "uid://b761fppfyuqaa"
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c4w8v"]
 shader = ExtResource("2_5uy6h")
 shader_parameter/flash_color = Color(1, 0, 0, 1)
@@ -288,7 +63,7 @@ step = 0.166667
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:frame")
+tracks/0/path = NodePath("Enemy/Visuals/Sprite2D:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -303,7 +78,7 @@ length = 0.001
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:frame")
+tracks/0/path = NodePath("Enemy/Visuals/Sprite2D:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -315,7 +90,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:texture")
+tracks/1/path = NodePath("Enemy/Visuals/Sprite2D:texture")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -327,7 +102,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/2/path = NodePath("Enemy/Visuals/Sprite2D:hframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -339,7 +114,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/3/path = NodePath("Enemy/Visuals/Sprite2D:vframes")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -351,7 +126,7 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("Visuals/Sprite2D:self_modulate")
+tracks/4/path = NodePath("Enemy/Visuals/Sprite2D:self_modulate")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
@@ -363,7 +138,7 @@ tracks/4/keys = {
 tracks/5/type = "value"
 tracks/5/imported = false
 tracks/5/enabled = true
-tracks/5/path = NodePath("Visuals/Sprite2D:modulate")
+tracks/5/path = NodePath("Enemy/Visuals/Sprite2D:modulate")
 tracks/5/interp = 1
 tracks/5/loop_wrap = true
 tracks/5/keys = {
@@ -379,7 +154,7 @@ length = 2.50002
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/path = NodePath("Enemy/Visuals/Sprite2D:texture")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -391,7 +166,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/1/path = NodePath("Enemy/Visuals/Sprite2D:hframes")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -403,7 +178,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/2/path = NodePath("Enemy/Visuals/Sprite2D:vframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -415,7 +190,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:frame")
+tracks/3/path = NodePath("Enemy/Visuals/Sprite2D:frame")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -427,7 +202,7 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("Visuals/Sprite2D:self_modulate")
+tracks/4/path = NodePath("Enemy/Visuals/Sprite2D:self_modulate")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
@@ -444,7 +219,7 @@ step = 0.166667
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/path = NodePath("Enemy/Visuals/Sprite2D:texture")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -456,7 +231,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/1/path = NodePath("Enemy/Visuals/Sprite2D:hframes")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -468,7 +243,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/2/path = NodePath("Enemy/Visuals/Sprite2D:vframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -480,7 +255,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:frame")
+tracks/3/path = NodePath("Enemy/Visuals/Sprite2D:frame")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -492,7 +267,7 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("Visuals/Sprite2D:modulate")
+tracks/4/path = NodePath("Enemy/Visuals/Sprite2D:modulate")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
@@ -509,7 +284,7 @@ step = 0.166667
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/path = NodePath("Enemy/Visuals/Sprite2D:texture")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -521,7 +296,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/1/path = NodePath("Enemy/Visuals/Sprite2D:hframes")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -533,7 +308,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/2/path = NodePath("Enemy/Visuals/Sprite2D:vframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -545,7 +320,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:frame")
+tracks/3/path = NodePath("Enemy/Visuals/Sprite2D:frame")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -557,7 +332,7 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("Visuals/Sprite2D:self_modulate")
+tracks/4/path = NodePath("Enemy/Visuals/Sprite2D:self_modulate")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
@@ -591,32 +366,29 @@ script = ExtResource("16_ekh6n")
 buffer_window = 0.5
 metadata/_custom_type_script = "uid://24v4chol2qs0"
 
-[node name="Enemy" type="CharacterBody2D"]
+[node name="EnemyEntity" type="Node2D"]
+
+[node name="Enemy" type="CharacterBody2D" parent="."]
 script = ExtResource("1_md0e3")
-skill_x = SubResource("Resource_g0yyi")
+skill_x = ExtResource("2_gst0f")
 skill_y = ExtResource("8_5lniq")
-skill_a = SubResource("Resource_13roy")
+skill_a = ExtResource("4_sm4rh")
 finisher_profile = ExtResource("3_thsr5")
 parry_profile = ExtResource("12_ile5s")
-riposte_profile = SubResource("Resource_hyejq")
+riposte_profile = ExtResource("12_13roy")
 mikiri_riposte_profile = ExtResource("6_5ie7m")
 block_stun_profile = ExtResource("18_wjec0")
 stagger_profile = ExtResource("12_rogs8")
 parried_profile = ExtResource("7_ekh6n")
 guard_broken_profile = ExtResource("20_2mchx")
 locomotion_profile = ExtResource("9_2sbpf")
-countered_profile = SubResource("Resource_a5akt")
-death_profile = SubResource("Resource_4lt7r")
+countered_profile = ExtResource("19_a5akt")
+death_profile = ExtResource("20_4lt7r")
 base_poise = 10.0
-neutral_dodge_profile = ExtResource("10_78kod")
-forward_dodge_profile = ExtResource("11_605iw")
-back_dodge_profile = ExtResource("12_x6q4o")
-up_dodge_profile = ExtResource("13_2tuss")
-down_dodge_profile = ExtResource("14_7v6cf")
 
-[node name="Visuals" type="Node2D" parent="."]
+[node name="Visuals" type="Node2D" parent="Enemy"]
 
-[node name="ColorRect" type="ColorRect" parent="Visuals"]
+[node name="ColorRect" type="ColorRect" parent="Enemy/Visuals"]
 visible = false
 material = SubResource("ShaderMaterial_c4w8v")
 offset_left = -16.0
@@ -625,164 +397,165 @@ offset_right = 16.0
 offset_bottom = 32.0
 color = Color(0.627451, 0.627451, 0.627451, 1)
 
-[node name="Sprite2D" type="Sprite2D" parent="Visuals"]
+[node name="Sprite2D" type="Sprite2D" parent="Enemy/Visuals"]
 position = Vector2(0, -44)
 scale = Vector2(0.4, 0.4)
 texture = ExtResource("20_e7lhw")
 hframes = 4
 vframes = 4
 
-[node name="PathTarget" type="Node2D" parent="Visuals"]
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Enemy"]
+root_node = NodePath("../..")
 libraries = {
 &"": SubResource("AnimationLibrary_5lniq")
 }
 
-[node name="AnimationListener" type="Node" parent="." node_paths=PackedStringArray("animation_player", "state_machine")]
+[node name="AnimationListener" type="Node" parent="Enemy" node_paths=PackedStringArray("animation_player", "state_machine")]
 script = ExtResource("22_sdxul")
 animation_player = NodePath("../AnimationPlayer")
 state_machine = NodePath("../StateMachine")
 metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy"]
 visible = false
 shape = SubResource("CapsuleShape2D_e7lhw")
 
-[node name="Hurtbox" type="Area2D" parent="."]
+[node name="Hurtbox" type="Area2D" parent="Enemy"]
 visible = false
 collision_layer = 8
 collision_mask = 4
 script = ExtResource("2_4ra3w")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/Hurtbox"]
 shape = SubResource("RectangleShape2D_gst0f")
 
-[node name="AttackHitbox" type="Area2D" parent="."]
+[node name="AttackHitbox" type="Area2D" parent="Enemy"]
 collision_layer = 16
 collision_mask = 32
 monitoring = false
 script = ExtResource("20_2pwtc")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/AttackHitbox"]
 
-[node name="DetectionArea" type="Area2D" parent="."]
+[node name="DetectionArea" type="Area2D" parent="Enemy"]
 visible = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/DetectionArea"]
 position = Vector2(181, -2)
 shape = SubResource("RectangleShape2D_ya47j")
 
-[node name="SFXEnemy" type="AudioStreamPlayer2D" parent="."]
+[node name="SFXEnemy" type="AudioStreamPlayer2D" parent="Enemy"]
 
-[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("state_machine")]
+[node name="SoundListener" type="Node" parent="Enemy" node_paths=PackedStringArray("state_machine")]
 script = ExtResource("17_shcg2")
 state_machine = NodePath("../StateMachine")
 metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 
-[node name="HealthComponent" type="Node" parent="."]
+[node name="HealthComponent" type="Node" parent="Enemy"]
 script = ExtResource("1_7p1mj")
 
-[node name="StaminaComponent" type="Node" parent="."]
+[node name="StaminaComponent" type="Node" parent="Enemy"]
 script = ExtResource("11_w8i8w")
 
-[node name="DelayTimer" type="Timer" parent="StaminaComponent"]
+[node name="DelayTimer" type="Timer" parent="Enemy/StaminaComponent"]
 
-[node name="AIController" type="Node" parent="."]
+[node name="AIController" type="Node" parent="Enemy"]
 script = ExtResource("5_md484")
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 
-[node name="AttackExecutor" type="Node" parent="."]
+[node name="AttackExecutor" type="Node" parent="Enemy"]
 script = ExtResource("22_605iw")
 metadata/_custom_type_script = "uid://b0lnh740qgaih"
 
-[node name="BufferComponent" type="Node" parent="."]
+[node name="BufferComponent" type="Node" parent="Enemy"]
 script = ExtResource("10_w8i8w")
 buffer_profile = SubResource("Resource_2sbpf")
 metadata/_custom_type_script = "uid://beortrl7adiim"
 
-[node name="PhysicsComponent" type="Node" parent="."]
+[node name="PhysicsComponent" type="Node" parent="Enemy"]
 script = ExtResource("9_8qclf")
 
-[node name="PathFollowerComponent" type="Node" parent="."]
+[node name="PathFollowerComponent" type="Node" parent="Enemy"]
 script = ExtResource("39_13roy")
 metadata/_custom_type_script = "uid://dtl5q4dyb0mxr"
 
-[node name="ComboComponent" type="Node" parent="."]
+[node name="ComboComponent" type="Node" parent="Enemy"]
 script = ExtResource("35_2sbpf")
 attack_set = ExtResource("2_2sbpf")
 metadata/_custom_type_script = "uid://7awh4v6bsojt"
 
-[node name="SkillComboComponent" type="Node" parent="."]
+[node name="SkillComboComponent" type="Node" parent="Enemy"]
 script = ExtResource("28_7v6cf")
 metadata/_custom_type_script = "uid://dmqafi2pyifje"
 
-[node name="PoiseComponent" type="Node" parent="."]
+[node name="PoiseComponent" type="Node" parent="Enemy"]
 script = ExtResource("23_78kod")
 metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
 
-[node name="FacingComponent" type="Node" parent="."]
+[node name="FacingComponent" type="Node" parent="Enemy"]
 script = ExtResource("31_5ie7m")
 metadata/_custom_type_script = "uid://cqen1cgottixs"
 
-[node name="StateMachine" type="Node" parent="."]
+[node name="StateMachine" type="Node" parent="Enemy"]
 script = ExtResource("6_ipns3")
 metadata/_custom_type_script = "uid://dus5o11ra71f"
 
-[node name="LocomotionState" type="Node" parent="StateMachine"]
+[node name="LocomotionState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("7_8qclf")
 metadata/_custom_type_script = "uid://c50xfgbngchgg"
 
-[node name="StaggerState" type="Node" parent="StateMachine"]
+[node name="StaggerState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("10_s1ycm")
 metadata/_custom_type_script = "uid://m2bbkg5u3e8f"
 
-[node name="ParryState" type="Node" parent="StateMachine"]
+[node name="ParryState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("11_shcg2")
 metadata/_custom_type_script = "uid://6j164hqmaqt2"
 
-[node name="ParriedState" type="Node" parent="StateMachine"]
+[node name="ParriedState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("13_1x4g4")
 metadata/_custom_type_script = "uid://ba650tjbftjqi"
 
-[node name="AttackState" type="Node" parent="StateMachine"]
+[node name="AttackState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("15_1x4g4")
 metadata/_custom_type_script = "uid://c3f0ddxqxcn8k"
 
-[node name="BlockStunState" type="Node" parent="StateMachine"]
+[node name="BlockStunState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("17_6awcb")
 metadata/_custom_type_script = "uid://b3auw1r8kc2yi"
 
-[node name="GuardBrokenState" type="Node" parent="StateMachine"]
+[node name="GuardBrokenState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("19_i4rgx")
 metadata/_custom_type_script = "uid://bnsx7y061rnqe"
 
-[node name="FinisherReadyState" type="Node" parent="StateMachine"]
+[node name="FinisherReadyState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("21_2mchx")
 metadata/_custom_type_script = "uid://bsk4xllkbirnu"
 
-[node name="SequenceState" type="Node" parent="StateMachine"]
+[node name="SequenceState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("37_x6q4o")
 metadata/_custom_type_script = "uid://b72ucjj1gl7t2"
 
-[node name="ExecuteCounterState" type="Node" parent="StateMachine"]
+[node name="ExecuteCounterState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("42_hyejq")
 metadata/_custom_type_script = "uid://cycmw65rta0mh"
 
-[node name="CounteredState" type="Node" parent="StateMachine"]
+[node name="CounteredState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("52_uiwvf")
 metadata/_custom_type_script = "uid://80lq1gnacaa2"
 
-[node name="DeathState" type="Node" parent="StateMachine"]
+[node name="DeathState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("54_b5geg")
 metadata/_custom_type_script = "uid://cjolmubu1vmxi"
 
-[node name="EnemyStatusUI" parent="." instance=ExtResource("12_otmr2")]
+[node name="EnemyStatusUI" parent="Enemy" instance=ExtResource("12_otmr2")]
 offset_left = -87.0
 offset_top = -122.0
 offset_right = -47.0
 offset_bottom = -82.0
 
-[node name="ActionCostValidator" type="Node" parent="."]
+[node name="ActionCostValidator" type="Node" parent="Enemy"]
 script = ExtResource("58_0b4fd")
 metadata/_custom_type_script = "uid://bwxgsevlwe736"
+
+[node name="PathTarget" type="Node2D" parent="."]

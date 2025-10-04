@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DeathProfile" load_steps=3 format=3 uid="uid://cer2y2x0eksg5"]
+
+[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="1_eq68f"]
+[ext_resource type="AudioStream" uid="uid://bgiotnuc2o8gq" path="res://audio/male_die.mp3" id="2_wf4c8"]
+
+[resource]
+script = ExtResource("1_eq68f")
+animation_name = &""
+sfx = ExtResource("2_wf4c8")
+metadata/_custom_type_script = "uid://b761fppfyuqaa"

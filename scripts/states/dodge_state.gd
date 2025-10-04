@@ -19,6 +19,7 @@ func enter(args: Dictionary = {}):
 		return
 
 	if path_follower_component and owner_node.path_target:
+		owner_node.path_target.position = Vector2.ZERO
 		path_follower_component.start_following(owner_node.path_target)
 		
 	_change_phase(Phases.ACTIVE)
@@ -29,15 +30,12 @@ func exit():
 	if path_follower_component:
 		path_follower_component.stop_following()
 
-	if owner_node.path_target:
-		owner_node.path_target.position = Vector2.ZERO
-
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
 		return Vector2.ZERO
 
 	var calculated_velocity = Vector2.ZERO
-	if path_follower_component:
+	if path_follower_component and path_follower_component.is_active():
 		calculated_velocity = path_follower_component.calculate_target_velocity(delta)
 
 	time_left_in_phase -= delta

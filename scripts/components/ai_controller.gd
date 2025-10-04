@@ -2,20 +2,15 @@ class_name AIController
 extends Node
 
 @export_group("Behavioral Strategy")
-# A parry_chance original não será mais usada para a lógica principal,
-# mas pode ser mantida para referência ou outros cenários.
 @export var parry_chance: float = 0.70
 @export var riposte_action_name: String = "skill_x"
 
 var _rng: RandomNumberGenerator
 var _owner_actor: Node
 @onready var _state_machine: StateMachine = get_parent().find_child("StateMachine")
-
 @onready var _detection_area: Area2D = get_parent().find_child("DetectionArea")
 @onready var _facing_component: FacingComponent = get_parent().find_child("FacingComponent")
 
-# --- NOVO CONTADOR ---
-# Esta variável irá rastrear quantos golpes o jogador acertou em sequência.
 var _player_combo_hits_count: int = 0
 
 func _ready():
@@ -24,20 +19,20 @@ func _ready():
 	assert(_detection_area != null, "AIController: Nó 'DetectionArea' (Area2D) não encontrado no Inimigo.")
 	assert(_facing_component != null, "AIController: Nó 'FacingComponent' não encontrado no Inimigo.")
 
-	_detection_area.body_entered.connect(_on_player_entered_detection_area)
-	_detection_area.body_exited.connect(_on_player_exited_detection_area)
-
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
 	if _state_machine:
 		_state_machine.phase_changed.connect(_on_phase_changed)
+	
+	_detection_area.body_entered.connect(_on_player_entered_detection_area)
+	_detection_area.body_exited.connect(_on_player_exited_detection_area)
 
 func _on_player_entered_detection_area(body: Node2D):
-	if body.is_in_group("player"):
+	if body == GameManager.player_node:
 		_facing_component.enable(body)
 
 func _on_player_exited_detection_area(body: Node2D):
-	if body.is_in_group("player"):
+	if body == GameManager.player_node:
 		_facing_component.disable()
 
 func get_walk_direction() -> float:
@@ -46,34 +41,25 @@ func get_walk_direction() -> float:
 func is_running() -> bool:
 	return false
 
-# --- LÓGICA DE PARRY ATUALIZADA ---
 func on_incoming_attack(_attacker: CharacterBody2D, _hitbox: Hitbox):
-	# Incrementa o contador a cada golpe recebido.
 	_player_combo_hits_count += 1
 	
 	var do_parry: bool = false
 	
-	# Decide a chance de parry com base no número do golpe na sequência.
 	match _player_combo_hits_count:
 		1:
-			# Primeiro golpe: nunca dá parry.
 			do_parry = false
 		2:
-			# Segundo golpe: 60% de chance de parry.
 			do_parry = _rng.randf() < 0.60
 		3:
-			# Terceiro golpe: 100% de chance de parry.
 			do_parry = true
 
 	if do_parry and _state_machine != null:
 		var profile = _owner_actor.get_parry_profile()
 		if profile:
 			_state_machine.on_parry_pressed(profile)
-			# Se o parry for bem-sucedido, reseta o contador para o próximo combo.
 			_player_combo_hits_count = 0
 	
-	# Se o terceiro golpe não for um parry (por algum motivo) ou
-	# se quisermos um ciclo de 3 golpes, resetamos o contador aqui.
 	if _player_combo_hits_count >= 3:
 		_player_combo_hits_count = 0
 
@@ -82,25 +68,22 @@ func _on_phase_changed(phase_data: Dictionary):
 		await get_tree().process_frame
 		_decide_and_execute_action()
 
-# --- LÓGICA DE DECISÃO PÓS-PARRY ATUALIZADA ---
 func _decide_and_execute_action():
-	# Rola um "dado" de 0.0 a 1.0 para determinar a ação com base em pesos.
 	var roll: float = _rng.randf()
 
-	if roll < 0.60: # 60% de chance
+	if roll < 0.60:
 		_execute_normal_attack()
-	elif roll < 0.80: # 20% de chance (de 0.60 a 0.80)
-		# Tenta executar skill_x, se não existir, usa um ataque normal como fallback.
+	elif roll < 0.80:
 		if _owner_actor.has_method("get_skill") and _owner_actor.get_skill("skill_x"):
 			_execute_skill("skill_x")
 		else:
 			_execute_normal_attack()
-	elif roll < 0.90: # 10% de chance (de 0.80 a 0.90)
+	elif roll < 0.90:
 		if _owner_actor.has_method("get_skill") and _owner_actor.get_skill("skill_y"):
 			_execute_skill("skill_y")
 		else:
 			_execute_normal_attack()
-	else: # 10% de chance restantes (de 0.90 a 1.0)
+	else: 
 		if _owner_actor.has_method("get_skill") and _owner_actor.get_skill("skill_a"):
 			_execute_skill("skill_a")
 		else:

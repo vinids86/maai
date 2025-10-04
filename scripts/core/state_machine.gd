@@ -14,18 +14,18 @@ var path_follower_component: Node
 var buffer_component: BufferComponent
 var action_cost_validator: ActionCostValidator
 
-func _ready():
-	owner_node = get_parent()
-	movement_component = owner_node.find_child("PhysicsComponent")
-	path_follower_component = owner_node.find_child("PathFollowerComponent")
-	buffer_component = owner_node.find_child("BufferComponent")
-	action_cost_validator = owner_node.find_child("ActionCostValidator")
+func setup(p_owner_node: Node, p_movement_comp: Node, p_path_follower_comp: Node, p_buffer_comp: BufferComponent, p_action_cost_validator: ActionCostValidator):
+	owner_node = p_owner_node
+	movement_component = p_movement_comp
+	path_follower_component = p_path_follower_comp
+	buffer_component = p_buffer_comp
+	action_cost_validator = p_action_cost_validator
 	
-	assert(owner_node != null, "StateMachine deve ser filha de um nó de ator (Player/Enemy).")
-	assert(movement_component != null, "Não foi encontrado um nó 'PhysicsComponent' como irmão da StateMachine.")
-	assert(path_follower_component != null, "Não foi encontrado um nó 'PathFollowerComponent' como irmão da StateMachine.")
-	assert(buffer_component != null, "Não foi encontrado um nó 'BufferComponent' como irmão da StateMachine.")
-	assert(action_cost_validator != null, "Não foi encontrado um nó 'ActionCostValidator' como irmão da StateMachine.")
+	assert(owner_node != null, "StateMachine: owner_node não pode ser nulo.")
+	assert(movement_component != null, "StateMachine: movement_component não pode ser nulo.")
+	assert(path_follower_component != null, "StateMachine: path_follower_component não pode ser nulo.")
+	assert(buffer_component != null, "StateMachine: buffer_component não pode ser nulo.")
+	assert(action_cost_validator != null, "StateMachine: action_cost_validator não pode ser nulo.")
 
 	var health_component = owner_node.find_child("HealthComponent")
 	if health_component:
@@ -43,7 +43,7 @@ func _ready():
 		var profile = owner_node.get_locomotion_profile()
 		current_state.enter({"profile": profile})
 	else:
-		push_error("StateMachine Error: Initial state '%s' not found." % initial_state_key)
+		push_error("StateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
 
 func _on_owner_died():
 	if current_state is DeathState:
@@ -54,10 +54,8 @@ func _on_owner_died():
 
 func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
 	if current_state:
-		var calculated_velocity = current_state.process_physics(delta, walk_direction, is_running)
-		if calculated_velocity is Vector2:
-			return calculated_velocity
-	return owner_node.velocity
+		return current_state.process_physics(delta, walk_direction, is_running)
+	return Vector2.ZERO
 
 func process_input(event: InputEvent):
 	if current_state:
@@ -149,7 +147,6 @@ func _on_impact_resolved(result: ContactResult):
 				var profile = owner_node.get_countered_profile()
 				transition_to("CounteredState", {"profile": profile})
 
-
 func on_current_state_finished(reason: Dictionary = {}):
 	var outcome = reason.get("outcome")
 	if outcome:
@@ -220,7 +217,7 @@ func on_current_state_finished(reason: Dictionary = {}):
 
 func transition_to(new_state_key: String, args: Dictionary = {}):
 	if not states.has(new_state_key):
-		push_error("StateMachine Error: Attempted to transition to nonexistent state '%s'." % new_state_key)
+		push_error("StateMachine Error: Tentativa de transição para o estado inexistente '%s'." % new_state_key)
 		return
 
 	var new_state = states[new_state_key]

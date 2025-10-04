@@ -11,7 +11,11 @@ extends CharacterBody2D
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var detection_area: Area2D = $DetectionArea
 @onready var visuals: Node2D = $Visuals
-@onready var path_target: Node2D = $PathTarget
+@onready var path_target: Node2D = get_parent().get_node("PathTarget")
+@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
+@onready var physics_component: PhysicsComponent = $PhysicsComponent
+@onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
+@onready var buffer_component: BufferComponent = $BufferComponent
 
 @export_group("Equipped Skills")
 @export var skill_x: BaseSkill
@@ -48,11 +52,14 @@ var facing_locked: bool = false
 func _ready():
 	_build_skill_dictionary()
 	
-	assert(visuals != null, "Enemy: Nó 'Visuals' (Node2D) não encontrado como filho.")
-	assert(health_component != null, "Enemy: Nó HealthComponent não encontrado.")
-	assert(stamina_component != null, "Enemy: Nó StaminaComponent não encontrado.")
-	assert(status_ui != null, "Enemy: Nó EnemyStatusUI não encontrado.")
-	assert(detection_area != null, "Enemy: Nó 'DetectionArea' (Area2D) não encontrado como filho.")
+	action_cost_validator.setup(stamina_component, null)
+	state_machine.setup(
+		self,
+		physics_component,
+		path_follower_component,
+		buffer_component,
+		action_cost_validator
+	)
 	
 	attack_executor.setup(self)
 
@@ -68,9 +75,10 @@ func _physics_process(delta: float):
 	
 	_update_facing_direction()
 	
-	var calculated_velocity = state_machine.process_physics(delta, walk_direction, is_running)
-	if calculated_velocity is Vector2:
-		self.velocity = calculated_velocity
+	if is_instance_valid(path_target):
+		path_target.global_position = self.global_position
+	
+	velocity = state_machine.process_physics(delta, walk_direction, is_running)
 	move_and_slide()
 
 func _build_skill_dictionary():

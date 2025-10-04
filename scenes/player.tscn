@@ -1,18 +1,15 @@
-[gd_scene load_steps=75 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=67 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
-[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_apa73"]
+[ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="2_apa73"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="2_g2els"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_oprun"]
-[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="3_74r1k"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="3_f1ej7"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="3_qfm1y"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
-[ext_resource type="Script" uid="uid://dyhsqdl12br5e" path="res://scripts/components/base_skill.gd" id="3_u2ulf"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="4_dqkch"]
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="4_fulsm"]
-[ext_resource type="AudioStream" uid="uid://br3naex6ir5bb" path="res://audio/attack_5.wav" id="5_74r1k"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="5_giy8y"]
+[ext_resource type="Resource" uid="uid://of3fc8ba47yj" path="res://resources/player/riposte/default.tres" id="5_74r1k"]
 [ext_resource type="Resource" uid="uid://5dqv7xvlptll" path="res://resources/player/counter/mikiri.tres" id="6_giy8y"]
 [ext_resource type="Script" uid="uid://mqtxcxisr6ph" path="res://scripts/states/dodge_state.gd" id="6_tuyoq"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="7_fjrip"]
@@ -22,8 +19,9 @@
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_487ah"]
 [ext_resource type="Resource" uid="uid://cfu400oitmjxr" path="res://resources/player/dodge/up.tres" id="10_jej6c"]
 [ext_resource type="Resource" uid="uid://cxtoyg6r5qy34" path="res://resources/player/dodge/down.tres" id="11_f1ej7"]
+[ext_resource type="Resource" uid="uid://dl072xuq1tgt8" path="res://resources/player/countered/default.tres" id="12_8svfe"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="12_jej6c"]
-[ext_resource type="Script" uid="uid://bupjea265f4xy" path="res://scripts/profiles/countered_profile.gd" id="13_2gdjj"]
+[ext_resource type="Resource" uid="uid://cer2y2x0eksg5" path="res://resources/player/death/default.tres" id="13_2a3c5"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_listener.gd" id="15_a8ls1"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="16_qfm1y"]
 [ext_resource type="Texture2D" uid="uid://bqpwrbau08mpn" path="res://assets/player/spritesheetiddle.png" id="17_fdfoy"]
@@ -58,88 +56,6 @@
 [ext_resource type="Script" uid="uid://cdtcv6tkc4hp1" path="res://scripts/components/focus_component.gd" id="53_lxlsd"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="54_ha2mi"]
 
-[sub_resource type="Resource" id="Resource_8svfe"]
-script = ExtResource("5_giy8y")
-startup_duration = 0.3
-active_duration = 0.3
-recovery_duration = 0.2
-link_duration = 0.6
-animation_name = &""
-active_sfx = ExtResource("5_74r1k")
-hitbox_size = Vector2(300, 64)
-hitbox_position = Vector2(90, -64)
-damage = 20.0
-stamina_cost = 0.0
-focus_cost = 100
-focus_gain_on_hit = 5
-stamina_damage = 20.0
-poise_impact_contribution = 100.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, -300)
-parry_interaction = 1
-unparryable_type = 1
-startup_movement_velocity = Vector2(0, 0)
-active_movement_velocity = Vector2(300, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 100.0
-active_poise_shield = 100.0
-recovery_poise_shield = 0.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_2a3c5"]
-script = ExtResource("3_74r1k")
-attacks = Array[ExtResource("5_giy8y")]([SubResource("Resource_8svfe")])
-metadata/_custom_type_script = "uid://bwq542vou2wu1"
-
-[sub_resource type="Resource" id="Resource_42b1b"]
-script = ExtResource("2_apa73")
-skill_phases = Array[ExtResource("3_74r1k")]([SubResource("Resource_2a3c5")])
-skill_name = ""
-metadata/_custom_type_script = "uid://cyu224lucyda8"
-
-[sub_resource type="Resource" id="Resource_6e8lb"]
-script = ExtResource("3_u2ulf")
-skill_name = ""
-metadata/_custom_type_script = "uid://dyhsqdl12br5e"
-
-[sub_resource type="Resource" id="Resource_fdfoy"]
-script = ExtResource("5_giy8y")
-startup_duration = 0.3
-active_duration = 0.2
-recovery_duration = 0.2
-link_duration = 0.6
-animation_name = &""
-hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(90, -64)
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 5
-stamina_damage = 10.0
-poise_impact_contribution = 10.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(150, -100)
-parry_interaction = 0
-unparryable_type = 0
-startup_movement_velocity = Vector2(150, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_sc3ue"]
-script = ExtResource("13_2gdjj")
-duration = 1.0
-animation_name = &""
-poise_shield_contribution = 0.0
-metadata/_custom_type_script = "uid://bupjea265f4xy"
-
 [sub_resource type="Animation" id="Animation_fdfoy"]
 resource_name = "idle"
 length = 0.500003
@@ -147,7 +63,7 @@ loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:frame")
+tracks/0/path = NodePath("Player/Visuals/Sprite2D:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -159,7 +75,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:texture")
+tracks/1/path = NodePath("Player/Visuals/Sprite2D:texture")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -171,7 +87,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/2/path = NodePath("Player/Visuals/Sprite2D:hframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -183,7 +99,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/3/path = NodePath("Player/Visuals/Sprite2D:vframes")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -199,7 +115,7 @@ length = 0.86667
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/path = NodePath("Player/Visuals/Sprite2D:texture")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -211,7 +127,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:frame")
+tracks/1/path = NodePath("Player/Visuals/Sprite2D:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -223,7 +139,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/2/path = NodePath("Player/Visuals/Sprite2D:hframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -235,7 +151,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/3/path = NodePath("Player/Visuals/Sprite2D:vframes")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -247,14 +163,14 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("Visuals/PathTarget:position")
+tracks/4/path = NodePath("PathTarget:position")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
-"times": PackedFloat32Array(0, 0.0666667, 0.5, 0.7, 0.86667),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
-"update": 1,
-"values": [Vector2(0, 0), Vector2(0, -250), Vector2(0, -250), Vector2(0, -250), Vector2(0, 0)]
+"times": PackedFloat32Array(0, 0.0333333, 0.0666667, 0.1, 0.133333, 0.166667, 0.2, 0.233333, 0.266667, 0.3, 0.333333, 0.366667, 0.4, 0.433333, 0.466667, 0.5, 0.533333, 0.566667, 0.6, 0.633333, 0.666667, 0.7, 0.733333, 0.766667, 0.8, 0.833333, 0.86667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, 0), Vector2(0, -125), Vector2(0, -250), Vector2(0, -249.928), Vector2(0, -249.421), Vector2(0, -248.047), Vector2(0, -245.37), Vector2(0, -240.958), Vector2(0, -234.375), Vector2(0, -225.188), Vector2(0, -212.963), Vector2(0, -197.266), Vector2(0, -177.663), Vector2(0, -153.719), Vector2(0, -125.002), Vector2(0, -96.2832), Vector2(0, -72.3392), Vector2(0, -52.7355), Vector2(0, -37.038), Vector2(0, -24.8127), Vector2(0, -15.6256), Vector2(0, -9.04268), Vector2(0, -4.62993), Vector2(0, -1.95331), Vector2(0, -0.578781), Vector2(0, -0.0723572), Vector2(0, 0)]
 }
 
 [sub_resource type="Animation" id="Animation_mx1m4"]
@@ -263,7 +179,7 @@ length = 0.400003
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/path = NodePath("Player/Visuals/Sprite2D:texture")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -275,7 +191,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/1/path = NodePath("Player/Visuals/Sprite2D:hframes")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -287,7 +203,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/2/path = NodePath("Player/Visuals/Sprite2D:vframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -299,7 +215,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:frame")
+tracks/3/path = NodePath("Player/Visuals/Sprite2D:frame")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -314,7 +230,7 @@ length = 0.001
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:frame")
+tracks/0/path = NodePath("Player/Visuals/Sprite2D:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -326,7 +242,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:texture")
+tracks/1/path = NodePath("Player/Visuals/Sprite2D:texture")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -338,7 +254,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/2/path = NodePath("Player/Visuals/Sprite2D:hframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -350,7 +266,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/3/path = NodePath("Player/Visuals/Sprite2D:vframes")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -362,7 +278,7 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("Visuals/PathTarget:position")
+tracks/4/path = NodePath("PathTarget:position")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
@@ -379,7 +295,7 @@ loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:frame")
+tracks/0/path = NodePath("Player/Visuals/Sprite2D:frame")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -391,7 +307,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:texture")
+tracks/1/path = NodePath("Player/Visuals/Sprite2D:texture")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -403,7 +319,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/2/path = NodePath("Player/Visuals/Sprite2D:hframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -415,7 +331,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/3/path = NodePath("Player/Visuals/Sprite2D:vframes")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -431,7 +347,7 @@ length = 0.600003
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/path = NodePath("Player/Visuals/Sprite2D:texture")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -443,7 +359,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/1/path = NodePath("Player/Visuals/Sprite2D:hframes")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -455,7 +371,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/2/path = NodePath("Player/Visuals/Sprite2D:vframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -467,7 +383,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:frame")
+tracks/3/path = NodePath("Player/Visuals/Sprite2D:frame")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -483,7 +399,7 @@ length = 0.600003
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("Visuals/Sprite2D:texture")
+tracks/0/path = NodePath("Player/Visuals/Sprite2D:texture")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -495,7 +411,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("Visuals/Sprite2D:hframes")
+tracks/1/path = NodePath("Player/Visuals/Sprite2D:hframes")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -507,7 +423,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("Visuals/Sprite2D:vframes")
+tracks/2/path = NodePath("Player/Visuals/Sprite2D:vframes")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -519,7 +435,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("Visuals/Sprite2D:frame")
+tracks/3/path = NodePath("Player/Visuals/Sprite2D:frame")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -531,14 +447,14 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("Visuals/PathTarget:position")
+tracks/4/path = NodePath("PathTarget:position")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
 "times": PackedFloat32Array(0, 0.0333333, 0.0666667, 0.1, 0.133333, 0.166667, 0.2, 0.233333, 0.266667, 0.3, 0.333333, 0.366667, 0.4, 0.433333, 0.466667, 0.5, 0.533333, 0.566667, 0.600003),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-"update": 1,
-"values": [Vector2(0, 0), Vector2(0.411517, 0), Vector2(3.29213, 0), Vector2(11.1109, 0), Vector2(26.3371, 0), Vector2(51.4396, 0), Vector2(88.8876, 0), Vector2(141.15, 0), Vector2(210.696, 0), Vector2(299.996, 0), Vector2(389.296, 0), Vector2(458.844, 0), Vector2(511.108, 0), Vector2(548.558, 0), Vector2(573.661, 0), Vector2(588.888, 0), Vector2(596.707, 0), Vector2(599.588, 0), Vector2(600, 0)]
+"update": 0,
+"values": [Vector2(0, 0), Vector2(89.3, 0), Vector2(158.847, 0), Vector2(211.11, 0), Vector2(248.559, 0), Vector2(273.662, 0), Vector2(288.889, 0), Vector2(296.708, 0), Vector2(299.588, 0), Vector2(300, 0), Vector2(300.411, 0), Vector2(303.292, 0), Vector2(311.11, 0), Vector2(326.336, 0), Vector2(351.438, 0), Vector2(388.886, 0), Vector2(441.147, 0), Vector2(510.693, 0), Vector2(600, 0)]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_hhpqf"]
@@ -564,191 +480,196 @@ script = ExtResource("21_487ah")
 buffer_window = 0.5
 metadata/_custom_type_script = "uid://24v4chol2qs0"
 
-[node name="Player" type="CharacterBody2D" groups=["player"]]
+[node name="PlayerEntity" type="Node2D" groups=["player"]]
+
+[node name="Player" type="CharacterBody2D" parent="."]
 script = ExtResource("1_4flbx")
 base_poise = 10.0
-skill_x = SubResource("Resource_42b1b")
-skill_y = SubResource("Resource_6e8lb")
+skill_x = ExtResource("2_apa73")
 finisher_profile = ExtResource("29_gl8cc")
 parry_profile = ExtResource("20_i4ail")
-riposte_profile = SubResource("Resource_fdfoy")
+riposte_profile = ExtResource("5_74r1k")
 mikiri_riposte_profile = ExtResource("6_giy8y")
 block_stun_profile = ExtResource("25_pf23h")
 stagger_profile = ExtResource("23_ke2ow")
 parried_profile = ExtResource("7_gl8cc")
 guard_broken_profile = ExtResource("27_wqfne")
 locomotion_profile = ExtResource("9_487ah")
-countered_profile = SubResource("Resource_sc3ue")
+countered_profile = ExtResource("12_8svfe")
+death_profile = ExtResource("13_2a3c5")
 neutral_dodge_profile = ExtResource("7_fjrip")
 forward_dodge_profile = ExtResource("8_d2wvv")
 back_dodge_profile = ExtResource("9_3v2ag")
 up_dodge_profile = ExtResource("10_jej6c")
 down_dodge_profile = ExtResource("11_f1ej7")
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="Player"]
 visible = false
 offset = Vector2(0, -220)
 position_smoothing_enabled = true
 
-[node name="Visuals" type="Node2D" parent="."]
+[node name="Visuals" type="Node2D" parent="Player"]
 
-[node name="Sprite2D" type="Sprite2D" parent="Visuals"]
+[node name="Sprite2D" type="Sprite2D" parent="Player/Visuals"]
 position = Vector2(0, -70)
 scale = Vector2(0.4, 0.4)
 texture = ExtResource("17_fdfoy")
 hframes = 4
 vframes = 4
 
-[node name="PathTarget" type="Node2D" parent="Visuals"]
-
-[node name="ColorRect" type="ColorRect" parent="Visuals/PathTarget"]
-offset_left = -50.0
-offset_top = -132.0
-offset_right = 40.0
-offset_bottom = 65.0
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Player"]
+root_node = NodePath("../..")
 libraries = {
 &"": SubResource("AnimationLibrary_hhpqf")
 }
 
-[node name="AnimationListener" type="Node" parent="." node_paths=PackedStringArray("animation_player", "state_machine")]
+[node name="AnimationListener" type="Node" parent="Player" node_paths=PackedStringArray("animation_player", "state_machine")]
 script = ExtResource("15_a8ls1")
 animation_player = NodePath("../AnimationPlayer")
 state_machine = NodePath("../StateMachine")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
 visible = false
 position = Vector2(0, -31)
 shape = SubResource("CapsuleShape2D_4gjji")
 
-[node name="Hurtbox" type="Area2D" parent="."]
+[node name="Hurtbox" type="Area2D" parent="Player"]
+visible = false
 collision_layer = 32
 collision_mask = 16
 script = ExtResource("24_l71n6")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/Hurtbox"]
 position = Vector2(0, -30)
 shape = SubResource("RectangleShape2D_hhpqf")
 
-[node name="AttackHitbox" type="Area2D" parent="."]
+[node name="AttackHitbox" type="Area2D" parent="Player"]
 collision_layer = 4
 collision_mask = 8
 monitoring = false
 script = ExtResource("3_qfm1y")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackHitbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/AttackHitbox"]
 disabled = true
 
-[node name="HoldInputTimer" type="Timer" parent="."]
+[node name="HoldInputTimer" type="Timer" parent="Player"]
 wait_time = 0.2
 one_shot = true
 
-[node name="RunCancelTimer" type="Timer" parent="."]
+[node name="RunCancelTimer" type="Timer" parent="Player"]
 wait_time = 0.15
 one_shot = true
 
-[node name="SFXPlayer" type="AudioStreamPlayer2D" parent="."]
+[node name="SFXPlayer" type="AudioStreamPlayer2D" parent="Player"]
 
-[node name="SoundListener" type="Node" parent="." node_paths=PackedStringArray("state_machine")]
+[node name="SoundListener" type="Node" parent="Player" node_paths=PackedStringArray("state_machine")]
 script = ExtResource("16_qfm1y")
 state_machine = NodePath("../StateMachine")
 
-[node name="HealthComponent" type="Node" parent="."]
+[node name="HealthComponent" type="Node" parent="Player"]
 script = ExtResource("4_fulsm")
 
-[node name="StaminaComponent" type="Node" parent="."]
+[node name="StaminaComponent" type="Node" parent="Player"]
 script = ExtResource("19_4r5pv")
 
-[node name="DelayTimer" type="Timer" parent="StaminaComponent"]
+[node name="DelayTimer" type="Timer" parent="Player/StaminaComponent"]
 
-[node name="PhysicsComponent" type="Node" parent="."]
+[node name="PhysicsComponent" type="Node" parent="Player"]
 script = ExtResource("2_g2els")
 
-[node name="PathFollowerComponent" type="Node" parent="."]
+[node name="PathFollowerComponent" type="Node" parent="Player"]
 script = ExtResource("34_8svfe")
 metadata/_custom_type_script = "uid://dtl5q4dyb0mxr"
 
-[node name="BufferComponent" type="Node" parent="."]
+[node name="BufferComponent" type="Node" parent="Player"]
 script = ExtResource("3_f1ej7")
 buffer_profile = SubResource("Resource_md1ol")
 
-[node name="PoiseComponent" type="Node" parent="."]
+[node name="PoiseComponent" type="Node" parent="Player"]
 script = ExtResource("22_bj30b")
 metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
 
-[node name="ComboComponent" type="Node" parent="."]
+[node name="ComboComponent" type="Node" parent="Player"]
 script = ExtResource("22_md1ol")
 attack_set = ExtResource("2_oprun")
 metadata/_custom_type_script = "uid://7awh4v6bsojt"
 
-[node name="SkillComboComponent" type="Node" parent="."]
+[node name="SkillComboComponent" type="Node" parent="Player"]
 script = ExtResource("26_j2b1d")
 metadata/_custom_type_script = "uid://dmqafi2pyifje"
 
-[node name="FocusComponent" type="Node" parent="."]
+[node name="FocusComponent" type="Node" parent="Player"]
 script = ExtResource("53_lxlsd")
 metadata/_custom_type_script = "uid://cdtcv6tkc4hp1"
 
-[node name="DecayTimer" type="Timer" parent="FocusComponent"]
+[node name="DecayTimer" type="Timer" parent="Player/FocusComponent"]
 one_shot = true
 
-[node name="AttackExecutor" type="Node" parent="."]
+[node name="AttackExecutor" type="Node" parent="Player"]
 script = ExtResource("25_hax0n")
 metadata/_custom_type_script = "uid://b0lnh740qgaih"
 
-[node name="ActionCostValidator" type="Node" parent="."]
+[node name="ActionCostValidator" type="Node" parent="Player"]
 script = ExtResource("54_ha2mi")
 metadata/_custom_type_script = "uid://bwxgsevlwe736"
 
-[node name="StateMachine" type="Node" parent="."]
+[node name="StateMachine" type="Node" parent="Player"]
 script = ExtResource("3_qhqgy")
 
-[node name="LocomotionState" type="Node" parent="StateMachine"]
+[node name="LocomotionState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("4_dqkch")
 
-[node name="DodgeState" type="Node" parent="StateMachine"]
+[node name="DodgeState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("6_tuyoq")
 
-[node name="AttackState" type="Node" parent="StateMachine"]
+[node name="AttackState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("12_jej6c")
 
-[node name="ParryState" type="Node" parent="StateMachine"]
+[node name="ParryState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("19_60mlk")
 metadata/_custom_type_script = "uid://6j164hqmaqt2"
 
-[node name="ParriedState" type="Node" parent="StateMachine"]
+[node name="ParriedState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("21_4ni07")
 metadata/_custom_type_script = "uid://ba650tjbftjqi"
 
-[node name="StaggerState" type="Node" parent="StateMachine"]
+[node name="StaggerState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("22_l71n6")
 metadata/_custom_type_script = "uid://m2bbkg5u3e8f"
 
-[node name="BlockStunState" type="Node" parent="StateMachine"]
+[node name="BlockStunState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("24_31cv2")
 metadata/_custom_type_script = "uid://b3auw1r8kc2yi"
 
-[node name="GuardBrokenState" type="Node" parent="StateMachine"]
+[node name="GuardBrokenState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("26_dt7fs")
 metadata/_custom_type_script = "uid://bnsx7y061rnqe"
 
-[node name="FinisherReadyState" type="Node" parent="StateMachine"]
+[node name="FinisherReadyState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("28_wnwbv")
 metadata/_custom_type_script = "uid://bsk4xllkbirnu"
 
-[node name="SequenceState" type="Node" parent="StateMachine"]
+[node name="SequenceState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("36_t4otl")
 metadata/_custom_type_script = "uid://b72ucjj1gl7t2"
 
-[node name="ExecuteCounterState" type="Node" parent="StateMachine"]
+[node name="ExecuteCounterState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("40_giy8y")
 metadata/_custom_type_script = "uid://cycmw65rta0mh"
 
-[node name="CounteredState" type="Node" parent="StateMachine"]
+[node name="CounteredState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("50_6e8lb")
 metadata/_custom_type_script = "uid://80lq1gnacaa2"
 
-[node name="DeathState" type="Node" parent="StateMachine"]
+[node name="DeathState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("52_sc3ue")
 metadata/_custom_type_script = "uid://cjolmubu1vmxi"
+
+[node name="PathTarget" type="Node2D" parent="."]
+
+[node name="ColorRect" type="ColorRect" parent="PathTarget"]
+offset_left = -50.0
+offset_top = -132.0
+offset_right = 40.0
+offset_bottom = 65.0
+metadata/_edit_use_anchors_ = true

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CounteredProfile" load_steps=2 format=3 uid="uid://dl072xuq1tgt8"]
+
+[ext_resource type="Script" uid="uid://bupjea265f4xy" path="res://scripts/profiles/countered_profile.gd" id="1_vmpkd"]
+
+[resource]
+script = ExtResource("1_vmpkd")
+duration = 1.0
+animation_name = &""
+poise_shield_contribution = 0.0
+metadata/_custom_type_script = "uid://bupjea265f4xy"

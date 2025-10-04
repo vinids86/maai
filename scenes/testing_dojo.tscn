@@ -13,14 +13,14 @@ size = Vector2(820, 49)
 
 [node name="Node2D" type="Node2D" node_paths=PackedStringArray("player", "hud")]
 script = ExtResource("1_r8dm2")
-player = NodePath("Player")
+player = NodePath("PlayerEntity/Player")
 hud = NodePath("CanvasLayer/PlayerHUD")
 
-[node name="Player" parent="." instance=ExtResource("1_dhed4")]
+[node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
 position = Vector2(103, 893)
 
 [node name="Enemy" parent="." instance=ExtResource("2_7od0s")]
-position = Vector2(1783, 873)
+position = Vector2(1484, 847)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
 position = Vector2(-443, 353)
@@ -42,3 +42,5 @@ offset_bottom = 955.0
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
 position = Vector2(-724, 773.5)
 shape = SubResource("RectangleShape2D_o4ihr")
+
+[editable path="PlayerEntity"]
