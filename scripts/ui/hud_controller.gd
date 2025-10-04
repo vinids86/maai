@@ -43,7 +43,6 @@ func update_stamina(current_stamina: float, max_stamina: float):
 	stamina_bar.value = current_stamina
 
 func _on_focus_changed(current_focus: int, max_focus: int):
-	print("_on_focus_changed", current_focus)
 	focus_bar.max_value = max_focus
 	focus_bar.value = current_focus
 

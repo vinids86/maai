@@ -20,7 +20,7 @@ hud = NodePath("CanvasLayer/PlayerHUD")
 position = Vector2(103, 893)
 
 [node name="Enemy" parent="." instance=ExtResource("2_7od0s")]
-position = Vector2(467, 861)
+position = Vector2(1783, 873)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
 position = Vector2(-443, 353)

@@ -7,7 +7,7 @@
 script = ExtResource("1_iiueb")
 active_duration = 0.15
 recovery_duration = 0.25
-speed = 750.0
+movement_chase_speed = 10.0
 ignores_gravity = false
 stamina_cost = 15.0
 poise_shield_contribution = 5.0

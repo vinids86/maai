@@ -41,7 +41,5 @@ func apply_dodge_velocity(direction: Vector2, profile: DodgeProfile):
 
 func apply_gravity(delta: float):
 	var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
-	print("GRAVITY: ", gravity)
-	#gravity = 30000
 	if not owner_node.is_on_floor():
 		owner_node.velocity.y += gravity * delta
