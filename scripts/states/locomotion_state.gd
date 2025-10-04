@@ -6,8 +6,6 @@ var current_profile: LocomotionProfile
 enum Phases { IDLE, WALK, RUN }
 var current_phase: Phases = Phases.IDLE
 
-var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
-
 func enter(args: Dictionary = {}):
 	self.current_profile = args.get("profile")
 	if not current_profile:
@@ -16,18 +14,28 @@ func enter(args: Dictionary = {}):
 	
 	_change_phase(Phases.IDLE)
 
-func process_physics(delta: float, walk_direction: float, is_running: bool):
-	if not owner_node.is_on_floor():
-		owner_node.velocity.y += gravity * delta
+func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
+	var new_velocity = owner_node.velocity
+
+	new_velocity = physics_component.apply_gravity(new_velocity, delta)
 
 	if not current_profile:
-		return
+		return new_velocity
 
 	_update_facing_sign(walk_direction)
 	
-	movement_component.calculate_walk_velocity(walk_direction, is_running, current_profile)
+	var target_speed = current_profile.speed
+	if is_running:
+		target_speed = current_profile.run_speed
+		
+	if walk_direction != 0:
+		new_velocity.x = walk_direction * target_speed
+	else:
+		new_velocity.x = move_toward(new_velocity.x, 0, current_profile.speed)
 	
 	_update_and_emit_phase(walk_direction, is_running)
+	
+	return new_velocity
 
 func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
@@ -44,9 +52,6 @@ func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerRe
 	if owner_node.is_on_floor():
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	return _resolve_default_contact(context)
 
 func get_poise_shield_contribution() -> float:
 	if not current_profile:

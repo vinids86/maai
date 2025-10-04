@@ -11,6 +11,7 @@ extends CharacterBody2D
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var detection_area: Area2D = $DetectionArea
 @onready var visuals: Node2D = $Visuals
+@onready var path_target: Node2D = $Visuals/PathTarget
 
 @export_group("Equipped Skills")
 @export var skill_x: BaseSkill
@@ -67,7 +68,9 @@ func _physics_process(delta: float):
 	
 	_update_facing_direction()
 	
-	state_machine.process_physics(delta, walk_direction, is_running)
+	var calculated_velocity = state_machine.process_physics(delta, walk_direction, is_running)
+	if calculated_velocity is Vector2:
+		self.velocity = calculated_velocity
 	move_and_slide()
 
 func _build_skill_dictionary():

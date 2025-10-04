@@ -13,8 +13,6 @@ func enter(args: Dictionary = {}):
 		return
 
 	time_left_in_phase = current_profile.duration
-	
-	owner_node.velocity = Vector2.ZERO
 
 	var phase_data := {
 		"state_name": self.name,
@@ -25,14 +23,17 @@ func enter(args: Dictionary = {}):
 	}
 	state_machine.emit_phase_change(phase_data)
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
-		return
+		return Vector2.ZERO
 
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0.0:
 		state_machine.on_current_state_finished()
-		return
+		return Vector2.ZERO
+
+	var final_velocity = physics_component.apply_gravity(Vector2.ZERO, delta)
+	return final_velocity
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()

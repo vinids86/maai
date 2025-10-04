@@ -1,8 +1,8 @@
-[gd_scene load_steps=74 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=75 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_apa73"]
-[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="2_g2els"]
+[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="2_g2els"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_oprun"]
 [ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="3_74r1k"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="3_f1ej7"]
@@ -50,6 +50,7 @@
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="27_wqfne"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="28_wnwbv"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="29_gl8cc"]
+[ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="34_8svfe"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="40_giy8y"]
 [ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="50_6e8lb"]
@@ -250,9 +251,9 @@ tracks/4/path = NodePath("Visuals/PathTarget:position")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
-"times": PackedFloat32Array(0, 0.297306, 0.457742, 0.633333, 0.86667),
+"times": PackedFloat32Array(0, 0.233333, 0.5, 0.766667, 0.86667),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
-"update": 0,
+"update": 1,
 "values": [Vector2(0, 0), Vector2(0, 0), Vector2(0, -250), Vector2(0, 0), Vector2(0, 0)]
 }
 
@@ -536,7 +537,7 @@ tracks/4/loop_wrap = true
 tracks/4/keys = {
 "times": PackedFloat32Array(0, 0.0333333, 0.0666667, 0.1, 0.133333, 0.166667, 0.2, 0.233333, 0.266667, 0.3, 0.333333, 0.366667, 0.4, 0.433333, 0.466667, 0.5, 0.533333, 0.566667, 0.600003),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-"update": 0,
+"update": 1,
 "values": [Vector2(0, 0), Vector2(-100, 0), Vector2(5.55553, 0), Vector2(8.33329, 0), Vector2(11.1111, 0), Vector2(13.8888, 0), Vector2(16.6666, 0), Vector2(19.4443, 0), Vector2(22.2221, 0), Vector2(24.9999, 0), Vector2(27.7776, 0), Vector2(30.5554, 0), Vector2(33.3332, 0), Vector2(36.1109, 0), Vector2(38.8887, 0), Vector2(41.6665, 0), Vector2(44.4442, 0), Vector2(47.222, 0), Vector2(200, 0)]
 }
 
@@ -617,6 +618,7 @@ animation_player = NodePath("../AnimationPlayer")
 state_machine = NodePath("../StateMachine")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+visible = false
 position = Vector2(0, -31)
 shape = SubResource("CapsuleShape2D_4gjji")
 
@@ -660,8 +662,12 @@ script = ExtResource("19_4r5pv")
 
 [node name="DelayTimer" type="Timer" parent="StaminaComponent"]
 
-[node name="MovementComponent" type="Node" parent="."]
+[node name="PhysicsComponent" type="Node" parent="."]
 script = ExtResource("2_g2els")
+
+[node name="PathFollowerComponent" type="Node" parent="."]
+script = ExtResource("34_8svfe")
+metadata/_custom_type_script = "uid://dtl5q4dyb0mxr"
 
 [node name="BufferComponent" type="Node" parent="."]
 script = ExtResource("3_f1ej7")

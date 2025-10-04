@@ -17,15 +17,14 @@ func enter(args: Dictionary = {}):
 		return
 	
 	owner_node.facing_locked = true
-	owner_node.velocity = Vector2.ZERO
 	_change_phase(Phases.ACTIVE)
 
 func exit():
 	owner_node.facing_locked = false
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
-		return
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
 
 	time_left_in_phase -= delta
 	
@@ -38,10 +37,12 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 				time_left_in_phase -= time_exceeded
 			Phases.SUCCESS:
 				state_machine.on_current_state_finished()
-				return
+				return physics_component.apply_gravity(Vector2.ZERO, delta)
 			Phases.RECOVERY:
 				state_machine.on_current_state_finished()
-				return
+				return physics_component.apply_gravity(Vector2.ZERO, delta)
+				
+	return physics_component.apply_gravity(Vector2.ZERO, delta)
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if current_phase == Phases.SUCCESS:

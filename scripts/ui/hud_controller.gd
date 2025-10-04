@@ -6,7 +6,6 @@ extends Control
 @onready var focus_bar: TextureProgressBar = $FocusBar
 @onready var focus_segments_container: HBoxContainer = $FocusSegmentsContainer
 
-# Cores para os segmentos de foco (pode ajustá-las no editor)
 @export var segment_incomplete_color: Color = Color(0.5, 0.5, 0.5)
 @export var segment_complete_color: Color = Color(0.2, 0.8, 1.0)
 
@@ -18,20 +17,20 @@ func initialize_hud(player_node: Node):
 	
 	if health_component:
 		health_component.health_changed.connect(update_health)
-		# Força a atualização inicial
+
 		update_health(health_component.current_health, health_component.max_health)
 	
 	if stamina_component:
 		stamina_component.stamina_changed.connect(update_stamina)
-		# Força a atualização inicial
+
 		update_stamina(stamina_component.current_stamina, stamina_component.max_stamina)
-	print("initialize_hud")
+
 	if focus_component:
 		focus_component.focus_changed.connect(_on_focus_changed)
 		focus_component.segment_completed.connect(_on_segment_completed)
-		# Força a atualização inicial
+
 		_on_focus_changed(focus_component.current_focus, focus_component.max_focus)
-		_on_segment_completed(0) # Começa com 0 segmentos completos
+		_on_segment_completed(0)
 
 
 func update_health(current_health: float, max_health: float):

@@ -44,16 +44,23 @@ func exit():
 	_current_phase = LinkPhases.EXECUTING
 	_current_profile = null
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	var new_velocity = Vector2.ZERO
+	
 	if _current_phase == LinkPhases.LINK:
 		_time_left_in_link -= delta
 		if _time_left_in_link <= 0.0:
 			state_machine.on_current_state_finished()
-			return
+			return physics_component.apply_gravity(Vector2.ZERO, delta)
 		
 		var move_vel = _current_profile.link_movement_velocity
-		owner_node.velocity.x = move_vel.x * owner_node.facing_sign
-		owner_node.velocity.y = move_vel.y
+		new_velocity.x = move_vel.x * owner_node.facing_sign
+		new_velocity.y = move_vel.y
+	elif _attack_executor:
+		new_velocity = _attack_executor.get_current_movement_velocity()
+
+	new_velocity = physics_component.apply_gravity(new_velocity, delta)
+	return new_velocity
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if _current_phase == LinkPhases.LINK:

@@ -10,17 +10,20 @@ var states: Dictionary = {}
 var current_state: State
 var owner_node: Node
 var movement_component: Node
+var path_follower_component: Node
 var buffer_component: BufferComponent
 var action_cost_validator: ActionCostValidator
 
 func _ready():
 	owner_node = get_parent()
-	movement_component = owner_node.find_child("MovementComponent")
+	movement_component = owner_node.find_child("PhysicsComponent")
+	path_follower_component = owner_node.find_child("PathFollowerComponent")
 	buffer_component = owner_node.find_child("BufferComponent")
 	action_cost_validator = owner_node.find_child("ActionCostValidator")
 	
 	assert(owner_node != null, "StateMachine deve ser filha de um nó de ator (Player/Enemy).")
-	assert(movement_component != null, "Não foi encontrado um nó 'MovementComponent' como irmão da StateMachine.")
+	assert(movement_component != null, "Não foi encontrado um nó 'PhysicsComponent' como irmão da StateMachine.")
+	assert(path_follower_component != null, "Não foi encontrado um nó 'PathFollowerComponent' como irmão da StateMachine.")
 	assert(buffer_component != null, "Não foi encontrado um nó 'BufferComponent' como irmão da StateMachine.")
 	assert(action_cost_validator != null, "Não foi encontrado um nó 'ActionCostValidator' como irmão da StateMachine.")
 
@@ -33,7 +36,7 @@ func _ready():
 	for child in get_children():
 		if child is State:
 			states[child.name] = child
-			child.initialize(self, owner_node, movement_component)
+			child.initialize(self, owner_node, movement_component, path_follower_component)
 	
 	if states.has(initial_state_key):
 		current_state = states[initial_state_key]
@@ -49,9 +52,12 @@ func _on_owner_died():
 	var profile = owner_node.get_death_profile()
 	transition_to("DeathState", {"profile": profile})
 
-func process_physics(delta: float, walk_direction: float, is_running: bool):
+func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
 	if current_state:
-		current_state.process_physics(delta, walk_direction, is_running)
+		var calculated_velocity = current_state.process_physics(delta, walk_direction, is_running)
+		if calculated_velocity is Vector2:
+			return calculated_velocity
+	return owner_node.velocity
 
 func process_input(event: InputEvent):
 	if current_state:
@@ -226,7 +232,7 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 	
 	if previous_state:
 		previous_state.exit()
-	
+
 	current_state = new_state
 	current_state.enter(args)
 	

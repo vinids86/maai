@@ -9,6 +9,7 @@ extends CharacterBody2D
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var visuals: Node2D = $Visuals
 @onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
+@onready var path_target: Node2D = $Visuals/PathTarget
 
 @export_group("Combat Data")
 @export var base_poise: float
@@ -57,7 +58,11 @@ func _ready():
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
 	_update_facing_direction()
-	state_machine.process_physics(delta, walk_direction, is_running)
+	
+	var calculated_velocity = state_machine.process_physics(delta, walk_direction, is_running)
+	if calculated_velocity is Vector2:
+		velocity = calculated_velocity
+	
 	move_and_slide()
 
 func _build_skill_dictionary():

@@ -1,4 +1,4 @@
-[gd_scene load_steps=82 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=83 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -20,7 +20,7 @@
 [ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="8_5lniq"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_2sbpf"]
 [ext_resource type="AudioStream" uid="uid://duggjplviepmn" path="res://audio/pre_sequence_skill.wav" id="9_7w3jn"]
-[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/movement_component.gd" id="9_8qclf"]
+[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="9_8qclf"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="10_78kod"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="10_s1ycm"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="10_w8i8w"]
@@ -54,6 +54,7 @@
 [ext_resource type="Script" uid="uid://cqen1cgottixs" path="res://scripts/components/facing_component.gd" id="31_5ie7m"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
+[ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="42_hyejq"]
 [ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="52_uiwvf"]
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="54_b5geg"]
@@ -631,6 +632,8 @@ texture = ExtResource("20_e7lhw")
 hframes = 4
 vframes = 4
 
+[node name="PathTarget" type="Node2D" parent="Visuals"]
+
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
 &"": SubResource("AnimationLibrary_5lniq")
@@ -698,8 +701,12 @@ script = ExtResource("10_w8i8w")
 buffer_profile = SubResource("Resource_2sbpf")
 metadata/_custom_type_script = "uid://beortrl7adiim"
 
-[node name="MovementComponent" type="Node" parent="."]
+[node name="PhysicsComponent" type="Node" parent="."]
 script = ExtResource("9_8qclf")
+
+[node name="PathFollowerComponent" type="Node" parent="."]
+script = ExtResource("39_13roy")
+metadata/_custom_type_script = "uid://dtl5q4dyb0mxr"
 
 [node name="ComboComponent" type="Node" parent="."]
 script = ExtResource("35_2sbpf")

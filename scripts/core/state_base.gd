@@ -3,37 +3,50 @@ extends Node
 
 var state_machine: StateMachine
 var owner_node: Node
-var movement_component: Node
+var physics_component: Node
+var path_follower_component: Node
 
-func initialize(sm: StateMachine, owner: Node, move_comp: Node):
+func initialize(sm: StateMachine, owner: Node, physics_comp: Node, path_follower_comp: Node):
 	self.state_machine = sm
 	self.owner_node = owner
-	self.movement_component = move_comp
+	self.physics_component = physics_comp
+	self.path_follower_component = path_follower_comp
 
-func enter(args: Dictionary = {}): pass
-func exit(): pass
-func process_physics(delta: float, walk_direction: float, is_running: bool): pass
-func process_input(event: InputEvent): pass
+func enter(_args: Dictionary = {}):
+	pass
+
+func exit():
+	pass
+
+func process_input(_event: InputEvent):
+	pass
+
+func process_physics(_delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	return Vector2.ZERO
+
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+	
+func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	return _resolve_default_contact(context)
 
 func get_poise_shield_contribution() -> float:
 	return 0.0
 
 func get_poise_impact_contribution() -> float:
 	return 0.0
-
-func allow_reentry() -> bool: return false
-
-func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+	
+func allow_reentry() -> bool:
+	return false
 
 func _resolve_default_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
@@ -74,6 +87,3 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 	
 	return result_for_attacker
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	return _resolve_default_contact(context)

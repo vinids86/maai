@@ -31,24 +31,20 @@ func enter(args: Dictionary = {}):
 	}
 	state_machine.emit_phase_change(phase_data)
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
-		return
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
 
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0.0:
-		owner_node.velocity = Vector2.ZERO
 		state_machine.on_current_state_finished()
-		return
-	
-	if not owner_node.is_on_floor():
-		var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
-		_knockback_velocity.y += gravity * delta
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
 	
 	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
-	owner_node.velocity = _knockback_velocity
-		
-	owner_node.move_and_slide()
+	
+	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
+	
+	return final_velocity
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	return _resolve_default_contact(context)

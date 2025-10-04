@@ -23,9 +23,9 @@ func enter(args: Dictionary = {}):
 
 	_change_phase(Phases.RECOIL)
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
-		return
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
 
 	time_left_in_phase -= delta
 
@@ -36,16 +36,14 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 			_change_phase(Phases.REACTIVE)
 			time_left_in_phase -= time_exceeded
 		else:
-			owner_node.velocity = Vector2.ZERO
 			state_machine.on_current_state_finished()
-			return
-	
-	if not owner_node.is_on_floor():
-		var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
-		_knockback_velocity.y += gravity * delta
+			return physics_component.apply_gravity(Vector2.ZERO, delta)
 	
 	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
-	owner_node.velocity = _knockback_velocity
+	
+	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
+	
+	return final_velocity
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)

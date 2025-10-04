@@ -4,6 +4,7 @@ extends State
 var current_profile: GuardBrokenProfile
 
 var time_left_in_phase: float = 0.0
+var _knockback_velocity: Vector2
 
 func enter(args: Dictionary = {}):
 	self.current_profile = args.get("profile")
@@ -14,17 +15,29 @@ func enter(args: Dictionary = {}):
 		return
 
 	time_left_in_phase = current_profile.duration
-	owner_node.velocity = Vector2.ZERO
+	
+	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
+	_knockback_velocity = knockback
+	if knockback.x != 0:
+		_knockback_velocity.x *= -owner_node.facing_sign
+		
 	_emit_phase_signal()
 
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
-		return
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
 
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0:
 		state_machine.on_current_state_finished()
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+		
+	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
+	
+	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
+	
+	return final_velocity
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var finisher_profile = owner_node.get_finisher_profile()

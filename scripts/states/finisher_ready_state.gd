@@ -14,13 +14,16 @@ func enter(args: Dictionary = {}):
 	time_left_in_phase = current_profile.ready_duration
 	_emit_phase_signal()
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
-		return
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
 
 	time_left_in_phase -= delta
 	if time_left_in_phase <= 0:
 		state_machine.on_current_state_finished()
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+		
+	return physics_component.apply_gravity(Vector2.ZERO, delta)
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	var finisher_attack_profile = owner_node.get_finisher_attack_profile()

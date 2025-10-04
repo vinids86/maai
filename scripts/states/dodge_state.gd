@@ -17,16 +17,28 @@ func enter(args: Dictionary = {}):
 	if not current_profile:
 		state_machine.on_current_state_finished()
 		return
+
+	if path_follower_component and owner_node.path_target:
+		path_follower_component.start_following(owner_node.path_target)
 		
-	movement_component.apply_dodge_velocity(_current_direction, current_profile)
 	_change_phase(Phases.ACTIVE)
 
 func exit():
 	owner_node.facing_locked = false
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
+	if path_follower_component:
+		path_follower_component.stop_following()
+
+	if owner_node.path_target:
+		owner_node.path_target.position = Vector2.ZERO
+
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
-		return
+		return Vector2.ZERO
+
+	var calculated_velocity = Vector2.ZERO
+	if path_follower_component:
+		calculated_velocity = path_follower_component.calculate_target_velocity(delta)
 
 	time_left_in_phase -= delta
 	
@@ -39,10 +51,9 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool):
 				time_left_in_phase -= time_exceeded
 			Phases.RECOVERY:
 				state_machine.on_current_state_finished()
-				return
-
-	if not current_profile.ignores_gravity:
-		movement_component.apply_gravity(delta)
+				return Vector2.ZERO
+	
+	return calculated_velocity
 		
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
@@ -72,31 +83,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 		return result_for_attacker
 	
 	if current_phase == Phases.RECOVERY:
-		var defender_shield_poise = context.defender_poise_comp.get_effective_shield_poise()
-		var auto_block_succeeds = context.attacker_offensive_poise < defender_shield_poise
-
-		if auto_block_succeeds:
-			if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
-				var block_recoil_fraction: float = 0.4
-				var base_knockback: Vector2 = context.attack_profile.knockback_vector
-				var recoil_velocity: Vector2 = base_knockback * block_recoil_fraction
-				var reason = { "outcome": "BLOCKED", "knockback_vector": recoil_velocity }
-				state_machine.on_current_state_finished(reason)
-				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
-				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
-			else:
-				var reason = { "outcome": "GUARD_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
-				state_machine.on_current_state_finished(reason)
-				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
-				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
-		else:
-			context.defender_health_comp.take_damage(context.attack_profile.damage)
-			var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
-			state_machine.on_current_state_finished(reason)
-			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
-			result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
-		
-		return result_for_attacker
+		return _resolve_default_contact(context)
 		
 	return null
 

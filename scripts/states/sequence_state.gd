@@ -24,10 +24,12 @@ func enter(args: Dictionary = {}):
 	_attack_executor.attack_phase_changed.connect(_on_phase_changed)
 
 	_skill_sequence = args.get("sequence_context")
+
 	if not _skill_sequence:
 		state_machine.on_current_state_finished()
 		return
 	
+	owner_node.facing_locked = true
 	_current_phase = LinkPhases.ACTIVE
 	_execute_next_attack()
 
@@ -39,15 +41,25 @@ func exit():
 			_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
 		_attack_executor.stop()
 		
+	owner_node.facing_locked = false
 	_current_profile = null
 	_current_phase = LinkPhases.FINISHED
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool):
-	if _current_phase == LinkPhases.LINK:
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	var calculated_velocity = Vector2.ZERO
+
+	if _current_phase == LinkPhases.ACTIVE:
+		if _attack_executor:
+			calculated_velocity = _attack_executor.get_current_movement_velocity()
+	elif _current_phase == LinkPhases.LINK:
 		_time_left_in_link -= delta
 		if _time_left_in_link <= 0.0:
 			_current_phase = LinkPhases.FINISHED
 			state_machine.on_current_state_finished()
+			return physics_component.apply_gravity(Vector2.ZERO, delta)
+	
+	var final_velocity = physics_component.apply_gravity(calculated_velocity, delta)
+	return final_velocity
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if _current_phase == LinkPhases.LINK:
@@ -75,6 +87,7 @@ func _execute_next_attack():
 
 	if next_profile:
 		if _cost_validator.try_pay_costs(next_profile):
+			print("EXE")
 			_current_profile = next_profile
 			_attack_executor.execute(_current_profile)
 		else:

@@ -5,10 +5,6 @@ extends Resource
 @export var active_duration: float = 0.2
 @export var recovery_duration: float = 0.1
 
-@export_group("Physics")
-@export var speed: float = 750.0
-@export var ignores_gravity: bool = false
-
 @export_group("Mechanics")
 @export var stamina_cost: float = 15.0
 @export var poise_shield_contribution: float = 50.0

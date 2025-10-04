@@ -45,23 +45,11 @@ func _physics_process(delta: float):
 				emit_signal("finished")
 				return
 
-	var move_vel = Vector2.ZERO
-	match _current_phase:
-		Phases.STARTUP:
-			move_vel = _current_profile.startup_movement_velocity
-		Phases.ACTIVE:
-			move_vel = _current_profile.active_movement_velocity
-		Phases.RECOVERY:
-			move_vel = _current_profile.recovery_movement_velocity
-			
-	_owner_node.velocity.x = move_vel.x * _owner_node.facing_sign
-	_owner_node.velocity.y = move_vel.y
-
 func execute(profile: AttackProfile):
 	if not is_instance_valid(profile):
 		push_warning("AttackExecutor: Tentou executar um AttackProfile inválido.")
 		return
-	
+
 	self._current_profile = profile
 	set_physics_process(true)
 	_change_phase(Phases.STARTUP)
@@ -75,6 +63,24 @@ func get_current_profile() -> AttackProfile:
 func get_current_phase_name() -> String:
 	return Phases.keys()[_current_phase].to_upper()
 
+func get_current_movement_velocity() -> Vector2:
+	if _current_phase == Phases.NONE or not _current_profile:
+		return Vector2.ZERO
+		
+	var move_vel = Vector2.ZERO
+	match _current_phase:
+		Phases.STARTUP:
+			move_vel = _current_profile.startup_movement_velocity
+		Phases.ACTIVE:
+			move_vel = _current_profile.active_movement_velocity
+		Phases.RECOVERY:
+			move_vel = _current_profile.recovery_movement_velocity
+	
+	var final_velocity = Vector2.ZERO
+	final_velocity.x = move_vel.x * _owner_node.facing_sign
+	final_velocity.y = move_vel.y
+	return final_velocity
+
 func _stop_execution():
 	set_physics_process(false)
 	_current_phase = Phases.NONE
@@ -83,7 +89,6 @@ func _stop_execution():
 		_hitbox_shape.set_deferred("disabled", true)
 		_hitbox_shape.shape = null
 	
-	# Reinicia a posição e a escala da hitbox para o seu estado padrão.
 	if is_instance_valid(_hitbox):
 		_hitbox.position = Vector2.ZERO
 		_hitbox.scale = Vector2.ONE
@@ -127,7 +132,6 @@ func _update_and_enable_hitbox():
 	
 	_hitbox_shape.shape = shape
 	
-	# Lógica de orientação centralizada e agora correta
 	_hitbox.position = _current_profile.hitbox_position
 	_hitbox.position.x *= _owner_node.facing_sign
 	_hitbox.scale.x = _owner_node.facing_sign

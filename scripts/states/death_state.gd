@@ -22,11 +22,10 @@ func enter(args: Dictionary = {}):
 		if child is Area2D:
 			child.monitoring = false
 			child.monitorable = false
-			
-	owner_node.velocity = Vector2.ZERO
 
-func process_physics(_delta: float, _walk_direction: float, _is_running: bool):
-	pass
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	var final_velocity = physics_component.apply_gravity(Vector2.ZERO, delta)
+	return final_velocity
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
