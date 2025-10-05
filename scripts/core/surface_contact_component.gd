@@ -7,6 +7,7 @@ var _body: CharacterBody2D
 var _was_on_floor: bool = false
 var is_grounded: bool = false
 var _enabled: bool = false
+var last_left_ground_ms: int = -1
 
 func _ready():
 	set_physics_process(false)
@@ -27,5 +28,7 @@ func _physics_process(delta: float) -> void:
 		_was_on_floor = true
 		emit_signal("landed")
 		return
+	if not grounded and _was_on_floor:
+		last_left_ground_ms = Time.get_ticks_msec()
 	is_grounded = grounded
 	_was_on_floor = grounded

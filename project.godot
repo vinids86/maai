@@ -110,10 +110,6 @@ dodge={
 2d_physics/layer_5="enemy_hitbox"
 2d_physics/layer_6="player_hurtbox"
 
-[physics]
-
-2d/default_gravity=1600.0
-
 [rendering]
 
 renderer/rendering_method="mobile"

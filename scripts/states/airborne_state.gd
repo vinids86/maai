@@ -42,7 +42,7 @@ func enter(args: Dictionary = {}) -> void:
 			air_jumps_left = current_profile.max_air_jumps
 			has_locked_air_pool = true
 	else:
-		last_left_ground_ms = Time.get_ticks_msec()
+		last_left_ground_ms = surface_contact_component.last_left_ground_ms
 
 	_update_phase(owner_node.velocity)
 
@@ -82,6 +82,18 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 		last_left_ground_ms = -1
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
+	if not has_locked_air_pool and current_profile.max_air_jumps > 0:
+		_pending_jump_impulse = true
+		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
+		_holding = true
+		_hold_time = 0.0
+		_released_this_frame = false
+		_last_jump_was_air = true
+
+		has_locked_air_pool = true
+		air_jumps_left = max(current_profile.max_air_jumps - 1, 0)
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
 	if air_jumps_left > 0:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
@@ -90,12 +102,7 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 		_released_this_frame = false
 		_last_jump_was_air = true
 
-		if not has_locked_air_pool:
-			air_jumps_left = max(current_profile.max_air_jumps - 1, 0)
-			has_locked_air_pool = true
-		else:
-			air_jumps_left -= 1
-
+		air_jumps_left -= 1
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
