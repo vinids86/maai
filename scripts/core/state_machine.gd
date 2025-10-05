@@ -75,6 +75,10 @@ func on_jump_pressed(profile: JumpProfile):
 			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
 				transition_to("AirborneState", {"profile": profile, "apply_jump_impulse": true})
+				
+func on_jump_released() -> void:
+	if current_state and current_state.has_method("on_jump_released"):
+		current_state.on_jump_released()
 
 func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 	var result: InputHandlerResult = current_state.handle_dodge_input(direction, profile)

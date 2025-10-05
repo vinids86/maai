@@ -7,19 +7,42 @@ enum Phases { RISING, FALLING }
 var current_phase: Phases = Phases.FALLING
 
 var _pending_jump_impulse: bool = false
+var _holding: bool = false
+var _hold_time: float = 0.0
+var _released_this_frame: bool = false
 
 func enter(args: Dictionary = {}) -> void:
 	var apply_jump_impulse: bool = bool(args.get("apply_jump_impulse", false))
 	current_profile = args.get("profile")
 	_pending_jump_impulse = apply_jump_impulse
+	_holding = true
+	_hold_time = 0.0
+	_released_this_frame = false
 	_update_phase(owner_node.velocity)
+
+func on_jump_released() -> void:
+	_holding = false
+	_released_this_frame = true
 
 func process_physics(delta: float, walk_direction: float, _is_running: bool) -> Vector2:
 	var new_velocity: Vector2 = owner_node.velocity
 
 	if _pending_jump_impulse and current_profile:
-		new_velocity.y = -abs(current_profile.jump_velocity)
+		new_velocity.y = -abs(current_profile.min_jump_velocity)
 		_pending_jump_impulse = false
+
+	if current_profile:
+		if _holding and _hold_time < current_profile.max_hold_time and new_velocity.y < 0.0:
+			new_velocity.y -= current_profile.hold_accel * delta
+			if abs(new_velocity.y) > abs(current_profile.max_jump_velocity):
+				new_velocity.y = -abs(current_profile.max_jump_velocity)
+			_hold_time += delta
+		if _released_this_frame and new_velocity.y < 0.0:
+			new_velocity.y *= current_profile.release_cut_multiplier
+			_released_this_frame = false
+	else:
+		if _holding and _hold_time < 0.12 and new_velocity.y < 0.0:
+			_hold_time += delta
 
 	if current_profile:
 		new_velocity.x = walk_direction * current_profile.air_control_speed

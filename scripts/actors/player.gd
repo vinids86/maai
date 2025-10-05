@@ -103,7 +103,12 @@ func _unhandled_input(event: InputEvent):
 			state_machine.on_jump_pressed(profile)
 		get_viewport().set_input_as_handled()
 		return
-
+		
+	if event.is_action_released("jump"):
+		state_machine.on_jump_released()
+		get_viewport().set_input_as_handled()
+		return
+		
 	if event.is_action_pressed("dodge_run"):
 		if not run_cancel_timer.is_stopped():
 			run_cancel_timer.stop()
