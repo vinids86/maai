@@ -3,7 +3,7 @@ extends Node
 
 @export var buffer_profile: BufferProfile
 
-enum BufferedAction { NONE, ATTACK, DODGE, PARRY, SEQUENCE_SKILL }
+enum BufferedAction { NONE, ATTACK, DODGE, PARRY, SEQUENCE_SKILL, JUMP, DASH }
 
 var _buffered_action: BufferedAction = BufferedAction.NONE
 var _buffered_context: Dictionary = {}

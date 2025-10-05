@@ -68,8 +68,9 @@ func _ready():
 		action_cost_validator,
 		surface_contact_component,
 	)
+
 	surface_contact_component.call_deferred("setup", self)
-	
+
 	if hud:
 		await hud.ready
 		hud.initialize_hud(self)
@@ -115,29 +116,29 @@ func _unhandled_input(event: InputEvent):
 		return
 		
 	if event.is_action_pressed("dash_run"):
+		_send_dash_intention()
+		get_viewport().set_input_as_handled()
+		return
+
+	if event.is_action_pressed("dodge"):
 		if not is_on_floor():
-			_send_dash_intention()
+			_send_dodge_intention()
 		else:
 			if not run_cancel_timer.is_stopped():
 				run_cancel_timer.stop()
-				_send_dash_intention()
+				_send_dodge_intention()
 			else:
 				hold_input_timer.start()
 		get_viewport().set_input_as_handled()
 		return
 
-	if event.is_action_released("dash_run"):
+	if event.is_action_released("dodge"):
 		if not is_running:
 			if not hold_input_timer.is_stopped():
 				hold_input_timer.stop()
-				_send_dash_intention()
+				_send_dodge_intention()
 		else:
 			run_cancel_timer.start()
-		get_viewport().set_input_as_handled()
-		return
-
-	if event.is_action_pressed("dodge"):
-		_send_dodge_intention()
 		get_viewport().set_input_as_handled()
 		return
 	
@@ -167,14 +168,14 @@ func _unhandled_input(event: InputEvent):
 	state_machine.process_input(event)
 
 func _on_hold_input_timer_timeout():
-	if Input.is_action_pressed("dash_run"):
+	if Input.is_action_pressed("dodge"):
 		is_running = true
 
 func _on_run_cancel_timer_timeout():
 	is_running = false
 
 func _on_landed():
-	if Input.is_action_pressed("dash_run"):
+	if Input.is_action_pressed("dodge"):
 		if hold_input_timer.is_stopped():
 			hold_input_timer.start()
 

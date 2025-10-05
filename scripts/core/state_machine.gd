@@ -77,6 +77,11 @@ func on_jump_pressed(profile: JumpProfile):
 			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
 				transition_to("AirborneState", {"profile": profile, "apply_jump_impulse": true})
+		InputHandlerResult.Status.REJECTED:
+			var context = {"profile": profile}
+			buffer_component.capture(BufferComponent.BufferedAction.JUMP, context)
+		InputHandlerResult.Status.CONSUMED:
+			pass
 
 func on_jump_released() -> void:
 	if current_state and current_state.has_method("on_jump_released"):
@@ -103,7 +108,8 @@ func on_dash_pressed(profile: DashProfile):
 				buffer_component.clear()
 				transition_to("DashState", {"profile": profile})
 		InputHandlerResult.Status.REJECTED:
-			pass
+			var context = {"profile": profile}
+			buffer_component.capture(BufferComponent.BufferedAction.DASH, context)
 		InputHandlerResult.Status.CONSUMED:
 			pass
 
@@ -208,6 +214,17 @@ func on_current_state_finished(reason: Dictionary = {}):
 	var buffered_data = buffer_component.consume()
 	if buffered_data:
 		match buffered_data.action:
+			BufferComponent.BufferedAction.JUMP:
+				var j_profile: JumpProfile = buffered_data.context.get("profile")
+				if action_cost_validator.try_pay_costs(j_profile):
+					transition_to("AirborneState", {"profile": j_profile, "apply_jump_impulse": true})
+					return
+			BufferComponent.BufferedAction.DASH:
+				var d_profile: DashProfile = buffered_data.context.get("profile")
+				if owner_node is CharacterBody2D and not owner_node.is_on_floor():
+					transition_to("AirborneState")
+				on_dash_pressed(d_profile)
+				return
 			BufferComponent.BufferedAction.ATTACK:
 				var profile = buffered_data.context.get("profile")
 				if action_cost_validator.try_pay_costs(profile):
