@@ -1,9 +1,10 @@
-[gd_scene load_steps=67 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=69 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="2_apa73"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="2_g2els"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_oprun"]
+[ext_resource type="Resource" uid="uid://besl07w08l6s" path="res://resources/player/jump/default.tres" id="3_8svfe"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="3_f1ej7"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="3_qfm1y"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
@@ -55,6 +56,7 @@
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="52_sc3ue"]
 [ext_resource type="Script" uid="uid://cdtcv6tkc4hp1" path="res://scripts/components/focus_component.gd" id="53_lxlsd"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="54_ha2mi"]
+[ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="56_74r1k"]
 
 [sub_resource type="Animation" id="Animation_fdfoy"]
 resource_name = "idle"
@@ -486,6 +488,7 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 script = ExtResource("1_4flbx")
 base_poise = 10.0
 skill_x = ExtResource("2_apa73")
+jump_profile = ExtResource("3_8svfe")
 finisher_profile = ExtResource("29_gl8cc")
 parry_profile = ExtResource("20_i4ail")
 riposte_profile = ExtResource("5_74r1k")
@@ -665,9 +668,14 @@ metadata/_custom_type_script = "uid://80lq1gnacaa2"
 script = ExtResource("52_sc3ue")
 metadata/_custom_type_script = "uid://cjolmubu1vmxi"
 
+[node name="AirborneState" type="Node" parent="Player/StateMachine"]
+script = ExtResource("56_74r1k")
+metadata/_custom_type_script = "uid://clhnftdn6qup"
+
 [node name="PathTarget" type="Node2D" parent="."]
 
 [node name="ColorRect" type="ColorRect" parent="PathTarget"]
+visible = false
 offset_left = -50.0
 offset_top = -132.0
 offset_right = 40.0

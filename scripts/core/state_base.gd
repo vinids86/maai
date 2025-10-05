@@ -33,6 +33,9 @@ func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHan
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
+func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
 func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 

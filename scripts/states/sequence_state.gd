@@ -87,7 +87,6 @@ func _execute_next_attack():
 
 	if next_profile:
 		if _cost_validator.try_pay_costs(next_profile):
-			print("EXE")
 			_current_profile = next_profile
 			_attack_executor.execute(_current_profile)
 		else:

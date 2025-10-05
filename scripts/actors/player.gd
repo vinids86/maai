@@ -11,6 +11,7 @@ extends CharacterBody2D
 @onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
 @onready var path_target: Node2D = get_parent().get_node("PathTarget")
 @onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
+@onready var health_component: HealthComponent = $HealthComponent
 @onready var stamina_component: StaminaComponent = $StaminaComponent
 @onready var focus_component: FocusComponent = $FocusComponent
 @onready var physics_component: PhysicsComponent = $PhysicsComponent
@@ -29,6 +30,7 @@ extends CharacterBody2D
 var _equipped_skills: Dictionary = {}
 
 @export_group("Profiles")
+@export var jump_profile: JumpProfile
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var riposte_profile: AttackProfile
@@ -81,7 +83,7 @@ func _physics_process(delta: float):
 	_update_facing_direction()
 	
 	velocity = state_machine.process_physics(delta, walk_direction, is_running)
-	
+
 	move_and_slide()
 
 func _build_skill_dictionary():
@@ -95,6 +97,13 @@ func _update_facing_direction():
 		visuals.scale.x = facing_sign
 
 func _unhandled_input(event: InputEvent):
+	if event.is_action_pressed("jump"):
+		var profile = get_jump_profile()
+		if profile:
+			state_machine.on_jump_pressed(profile)
+		get_viewport().set_input_as_handled()
+		return
+
 	if event.is_action_pressed("dodge_run"):
 		if not run_cancel_timer.is_stopped():
 			run_cancel_timer.stop()
@@ -153,6 +162,9 @@ func _send_dodge_intention():
 	var profile = _get_dodge_profile_for_direction(direction)
 	if profile:
 		state_machine.on_dodge_pressed(direction, profile)
+
+func get_jump_profile() -> JumpProfile:
+	return jump_profile
 
 func get_riposte_profile() -> AttackProfile:
 	return riposte_profile

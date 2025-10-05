@@ -67,6 +67,15 @@ func emit_phase_change(data: Dictionary):
 func get_current_state() -> State:
 	return current_state
 
+func on_jump_pressed(profile: JumpProfile):
+	var result: InputHandlerResult = current_state.handle_jump_input(profile)
+	
+	match result.status:
+		InputHandlerResult.Status.ACCEPTED:
+			if action_cost_validator.try_pay_costs(profile):
+				buffer_component.clear()
+				transition_to("AirborneState", {"profile": profile, "apply_jump_impulse": true})
+
 func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 	var result: InputHandlerResult = current_state.handle_dodge_input(direction, profile)
 	
@@ -212,8 +221,12 @@ func on_current_state_finished(reason: Dictionary = {}):
 					transition_to("SequenceState", {"sequence_context": sequence})
 					return
 
-	var profile = owner_node.get_locomotion_profile()
-	transition_to(initial_state_key, {"profile": profile})
+	if owner_node is CharacterBody2D and owner_node.is_on_floor():
+		var profile = owner_node.get_locomotion_profile()
+		transition_to(initial_state_key, {"profile": profile})
+	else:
+		transition_to("AirborneState")
+
 
 func transition_to(new_state_key: String, args: Dictionary = {}):
 	if not states.has(new_state_key):

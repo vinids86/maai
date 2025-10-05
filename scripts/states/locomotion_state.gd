@@ -15,8 +15,11 @@ func enter(args: Dictionary = {}):
 	_change_phase(Phases.IDLE)
 
 func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
-	var new_velocity = owner_node.velocity
+	if not owner_node.is_on_floor():
+		state_machine.transition_to("AirborneState")
+		return owner_node.velocity
 
+	var new_velocity = owner_node.velocity
 	new_velocity = physics_component.apply_gravity(new_velocity, delta)
 
 	if not current_profile:
@@ -47,6 +50,11 @@ func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
+func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
+	if owner_node.is_on_floor():
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
 	if owner_node.is_on_floor():
