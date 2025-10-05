@@ -7,9 +7,11 @@
 script = ExtResource("1_mor73")
 rising_animation = &""
 falling_animation = &""
+air_rising_animation = &""
 jump_sfx = ExtResource("1_vy6cc")
-air_control_speed = 700.0
-jump_velocity = -1400.0
+coyote_time = 0.12
+max_air_jumps = 1
+air_control_speed = 500.0
 min_jump_velocity = 260.0
 max_jump_velocity = 6900.0
 max_hold_time = 0.12

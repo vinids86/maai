@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=11 format=3 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="Script" uid="uid://coil0eyucsysb" path="res://scripts/scenes/testing_dojo.gd" id="1_r8dm2"]
@@ -11,6 +11,18 @@ size = Vector2(6416, 33)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_o4ihr"]
 size = Vector2(820, 49)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_sr25e"]
+size = Vector2(625, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pjkap"]
+size = Vector2(971, 45)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qq2yu"]
+size = Vector2(9369.5, 42)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xi06q"]
+size = Vector2(162, 20)
+
 [node name="Node2D" type="Node2D" node_paths=PackedStringArray("player", "hud")]
 script = ExtResource("1_r8dm2")
 player = NodePath("PlayerEntity/Player")
@@ -22,13 +34,6 @@ position = Vector2(103, 893)
 [node name="Enemy" parent="." instance=ExtResource("2_7od0s")]
 position = Vector2(1484, 847)
 
-[node name="StaticBody2D" type="StaticBody2D" parent="."]
-position = Vector2(-443, 353)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
-position = Vector2(1044, 631.5)
-shape = SubResource("RectangleShape2D_8jaed")
-
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="PlayerHUD" parent="CanvasLayer" groups=["hud"] instance=ExtResource("4_o4ihr")]
@@ -37,10 +42,45 @@ offset_top = 917.0
 offset_right = 814.0
 offset_bottom = 955.0
 
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(-443, 353)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+position = Vector2(1044, 631.5)
+shape = SubResource("RectangleShape2D_8jaed")
+
 [node name="StaticBody2D2" type="StaticBody2D" parent="."]
+position = Vector2(0, 51)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2"]
 position = Vector2(-724, 773.5)
 shape = SubResource("RectangleShape2D_o4ihr")
+
+[node name="StaticBody2D3" type="StaticBody2D" parent="."]
+position = Vector2(12, -6)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D3"]
+position = Vector2(-1614, 515)
+shape = SubResource("RectangleShape2D_sr25e")
+
+[node name="StaticBody2D4" type="StaticBody2D" parent="."]
+position = Vector2(-2643, 666)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D4"]
+position = Vector2(-213.5, 12.5)
+shape = SubResource("RectangleShape2D_pjkap")
+
+[node name="StaticBody2D5" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D5"]
+position = Vector2(935.25, 1334)
+shape = SubResource("RectangleShape2D_qq2yu")
+
+[node name="StaticBody2D6" type="StaticBody2D" parent="."]
+position = Vector2(4101, 1138)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D6"]
+position = Vector2(71, 0)
+shape = SubResource("RectangleShape2D_xi06q")
 
 [editable path="PlayerEntity"]
