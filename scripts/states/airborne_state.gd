@@ -6,18 +6,19 @@ var current_profile: JumpProfile
 enum Phases { RISING, FALLING }
 var current_phase: Phases = Phases.FALLING
 
-# --- NOVO: controle de coyote e pulos aéreos ---
 var last_left_ground_ms: int = -1
 var air_jumps_left: int = 0
 var has_locked_air_pool: bool = false
 var _last_jump_was_air: bool = false
 
-# --- Lógica existente de pulo variável ---
 var _pending_jump_impulse: bool = false
 var _pending_initial_velocity: float = 0.0
 var _holding: bool = false
 var _hold_time: float = 0.0
 var _released_this_frame: bool = false
+
+var air_dash_used: bool = false
+var _landed_connected: bool = false
 
 func enter(args: Dictionary = {}) -> void:
 	var apply_jump_impulse: bool = bool(args.get("apply_jump_impulse", false))
@@ -29,23 +30,23 @@ func enter(args: Dictionary = {}) -> void:
 	_released_this_frame = false
 	_last_jump_was_air = false
 
+	if surface_contact_component and not _landed_connected:
+		surface_contact_component.connect("landed", Callable(self, "_on_landed"))
+		_landed_connected = true
+
 	if apply_jump_impulse and current_profile:
-		# Primeiro pulo (do chão) entrando no Airborne
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
 		_holding = true
-		# Travar e carregar a pool aérea na primeira aceitação de pulo
 		if not has_locked_air_pool:
 			air_jumps_left = current_profile.max_air_jumps
 			has_locked_air_pool = true
 	else:
-		# Entrou por queda (borda/escorregou) → inicia janela de coyote
 		last_left_ground_ms = Time.get_ticks_msec()
 
 	_update_phase(owner_node.velocity)
 
 func exit() -> void:
-	# Reset leve na saída (landing será o responsável pelo reset total)
 	_holding = false
 	_hold_time = 0.0
 	_released_this_frame = false
@@ -99,6 +100,12 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
+func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
+	if air_dash_used:
+		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+	air_dash_used = true
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
 func process_physics(delta: float, walk_direction: float, _is_running: bool) -> Vector2:
 	var new_velocity: Vector2 = owner_node.velocity
 
@@ -133,7 +140,6 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	_update_phase(new_velocity)
 
 	if owner_node.is_on_floor() and new_velocity.y >= 0.0:
-		# Landing → reset completo do ciclo aéreo
 		air_jumps_left = 0
 		has_locked_air_pool = false
 		last_left_ground_ms = -1
@@ -178,3 +184,9 @@ func _emit_phase_signal() -> void:
 		"sfx_to_play": sfx_to_play
 	}
 	state_machine.emit_phase_change(phase_data)
+
+func _on_landed() -> void:
+	air_dash_used = false
+	air_jumps_left = 0
+	has_locked_air_pool = false
+	last_left_ground_ms = -1

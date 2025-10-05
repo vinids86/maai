@@ -1,4 +1,4 @@
-[gd_scene load_steps=69 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=72 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="2_apa73"]
@@ -23,6 +23,7 @@
 [ext_resource type="Resource" uid="uid://dl072xuq1tgt8" path="res://resources/player/countered/default.tres" id="12_8svfe"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="12_jej6c"]
 [ext_resource type="Resource" uid="uid://cer2y2x0eksg5" path="res://resources/player/death/default.tres" id="13_2a3c5"]
+[ext_resource type="Resource" uid="uid://dvig1a4kkleik" path="res://resources/player/dash/default.tres" id="15_42b1b"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_listener.gd" id="15_a8ls1"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="16_qfm1y"]
 [ext_resource type="Texture2D" uid="uid://bqpwrbau08mpn" path="res://assets/player/spritesheetiddle.png" id="17_fdfoy"]
@@ -52,11 +53,13 @@
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="34_8svfe"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="40_giy8y"]
+[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="42_h7ic4"]
 [ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="50_6e8lb"]
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="52_sc3ue"]
 [ext_resource type="Script" uid="uid://cdtcv6tkc4hp1" path="res://scripts/components/focus_component.gd" id="53_lxlsd"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="54_ha2mi"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="56_74r1k"]
+[ext_resource type="Script" uid="uid://d18awpld4ar25" path="res://scripts/states/dash_state.gd" id="60_h7ic4"]
 
 [sub_resource type="Animation" id="Animation_fdfoy"]
 resource_name = "idle"
@@ -500,6 +503,7 @@ guard_broken_profile = ExtResource("27_wqfne")
 locomotion_profile = ExtResource("9_487ah")
 countered_profile = ExtResource("12_8svfe")
 death_profile = ExtResource("13_2a3c5")
+dash_profile = ExtResource("15_42b1b")
 neutral_dodge_profile = ExtResource("7_fjrip")
 forward_dodge_profile = ExtResource("8_d2wvv")
 back_dodge_profile = ExtResource("9_3v2ag")
@@ -608,6 +612,10 @@ metadata/_custom_type_script = "uid://cdtcv6tkc4hp1"
 [node name="DecayTimer" type="Timer" parent="Player/FocusComponent"]
 one_shot = true
 
+[node name="SurfaceContactComponent" type="Node" parent="Player"]
+script = ExtResource("42_h7ic4")
+metadata/_custom_type_script = "uid://dhdu4hixec0wa"
+
 [node name="AttackExecutor" type="Node" parent="Player"]
 script = ExtResource("25_hax0n")
 metadata/_custom_type_script = "uid://b0lnh740qgaih"
@@ -671,6 +679,10 @@ metadata/_custom_type_script = "uid://cjolmubu1vmxi"
 [node name="AirborneState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("56_74r1k")
 metadata/_custom_type_script = "uid://clhnftdn6qup"
+
+[node name="DashState" type="Node" parent="Player/StateMachine"]
+script = ExtResource("60_h7ic4")
+metadata/_custom_type_script = "uid://d18awpld4ar25"
 
 [node name="PathTarget" type="Node2D" parent="."]
 

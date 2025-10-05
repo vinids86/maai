@@ -5,12 +5,14 @@ var state_machine: StateMachine
 var owner_node: Node
 var physics_component: Node
 var path_follower_component: Node
+var surface_contact_component: SurfaceContactComponent
 
-func initialize(sm: StateMachine, owner: Node, physics_comp: Node, path_follower_comp: Node):
+func initialize(sm: StateMachine, owner: Node, physics_comp: Node, path_follower_comp: Node, surface_contact_comp: SurfaceContactComponent):
 	self.state_machine = sm
 	self.owner_node = owner
 	self.physics_component = physics_comp
 	self.path_follower_component = path_follower_comp
+	self.surface_contact_component = surface_contact_comp
 
 func enter(_args: Dictionary = {}):
 	pass
@@ -28,6 +30,9 @@ func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 	
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:

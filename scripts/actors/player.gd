@@ -17,6 +17,7 @@ extends CharacterBody2D
 @onready var physics_component: PhysicsComponent = $PhysicsComponent
 @onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
 @onready var buffer_component: BufferComponent = $BufferComponent
+@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
 
 @export_group("Combat Data")
 @export var base_poise: float
@@ -42,6 +43,7 @@ var _equipped_skills: Dictionary = {}
 @export var locomotion_profile: LocomotionProfile
 @export var countered_profile: CounteredProfile
 @export var death_profile: DeathProfile
+@export var dash_profile: DashProfile
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile
@@ -63,8 +65,10 @@ func _ready():
 		physics_component,
 		path_follower_component,
 		buffer_component,
-		action_cost_validator
+		action_cost_validator,
+		surface_contact_component,
 	)
+	surface_contact_component.call_deferred("setup", self)
 	
 	if hud:
 		await hud.ready
@@ -72,6 +76,7 @@ func _ready():
 	attack_executor.setup(self)
 	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
 	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
+	surface_contact_component.landed.connect(_on_landed)
 	_build_skill_dictionary()
 
 func _exit_tree():
@@ -109,22 +114,30 @@ func _unhandled_input(event: InputEvent):
 		get_viewport().set_input_as_handled()
 		return
 		
-	if event.is_action_pressed("dodge_run"):
-		if not run_cancel_timer.is_stopped():
-			run_cancel_timer.stop()
-			_send_dodge_intention()
+	if event.is_action_pressed("dash_run"):
+		if not is_on_floor():
+			_send_dash_intention()
 		else:
-			hold_input_timer.start()
+			if not run_cancel_timer.is_stopped():
+				run_cancel_timer.stop()
+				_send_dash_intention()
+			else:
+				hold_input_timer.start()
 		get_viewport().set_input_as_handled()
 		return
 
-	if event.is_action_released("dodge_run"):
+	if event.is_action_released("dash_run"):
 		if not is_running:
 			if not hold_input_timer.is_stopped():
 				hold_input_timer.stop()
-				_send_dodge_intention()
+				_send_dash_intention()
 		else:
 			run_cancel_timer.start()
+		get_viewport().set_input_as_handled()
+		return
+
+	if event.is_action_pressed("dodge"):
+		_send_dodge_intention()
 		get_viewport().set_input_as_handled()
 		return
 	
@@ -139,10 +152,8 @@ func _unhandled_input(event: InputEvent):
 		for action_name in _equipped_skills.keys():
 			if event.is_action_pressed(action_name):
 				var skill: BaseSkill = _equipped_skills.get(action_name)
-				
 				if skill:
 					skill.execute(self, state_machine)
-				
 				get_viewport().set_input_as_handled()
 				return
 
@@ -156,11 +167,21 @@ func _unhandled_input(event: InputEvent):
 	state_machine.process_input(event)
 
 func _on_hold_input_timer_timeout():
-	if Input.is_action_pressed("dodge_run"):
+	if Input.is_action_pressed("dash_run"):
 		is_running = true
 
 func _on_run_cancel_timer_timeout():
 	is_running = false
+
+func _on_landed():
+	if Input.is_action_pressed("dash_run"):
+		if hold_input_timer.is_stopped():
+			hold_input_timer.start()
+
+func _send_dash_intention():
+	var profile = get_dash_profile()
+	if profile:
+		state_machine.on_dash_pressed(profile)
 
 func _send_dodge_intention():
 	var direction = _get_dodge_direction_from_input()
@@ -170,6 +191,9 @@ func _send_dodge_intention():
 
 func get_jump_profile() -> JumpProfile:
 	return jump_profile
+
+func get_dash_profile() -> DashProfile:
+	return dash_profile
 
 func get_riposte_profile() -> AttackProfile:
 	return riposte_profile

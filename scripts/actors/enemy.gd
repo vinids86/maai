@@ -16,6 +16,7 @@ extends CharacterBody2D
 @onready var physics_component: PhysicsComponent = $PhysicsComponent
 @onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
 @onready var buffer_component: BufferComponent = $BufferComponent
+@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
 
 @export_group("Equipped Skills")
 @export var skill_x: BaseSkill
@@ -58,7 +59,8 @@ func _ready():
 		physics_component,
 		path_follower_component,
 		buffer_component,
-		action_cost_validator
+		action_cost_validator,
+		surface_contact_component,
 	)
 	
 	attack_executor.setup(self)

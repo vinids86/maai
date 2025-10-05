@@ -1,4 +1,4 @@
-[gd_scene load_steps=62 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=64 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -43,10 +43,12 @@
 [ext_resource type="Script" uid="uid://dmqafi2pyifje" path="res://scripts/components/skill_combo_component.gd" id="28_7v6cf"]
 [ext_resource type="Script" uid="uid://cqen1cgottixs" path="res://scripts/components/facing_component.gd" id="31_5ie7m"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
+[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="35_5lniq"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="42_hyejq"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="48_sm4rh"]
+[ext_resource type="Script" uid="uid://d18awpld4ar25" path="res://scripts/states/dash_state.gd" id="50_7w3jn"]
 [ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="52_uiwvf"]
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="54_b5geg"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="58_0b4fd"]
@@ -497,6 +499,10 @@ metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
 script = ExtResource("31_5ie7m")
 metadata/_custom_type_script = "uid://cqen1cgottixs"
 
+[node name="SurfaceContactComponent" type="Node" parent="Enemy"]
+script = ExtResource("35_5lniq")
+metadata/_custom_type_script = "uid://dhdu4hixec0wa"
+
 [node name="StateMachine" type="Node" parent="Enemy"]
 script = ExtResource("6_ipns3")
 metadata/_custom_type_script = "uid://dus5o11ra71f"
@@ -552,6 +558,10 @@ metadata/_custom_type_script = "uid://cjolmubu1vmxi"
 [node name="AirborneState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("48_sm4rh")
 metadata/_custom_type_script = "uid://clhnftdn6qup"
+
+[node name="DashState" type="Node" parent="Enemy/StateMachine"]
+script = ExtResource("50_7w3jn")
+metadata/_custom_type_script = "uid://d18awpld4ar25"
 
 [node name="EnemyStatusUI" parent="Enemy" instance=ExtResource("12_otmr2")]
 offset_left = -87.0

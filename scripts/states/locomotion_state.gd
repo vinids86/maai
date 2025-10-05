@@ -43,6 +43,9 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> V
 func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
+func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if owner_node.is_on_floor():
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
