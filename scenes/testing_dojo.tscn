@@ -21,7 +21,7 @@ size = Vector2(971, 45)
 size = Vector2(9369.5, 42)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_xi06q"]
-size = Vector2(47, 189)
+size = Vector2(47, 306)
 
 [node name="Node2D" type="Node2D" node_paths=PackedStringArray("player", "hud")]
 script = ExtResource("1_r8dm2")
@@ -87,14 +87,35 @@ shape = SubResource("RectangleShape2D_xi06q")
 position = Vector2(-26, 796)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D7"]
-position = Vector2(13.5, -84.5)
+position = Vector2(3, -285)
 shape = SubResource("RectangleShape2D_xi06q")
 
 [node name="StaticBody2D8" type="StaticBody2D" parent="."]
-position = Vector2(129, 750)
+position = Vector2(200, 295)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D8"]
-position = Vector2(13.5, -84.5)
+position = Vector2(12, -106)
+shape = SubResource("RectangleShape2D_xi06q")
+
+[node name="StaticBody2D9" type="StaticBody2D" parent="."]
+position = Vector2(-285, -100)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D9"]
+position = Vector2(12, -106)
+shape = SubResource("RectangleShape2D_xi06q")
+
+[node name="StaticBody2D10" type="StaticBody2D" parent="."]
+position = Vector2(-606, -233)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D10"]
+position = Vector2(12, -106)
+shape = SubResource("RectangleShape2D_xi06q")
+
+[node name="StaticBody2D11" type="StaticBody2D" parent="."]
+position = Vector2(-1139, -59)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D11"]
+position = Vector2(12, -92)
 shape = SubResource("RectangleShape2D_xi06q")
 
 [editable path="PlayerEntity"]

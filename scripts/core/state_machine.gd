@@ -58,22 +58,19 @@ func _on_owner_died():
 	transition_to("DeathState", {"profile": profile})
 
 func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
-	if current_state and current_state.has_method("check_contextual_transitions"):
-		var transition_suggestion: Dictionary = current_state.check_contextual_transitions(walk_direction)
-		if not transition_suggestion.is_empty():
-			var state_name = transition_suggestion.get("name")
-			if state_name == "WallSlideState":
-				var airborne_state = states.get("AirborneState")
-				if airborne_state and airborne_state is AirborneState:
-					airborne_state.reset_air_actions()
-				var profile = owner_node.get_wall_slide_profile()
-				transition_to(state_name, {"profile": profile})
-				
-				return current_state.process_physics(delta, walk_direction, is_running)
+	if not current_state:
+		return Vector2.ZERO
 
-	if current_state:
+	var result = current_state.process_physics(delta, walk_direction, is_running)
+
+	if result is Dictionary:
+		var transition_request: Dictionary = result
+		var state_name = transition_request.get("name")
+		var args = transition_request.get("args", {})
+		transition_to(state_name, args)
 		return current_state.process_physics(delta, walk_direction, is_running)
-	return Vector2.ZERO
+	
+	return result
 
 func process_input(event: InputEvent):
 	if current_state:

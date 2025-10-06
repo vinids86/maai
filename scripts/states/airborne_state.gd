@@ -139,7 +139,7 @@ func check_contextual_transitions(walk_direction: float) -> Dictionary:
 	
 	if is_falling and is_pressing_towards_wall:
 		if wall_detector.is_colliding(owner_node.facing_sign):
-			return {"name": "WallSlideState"}
+			return {"name": "WallSlideState", "pre_transition_action": "reset_air_actions"}
 			
 	return {}
 
