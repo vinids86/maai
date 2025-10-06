@@ -18,6 +18,7 @@ extends CharacterBody2D
 @onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
 @onready var buffer_component: BufferComponent = $BufferComponent
 @onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
+@onready var wall_detector_component: WallDetectorComponent = $WallDetectorComponent
 
 @export_group("Combat Data")
 @export var base_poise: float
@@ -44,6 +45,7 @@ var _equipped_skills: Dictionary = {}
 @export var countered_profile: CounteredProfile
 @export var death_profile: DeathProfile
 @export var dash_profile: DashProfile
+@export var wall_slide_profile: WallSlideProfile
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile
@@ -67,6 +69,7 @@ func _ready():
 		buffer_component,
 		action_cost_validator,
 		surface_contact_component,
+		wall_detector_component
 	)
 
 	surface_contact_component.call_deferred("setup", self)
@@ -232,6 +235,9 @@ func get_countered_profile() -> CounteredProfile:
 	
 func get_death_profile() -> DeathProfile:
 	return death_profile
+
+func get_wall_slide_profile() -> WallSlideProfile:
+	return wall_slide_profile
 
 func _get_dodge_direction_from_input() -> Vector2:
 	var direction = Vector2.ZERO

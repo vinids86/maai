@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="WallSlideProfile" load_steps=2 format=3 uid="uid://048h5l4vvq4w"]
+
+[ext_resource type="Script" uid="uid://rimkfupy77fv" path="res://scripts/profiles/wall_slide_profile.gd" id="1_wwokp"]
+
+[resource]
+script = ExtResource("1_wwokp")
+animation_name = &""
+slide_speed = 150.0
+metadata/_custom_type_script = "uid://rimkfupy77fv"

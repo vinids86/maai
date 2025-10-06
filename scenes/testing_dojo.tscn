@@ -21,7 +21,7 @@ size = Vector2(971, 45)
 size = Vector2(9369.5, 42)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_xi06q"]
-size = Vector2(162, 20)
+size = Vector2(47, 189)
 
 [node name="Node2D" type="Node2D" node_paths=PackedStringArray("player", "hud")]
 script = ExtResource("1_r8dm2")
@@ -81,6 +81,20 @@ position = Vector2(4101, 1138)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D6"]
 position = Vector2(71, 0)
+shape = SubResource("RectangleShape2D_xi06q")
+
+[node name="StaticBody2D7" type="StaticBody2D" parent="."]
+position = Vector2(-26, 796)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D7"]
+position = Vector2(13.5, -84.5)
+shape = SubResource("RectangleShape2D_xi06q")
+
+[node name="StaticBody2D8" type="StaticBody2D" parent="."]
+position = Vector2(129, 750)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D8"]
+position = Vector2(13.5, -84.5)
 shape = SubResource("RectangleShape2D_xi06q")
 
 [editable path="PlayerEntity"]

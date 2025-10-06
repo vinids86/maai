@@ -22,6 +22,8 @@ var _landed_connected: bool = false
 
 func enter(args: Dictionary = {}) -> void:
 	var apply_jump_impulse: bool = bool(args.get("apply_jump_impulse", false))
+	var is_wall_jump: bool = bool(args.get("is_wall_jump", false))
+	
 	current_profile = args.get("profile")
 	_pending_jump_impulse = false
 	_pending_initial_velocity = 0.0
@@ -34,7 +36,12 @@ func enter(args: Dictionary = {}) -> void:
 		surface_contact_component.connect("landed", Callable(self, "_on_landed"))
 		_landed_connected = true
 
-	if apply_jump_impulse and current_profile:
+	if is_wall_jump and current_profile:
+		var impulse = current_profile.wall_jump_impulse
+		impulse.x *= -owner_node.facing_sign
+		owner_node.velocity = impulse
+		_last_jump_was_air = true
+	elif apply_jump_impulse and current_profile:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
 		_holding = true
@@ -57,6 +64,12 @@ func exit() -> void:
 func on_jump_released() -> void:
 	_holding = false
 	_released_this_frame = true
+
+func reset_air_actions() -> void:
+	if current_profile:
+		air_jumps_left = current_profile.max_air_jumps
+	air_dash_used = false
+	has_locked_air_pool = true
 
 func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 	current_profile = profile
@@ -112,6 +125,12 @@ func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 	air_dash_used = true
 	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
+func check_contextual_transitions(walk_direction: float) -> Dictionary:
+	if is_instance_valid(wall_detector) and owner_node.velocity.y > 0:
+		if wall_detector.is_on_wall(owner_node.facing_sign, walk_direction):
+			return {"name": "WallSlideState"}
+	return {}
 
 func process_physics(delta: float, walk_direction: float, _is_running: bool) -> Vector2:
 	var new_velocity: Vector2 = owner_node.velocity

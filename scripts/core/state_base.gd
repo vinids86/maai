@@ -6,19 +6,24 @@ var owner_node: Node
 var physics_component: Node
 var path_follower_component: Node
 var surface_contact_component: SurfaceContactComponent
+var wall_detector: WallDetectorComponent
 
-func initialize(sm: StateMachine, owner: Node, physics_comp: Node, path_follower_comp: Node, surface_contact_comp: SurfaceContactComponent):
+func initialize(sm: StateMachine, owner: Node, physics_comp: Node, path_follower_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
 	self.state_machine = sm
 	self.owner_node = owner
 	self.physics_component = physics_comp
 	self.path_follower_component = path_follower_comp
 	self.surface_contact_component = surface_contact_comp
+	self.wall_detector = p_wall_detector
 
 func enter(_args: Dictionary = {}):
 	pass
 
 func exit():
 	pass
+	
+func check_contextual_transitions(_walk_direction: float) -> Dictionary:
+	return {}
 
 func process_input(_event: InputEvent):
 	pass

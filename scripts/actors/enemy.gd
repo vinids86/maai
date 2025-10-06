@@ -17,6 +17,7 @@ extends CharacterBody2D
 @onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
 @onready var buffer_component: BufferComponent = $BufferComponent
 @onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
+@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
 
 @export_group("Equipped Skills")
 @export var skill_x: BaseSkill
@@ -36,6 +37,7 @@ extends CharacterBody2D
 @export var locomotion_profile: LocomotionProfile
 @export var countered_profile: CounteredProfile
 @export var death_profile: DeathProfile
+@export var wall_slide_profile: WallSlideProfile
 @export var base_poise: float
 
 @export_group("Dodge Profiles")
@@ -61,6 +63,7 @@ func _ready():
 		buffer_component,
 		action_cost_validator,
 		surface_contact_component,
+		wall_detector
 	)
 	
 	attack_executor.setup(self)
@@ -135,6 +138,9 @@ func get_countered_profile() -> CounteredProfile:
 	
 func get_death_profile() -> DeathProfile:
 	return death_profile
+
+func get_wall_slide_profile() -> WallSlideProfile:
+	return wall_slide_profile
 
 func flash_red():
 	if not material_ref:

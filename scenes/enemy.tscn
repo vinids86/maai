@@ -1,4 +1,4 @@
-[gd_scene load_steps=64 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=67 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -26,6 +26,7 @@
 [ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="12_rogs8"]
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="13_1x4g4"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="15_1x4g4"]
+[ext_resource type="Resource" uid="uid://048h5l4vvq4w" path="res://resources/player/wall/default.tres" id="16_b5geg"]
 [ext_resource type="Script" uid="uid://24v4chol2qs0" path="res://scripts/profiles/buffer_profile.gd" id="16_ekh6n"]
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="17_6awcb"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="17_shcg2"]
@@ -44,12 +45,14 @@
 [ext_resource type="Script" uid="uid://cqen1cgottixs" path="res://scripts/components/facing_component.gd" id="31_5ie7m"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 [ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="35_5lniq"]
+[ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="37_g0yyi"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="42_hyejq"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="48_sm4rh"]
 [ext_resource type="Script" uid="uid://d18awpld4ar25" path="res://scripts/states/dash_state.gd" id="50_7w3jn"]
 [ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="52_uiwvf"]
+[ext_resource type="Script" uid="uid://kqlkm03xp1rg" path="res://scripts/states/wall_slide_state.gd" id="54_5utat"]
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="54_b5geg"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="58_0b4fd"]
 
@@ -411,6 +414,7 @@ guard_broken_profile = ExtResource("20_2mchx")
 locomotion_profile = ExtResource("9_2sbpf")
 countered_profile = ExtResource("19_a5akt")
 death_profile = ExtResource("20_4lt7r")
+wall_slide_profile = ExtResource("16_b5geg")
 base_poise = 10.0
 
 [node name="Visuals" type="Node2D" parent="Enemy"]
@@ -535,6 +539,16 @@ metadata/_custom_type_script = "uid://cqen1cgottixs"
 script = ExtResource("35_5lniq")
 metadata/_custom_type_script = "uid://dhdu4hixec0wa"
 
+[node name="WallDetectorComponent" type="Node2D" parent="Enemy"]
+script = ExtResource("37_g0yyi")
+
+[node name="RayCast2D" type="RayCast2D" parent="Enemy/WallDetectorComponent"]
+target_position = Vector2(35, 0)
+
+[node name="ActionCostValidator" type="Node" parent="Enemy"]
+script = ExtResource("58_0b4fd")
+metadata/_custom_type_script = "uid://bwxgsevlwe736"
+
 [node name="StateMachine" type="Node" parent="Enemy"]
 script = ExtResource("6_ipns3")
 metadata/_custom_type_script = "uid://dus5o11ra71f"
@@ -595,14 +609,14 @@ metadata/_custom_type_script = "uid://clhnftdn6qup"
 script = ExtResource("50_7w3jn")
 metadata/_custom_type_script = "uid://d18awpld4ar25"
 
+[node name="WallSlideState" type="Node" parent="Enemy/StateMachine"]
+script = ExtResource("54_5utat")
+metadata/_custom_type_script = "uid://kqlkm03xp1rg"
+
 [node name="EnemyStatusUI" parent="Enemy" instance=ExtResource("12_otmr2")]
 offset_left = -87.0
 offset_top = -122.0
 offset_right = -47.0
 offset_bottom = -82.0
-
-[node name="ActionCostValidator" type="Node" parent="Enemy"]
-script = ExtResource("58_0b4fd")
-metadata/_custom_type_script = "uid://bwxgsevlwe736"
 
 [node name="PathTarget" type="Node2D" parent="."]
