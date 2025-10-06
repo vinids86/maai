@@ -27,7 +27,7 @@ enum UnparryableType {
 
 @export_group("Hitbox")
 @export var hitbox_size: Vector2 = Vector2(90, 64)
-@export var hitbox_position: Vector2 = Vector2(90, -64)
+@export var hitbox_position: Vector2 = Vector2(40, 0)
 
 @export_group("Mechanics")
 @export var damage: float = 1.0

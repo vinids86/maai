@@ -7,8 +7,6 @@
 script = ExtResource("1_0alo4")
 active_duration = 0.25
 recovery_duration = 0.05
-movement_chase_speed = 10.0
-ignores_gravity = false
 stamina_cost = 15.0
 poise_shield_contribution = 5.0
 animation_name = &""

@@ -150,6 +150,18 @@ tracks/5/keys = {
 "update": 0,
 "values": [Color(1, 1, 1, 1)]
 }
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Enemy/Visuals/ColorRect:color")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(0, 0, 1, 1)]
+}
 
 [sub_resource type="Animation" id="Animation_j0dkt"]
 resource_name = "riposte"
@@ -213,6 +225,18 @@ tracks/4/keys = {
 "transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 0,
 "values": [Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(0, 0, 1, 1), Color(1, 1, 1, 1)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Enemy/Visuals/ColorRect:color")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 0.150639, 0.351168),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(0, 0, 1, 1), Color(1, 1, 1, 1)]
 }
 
 [sub_resource type="Animation" id="Animation_a5akt"]
@@ -355,14 +379,14 @@ _data = {
 }
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_e7lhw"]
-radius = 84.0
-height = 192.0
+radius = 31.0
+height = 62.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gst0f"]
-size = Vector2(130, 200)
+size = Vector2(32, 64)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ya47j"]
-size = Vector2(750, 200)
+size = Vector2(698, 108)
 
 [sub_resource type="Resource" id="Resource_2sbpf"]
 script = ExtResource("16_ekh6n")
@@ -391,21 +415,29 @@ base_poise = 10.0
 
 [node name="Visuals" type="Node2D" parent="Enemy"]
 
-[node name="ColorRect" type="ColorRect" parent="Enemy/Visuals"]
-visible = false
-material = SubResource("ShaderMaterial_c4w8v")
-offset_left = -16.0
-offset_top = -32.0
-offset_right = 16.0
-offset_bottom = 32.0
-color = Color(0.627451, 0.627451, 0.627451, 1)
-
 [node name="Sprite2D" type="Sprite2D" parent="Enemy/Visuals"]
+visible = false
 position = Vector2(0, -44)
 scale = Vector2(0.4, 0.4)
 texture = ExtResource("20_e7lhw")
 hframes = 4
 vframes = 4
+
+[node name="ColorRect" type="ColorRect" parent="Enemy/Visuals"]
+self_modulate = Color(0.00319518, 0.00319518, 1, 1)
+material = SubResource("ShaderMaterial_c4w8v")
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -16.0
+offset_top = -32.0
+offset_right = 16.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 1, 1)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Enemy"]
 root_node = NodePath("../..")
@@ -444,7 +476,7 @@ script = ExtResource("20_2pwtc")
 visible = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/DetectionArea"]
-position = Vector2(181, -2)
+position = Vector2(207, -22)
 shape = SubResource("RectangleShape2D_ya47j")
 
 [node name="SFXEnemy" type="AudioStreamPlayer2D" parent="Enemy"]

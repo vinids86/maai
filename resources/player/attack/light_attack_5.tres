@@ -6,13 +6,13 @@
 [resource]
 script = ExtResource("1_mlt2x")
 startup_duration = 0.3
-active_duration = 0.2
+active_duration = 0.3
 recovery_duration = 0.6
 link_duration = 0.0
 animation_name = &"light_attack_5"
 active_sfx = ExtResource("1_4dkyc")
 hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(90, -64)
+hitbox_position = Vector2(40, 0)
 damage = 1.0
 stamina_cost = 0.0
 focus_cost = 0

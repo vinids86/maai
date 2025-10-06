@@ -474,11 +474,11 @@ _data = {
 }
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4gjji"]
-radius = 83.0
-height = 188.0
+radius = 31.0
+height = 62.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hhpqf"]
-size = Vector2(130, 200)
+size = Vector2(32, 64)
 
 [sub_resource type="Resource" id="Resource_md1ol"]
 script = ExtResource("21_487ah")
@@ -518,11 +518,18 @@ position_smoothing_enabled = true
 [node name="Visuals" type="Node2D" parent="Player"]
 
 [node name="Sprite2D" type="Sprite2D" parent="Player/Visuals"]
+visible = false
 position = Vector2(0, -70)
 scale = Vector2(0.4, 0.4)
 texture = ExtResource("17_fdfoy")
 hframes = 4
 vframes = 4
+
+[node name="ColorRect" type="ColorRect" parent="Player/Visuals"]
+offset_left = -16.0
+offset_top = -32.0
+offset_right = 16.0
+offset_bottom = 32.0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Player"]
 root_node = NodePath("../..")
@@ -537,7 +544,6 @@ state_machine = NodePath("../StateMachine")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
 visible = false
-position = Vector2(0, -31)
 shape = SubResource("CapsuleShape2D_4gjji")
 
 [node name="Hurtbox" type="Area2D" parent="Player"]
@@ -547,7 +553,6 @@ collision_mask = 16
 script = ExtResource("24_l71n6")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player/Hurtbox"]
-position = Vector2(0, -30)
 shape = SubResource("RectangleShape2D_hhpqf")
 
 [node name="AttackHitbox" type="Area2D" parent="Player"]
