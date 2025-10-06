@@ -4,8 +4,6 @@ extends Node
 signal phase_changed(phase_data: Dictionary)
 signal transitioned(from_state: State, to_state: State)
 
-enum ContextualTransition { NONE, REQUEST_WALL_SLIDE }
-
 @export var initial_state_key: String = "LocomotionState"
 
 var states: Dictionary = {}
@@ -60,28 +58,22 @@ func _on_owner_died():
 	transition_to("DeathState", {"profile": profile})
 
 func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
-	if current_state:
-		var transition_data = current_state.check_contextual_transitions(walk_direction)
-		if not transition_data.is_empty():
-			_handle_contextual_transition(transition_data)
-			return current_state.process_physics(delta, walk_direction, is_running)
-			
-		return current_state.process_physics(delta, walk_direction, is_running)
-		
-	return Vector2.ZERO
+	if current_state and current_state.has_method("check_contextual_transitions"):
+		var transition_suggestion: Dictionary = current_state.check_contextual_transitions(walk_direction)
+		if not transition_suggestion.is_empty():
+			var state_name = transition_suggestion.get("name")
+			if state_name == "WallSlideState":
+				var airborne_state = states.get("AirborneState")
+				if airborne_state and airborne_state is AirborneState:
+					airborne_state.reset_air_actions()
+				var profile = owner_node.get_wall_slide_profile()
+				transition_to(state_name, {"profile": profile})
+				
+				return current_state.process_physics(delta, walk_direction, is_running)
 
-func _handle_contextual_transition(transition_data: Dictionary):
-	var transition_name = transition_data.get("name")
-	
-	match transition_name:
-		"WallSlideState":
-			var airborne_state = states.get("AirborneState")
-			if airborne_state and airborne_state.has_method("reset_air_actions"):
-				airborne_state.reset_air_actions()
-			
-			var profile = owner_node.get_wall_slide_profile()
-			if profile:
-				transition_to("WallSlideState", {"profile": profile})
+	if current_state:
+		return current_state.process_physics(delta, walk_direction, is_running)
+	return Vector2.ZERO
 
 func process_input(event: InputEvent):
 	if current_state:
@@ -99,9 +91,12 @@ func on_jump_pressed(profile: JumpProfile):
 		InputHandlerResult.Status.ACCEPTED:
 			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
-				var is_wall_jump = result.context.get("is_wall_jump", false)
-				var args = {"profile": profile, "apply_jump_impulse": true, "is_wall_jump": is_wall_jump}
-				transition_to("AirborneState", args)
+				var transition_args = {"profile": profile, "apply_jump_impulse": true}
+				
+				if result.context.get("is_wall_jump", false):
+					transition_args["is_wall_jump"] = true
+					
+				transition_to("AirborneState", transition_args)
 		InputHandlerResult.Status.REJECTED:
 			var context = {"profile": profile}
 			buffer_component.capture(BufferComponent.BufferedAction.JUMP, context)

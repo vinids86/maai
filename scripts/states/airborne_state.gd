@@ -16,6 +16,7 @@ var _pending_initial_velocity: float = 0.0
 var _holding: bool = false
 var _hold_time: float = 0.0
 var _released_this_frame: bool = false
+var _ignore_air_control_this_frame: bool = false
 
 var air_dash_used: bool = false
 var _landed_connected: bool = false
@@ -31,16 +32,18 @@ func enter(args: Dictionary = {}) -> void:
 	_hold_time = 0.0
 	_released_this_frame = false
 	_last_jump_was_air = false
+	_ignore_air_control_this_frame = false
 
 	if surface_contact_component and not _landed_connected:
 		surface_contact_component.connect("landed", Callable(self, "_on_landed"))
 		_landed_connected = true
 
 	if is_wall_jump and current_profile:
-		var impulse = current_profile.wall_jump_impulse
-		impulse.x *= -owner_node.facing_sign
-		owner_node.velocity = impulse
+		owner_node.velocity.x = owner_node.wall_jump_horizontal_force * owner_node.facing_sign
+		owner_node.velocity.y = -current_profile.min_jump_velocity
+		_holding = true
 		_last_jump_was_air = true
+		_ignore_air_control_this_frame = true
 	elif apply_jump_impulse and current_profile:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
@@ -60,6 +63,7 @@ func exit() -> void:
 	_pending_jump_impulse = false
 	_pending_initial_velocity = 0.0
 	_last_jump_was_air = false
+	_ignore_air_control_this_frame = false
 
 func on_jump_released() -> void:
 	_holding = false
@@ -125,14 +129,26 @@ func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 	air_dash_used = true
 	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
+	
 func check_contextual_transitions(walk_direction: float) -> Dictionary:
-	if is_instance_valid(wall_detector) and owner_node.velocity.y > 0:
-		if wall_detector.is_on_wall(owner_node.facing_sign, walk_direction):
+	if not is_instance_valid(wall_detector):
+		return {}
+
+	var is_falling = owner_node.velocity.y > 0
+	var is_pressing_towards_wall = walk_direction * owner_node.facing_sign > 0
+	
+	if is_falling and is_pressing_towards_wall:
+		if wall_detector.is_colliding(owner_node.facing_sign):
 			return {"name": "WallSlideState"}
+			
 	return {}
 
 func process_physics(delta: float, walk_direction: float, _is_running: bool) -> Vector2:
+	var current_walk_direction = walk_direction
+	if _ignore_air_control_this_frame:
+		current_walk_direction = 0.0
+		_ignore_air_control_this_frame = false
+		
 	var new_velocity: Vector2 = owner_node.velocity
 
 	if _pending_jump_impulse and current_profile:
@@ -154,15 +170,15 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 			_hold_time += delta
 
 	if current_profile:
-		new_velocity.x = walk_direction * current_profile.air_control_speed
+		new_velocity.x = current_walk_direction * current_profile.air_control_speed
 	else:
-		new_velocity.x = walk_direction * 200.0
+		new_velocity.x = current_walk_direction * 200.0
 
 	new_velocity = physics_component.apply_gravity(new_velocity, delta)
 	if new_velocity.y > 0.0:
 		var extra_down_a := 1600 * max(2.2 - 1.0, 0.0)
 		new_velocity.y += extra_down_a * delta
-	_update_facing_sign(walk_direction)
+	_update_facing_sign(current_walk_direction)
 	_update_phase(new_velocity)
 
 	if owner_node.is_on_floor() and new_velocity.y >= 0.0:

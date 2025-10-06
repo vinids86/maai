@@ -630,7 +630,6 @@ script = ExtResource("44_51ujp")
 
 [node name="RayCast2D" type="RayCast2D" parent="Player/WallDetectorComponent"]
 target_position = Vector2(35, 1)
-collision_mask = 16777215
 
 [node name="AttackExecutor" type="Node" parent="Player"]
 script = ExtResource("25_hax0n")
