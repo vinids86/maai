@@ -61,16 +61,7 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> V
 	if not current_state:
 		return Vector2.ZERO
 
-	var result = current_state.process_physics(delta, walk_direction, is_running)
-
-	if result is Dictionary:
-		var transition_request: Dictionary = result
-		var state_name = transition_request.get("name")
-		var args = transition_request.get("args", {})
-		transition_to(state_name, args)
-		return current_state.process_physics(delta, walk_direction, is_running)
-	
-	return result
+	return current_state.process_physics(delta, walk_direction, is_running)
 
 func process_input(event: InputEvent):
 	if current_state:
@@ -196,6 +187,10 @@ func on_current_state_finished(reason: Dictionary = {}):
 	var outcome = reason.get("outcome")
 	if outcome:
 		match outcome:
+			"WALL_CONTACT":
+				owner_node.reset_air_actions()
+				transition_to("WallSlideState", {"profile": owner_node.get_wall_slide_profile()})
+				return
 			"COUNTER_SUCCESS":
 				var context = reason.get("context")
 				if context:
@@ -265,7 +260,7 @@ func on_current_state_finished(reason: Dictionary = {}):
 					transition_to("SequenceState", {"sequence_context": sequence})
 					return
 
-	if owner_node is CharacterBody2D and owner_node.is_on_floor():
+	if owner_node.is_on_floor():
 		var profile = owner_node.get_locomotion_profile()
 		transition_to(initial_state_key, {"profile": profile})
 	else:

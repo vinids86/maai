@@ -59,6 +59,11 @@ var is_running: bool = false
 var facing_sign: int = 1
 var facing_locked: bool = false
 
+var air_jumps_left: int = 0
+var air_dash_used: bool = false
+var has_locked_air_pool: bool = false
+var last_left_ground_ms: int = -1
+
 func _ready():
 	GameManager.player_node = self
 	
@@ -170,6 +175,12 @@ func _unhandled_input(event: InputEvent):
 		return
 
 	state_machine.process_input(event)
+
+func reset_air_actions():
+	if jump_profile:
+		air_jumps_left = jump_profile.max_air_jumps
+	air_dash_used = false
+	has_locked_air_pool = true
 
 func _on_hold_input_timer_timeout():
 	if Input.is_action_pressed("dodge"):

@@ -629,7 +629,7 @@ metadata/_custom_type_script = "uid://dhdu4hixec0wa"
 script = ExtResource("44_51ujp")
 
 [node name="RayCast2D" type="RayCast2D" parent="Player/WallDetectorComponent"]
-target_position = Vector2(35, 1)
+target_position = Vector2(35, 0)
 
 [node name="AttackExecutor" type="Node" parent="Player"]
 script = ExtResource("25_hax0n")

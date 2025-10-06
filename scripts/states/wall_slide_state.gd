@@ -31,8 +31,6 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 	if current_profile:
 		new_velocity.y = current_profile.slide_speed
 
-	# A gravidade não deve ser aplicada aqui para criar um deslize constante.
-	# new_velocity = physics_component.apply_gravity(new_velocity, delta)
 	return new_velocity
 
 func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:

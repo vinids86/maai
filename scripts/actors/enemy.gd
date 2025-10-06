@@ -26,6 +26,7 @@ extends CharacterBody2D
 @export var skill_b: BaseSkill
 
 @export_group("Combat Data")
+@export var jump_profile: JumpProfile
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var riposte_profile: AttackProfile
@@ -51,6 +52,11 @@ var _equipped_skills: Dictionary = {}
 var material_ref: ShaderMaterial
 var facing_sign: int = 1
 var facing_locked: bool = false
+
+var air_jumps_left: int = 0
+var air_dash_used: bool = false
+var has_locked_air_pool: bool = false
+var last_left_ground_ms: int = -1
 
 func _ready():
 	_build_skill_dictionary()
@@ -141,6 +147,15 @@ func get_death_profile() -> DeathProfile:
 
 func get_wall_slide_profile() -> WallSlideProfile:
 	return wall_slide_profile
+
+func get_jump_profile() -> JumpProfile:
+	return jump_profile
+	
+func reset_air_actions():
+	if jump_profile:
+		air_jumps_left = jump_profile.max_air_jumps
+	air_dash_used = false
+	has_locked_air_pool = true
 
 func flash_red():
 	if not material_ref:

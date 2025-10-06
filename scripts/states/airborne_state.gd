@@ -6,9 +6,6 @@ var current_profile: JumpProfile
 enum Phases { RISING, FALLING }
 var current_phase: Phases = Phases.FALLING
 
-var last_left_ground_ms: int = -1
-var air_jumps_left: int = 0
-var has_locked_air_pool: bool = false
 var _last_jump_was_air: bool = false
 
 var _pending_jump_impulse: bool = false
@@ -18,7 +15,6 @@ var _hold_time: float = 0.0
 var _released_this_frame: bool = false
 var _ignore_air_control_this_frame: bool = false
 
-var air_dash_used: bool = false
 var _landed_connected: bool = false
 
 func enter(args: Dictionary = {}) -> void:
@@ -39,8 +35,7 @@ func enter(args: Dictionary = {}) -> void:
 		_landed_connected = true
 
 	if is_wall_jump and current_profile:
-		owner_node.velocity.x = owner_node.wall_jump_horizontal_force * owner_node.facing_sign
-		owner_node.velocity.y = -current_profile.min_jump_velocity
+		owner_node.velocity = current_profile.wall_jump_impulse * Vector2(owner_node.facing_sign, 1)
 		_holding = true
 		_last_jump_was_air = true
 		_ignore_air_control_this_frame = true
@@ -48,11 +43,12 @@ func enter(args: Dictionary = {}) -> void:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
 		_holding = true
-		if not has_locked_air_pool:
-			air_jumps_left = current_profile.max_air_jumps
-			has_locked_air_pool = true
+		if not owner_node.has_locked_air_pool:
+			owner_node.air_jumps_left = current_profile.max_air_jumps
+			owner_node.has_locked_air_pool = true
 	else:
-		last_left_ground_ms = surface_contact_component.last_left_ground_ms
+		if surface_contact_component.last_left_ground_ms != -1:
+			owner_node.last_left_ground_ms = surface_contact_component.last_left_ground_ms
 
 	_update_phase(owner_node.velocity)
 
@@ -69,12 +65,6 @@ func on_jump_released() -> void:
 	_holding = false
 	_released_this_frame = true
 
-func reset_air_actions() -> void:
-	if current_profile:
-		air_jumps_left = current_profile.max_air_jumps
-	air_dash_used = false
-	has_locked_air_pool = true
-
 func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 	current_profile = profile
 	if current_profile == null:
@@ -82,7 +72,7 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 
 	var now_ms := Time.get_ticks_msec()
 	var coyote_ms := int(current_profile.coyote_time * 1000.0)
-	var in_coyote := (last_left_ground_ms >= 0) and ((now_ms - last_left_ground_ms) <= coyote_ms)
+	var in_coyote = (owner_node.last_left_ground_ms >= 0) and ((now_ms - owner_node.last_left_ground_ms) <= coyote_ms)
 
 	if in_coyote:
 		_pending_jump_impulse = true
@@ -92,14 +82,14 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 		_released_this_frame = false
 		_last_jump_was_air = false
 
-		if not has_locked_air_pool:
-			air_jumps_left = current_profile.max_air_jumps
-			has_locked_air_pool = true
+		if not owner_node.has_locked_air_pool:
+			owner_node.air_jumps_left = current_profile.max_air_jumps
+			owner_node.has_locked_air_pool = true
 
-		last_left_ground_ms = -1
+		owner_node.last_left_ground_ms = -1
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
-	if not has_locked_air_pool and current_profile.max_air_jumps > 0:
+	if not owner_node.has_locked_air_pool and current_profile.max_air_jumps > 0:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
 		_holding = true
@@ -107,11 +97,11 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 		_released_this_frame = false
 		_last_jump_was_air = true
 
-		has_locked_air_pool = true
-		air_jumps_left = max(current_profile.max_air_jumps - 1, 0)
+		owner_node.has_locked_air_pool = true
+		owner_node.air_jumps_left = max(current_profile.max_air_jumps - 1, 0)
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
-	if air_jumps_left > 0:
+	if owner_node.air_jumps_left > 0:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
 		_holding = true
@@ -119,29 +109,16 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 		_released_this_frame = false
 		_last_jump_was_air = true
 
-		air_jumps_left -= 1
+		owner_node.air_jumps_left -= 1
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
-	if air_dash_used:
+	if owner_node.air_dash_used:
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-	air_dash_used = true
+	owner_node.air_dash_used = true
 	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-	
-func check_contextual_transitions(walk_direction: float) -> Dictionary:
-	if not is_instance_valid(wall_detector):
-		return {}
-
-	var is_falling = owner_node.velocity.y > 0
-	var is_pressing_towards_wall = walk_direction * owner_node.facing_sign > 0
-	
-	if is_falling and is_pressing_towards_wall:
-		if wall_detector.is_colliding(owner_node.facing_sign):
-			return {"name": "WallSlideState", "pre_transition_action": "reset_air_actions"}
-			
-	return {}
 
 func process_physics(delta: float, walk_direction: float, _is_running: bool) -> Vector2:
 	var current_walk_direction = walk_direction
@@ -154,7 +131,7 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	if _pending_jump_impulse and current_profile:
 		new_velocity.y = -abs(_pending_initial_velocity)
 		_pending_jump_impulse = false
-		last_left_ground_ms = -1
+		owner_node.last_left_ground_ms = -1
 
 	if current_profile:
 		if _holding and _hold_time < current_profile.max_hold_time and new_velocity.y < 0.0:
@@ -182,11 +159,17 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	_update_phase(new_velocity)
 
 	if owner_node.is_on_floor() and new_velocity.y >= 0.0:
-		air_jumps_left = 0
-		has_locked_air_pool = false
-		last_left_ground_ms = -1
+		_on_landed()
 		state_machine.on_current_state_finished()
 		return Vector2.ZERO
+
+	var is_falling = new_velocity.y > 0
+	if is_falling and walk_direction != 0:
+		var direction_sign = int(sign(walk_direction))
+		var is_pressing_towards_wall = direction_sign == owner_node.facing_sign
+		if is_pressing_towards_wall and wall_detector.is_colliding(direction_sign):
+			state_machine.on_current_state_finished({"outcome": "WALL_CONTACT"})
+			return new_velocity
 
 	return new_velocity
 
@@ -228,7 +211,7 @@ func _emit_phase_signal() -> void:
 	state_machine.emit_phase_change(phase_data)
 
 func _on_landed() -> void:
-	air_dash_used = false
-	air_jumps_left = 0
-	has_locked_air_pool = false
-	last_left_ground_ms = -1
+	owner_node.air_dash_used = false
+	owner_node.air_jumps_left = 0
+	owner_node.has_locked_air_pool = false
+	owner_node.last_left_ground_ms = -1
