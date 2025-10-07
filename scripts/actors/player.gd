@@ -6,6 +6,7 @@ extends CharacterBody2D
 @onready var run_cancel_timer: Timer = $RunCancelTimer
 @onready var attack_executor: AttackExecutor = $AttackExecutor
 @onready var combo_component: ComboComponent = $ComboComponent
+@onready var air_combo_component: AirComboComponent = $AirComboComponent
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var visuals: Node2D = $Visuals
 @onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
@@ -152,9 +153,15 @@ func _unhandled_input(event: InputEvent):
 		return
 	
 	if event.is_action_pressed("attack"):
-		var profile = combo_component.get_next_attack_profile()
-		if profile:
-			state_machine.on_attack_pressed(profile)
+		var profile_to_use: AttackProfile
+		if is_on_floor():
+			profile_to_use = combo_component.get_next_attack_profile()
+		else:
+			profile_to_use = air_combo_component.get_next_attack_profile()
+		
+		if profile_to_use:
+			state_machine.on_attack_pressed(profile_to_use)
+			
 		get_viewport().set_input_as_handled()
 		return
 
