@@ -22,7 +22,6 @@ extends CharacterBody2D
 
 @export_group("Combat Data")
 @export var base_poise: float
-@export var wall_jump_horizontal_force: float = 400.0
 
 @export_group("Equipped Skills")
 @export var skill_x: BaseSkill
@@ -34,6 +33,7 @@ var _equipped_skills: Dictionary = {}
 
 @export_group("Profiles")
 @export var jump_profile: JumpProfile
+@export var running_jump_profile: JumpProfile
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var riposte_profile: AttackProfile
@@ -113,7 +113,7 @@ func _update_facing_direction():
 
 func _unhandled_input(event: InputEvent):
 	if event.is_action_pressed("jump"):
-		var profile = get_jump_profile()
+		var profile = running_jump_profile if is_running else jump_profile
 		if profile:
 			state_machine.on_jump_pressed(profile)
 		get_viewport().set_input_as_handled()

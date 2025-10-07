@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="JumpProfile" load_steps=3 format=3 uid="uid://t0gwhvsiurco"]
+
+[ext_resource type="Script" uid="uid://brd5hi7x8jvw0" path="res://scripts/profiles/jump_profile.gd" id="1_ddpie"]
+[ext_resource type="AudioStream" uid="uid://dbm1xt5hw8dp0" path="res://audio/dodge.wav" id="1_wjg8d"]
+
+[resource]
+script = ExtResource("1_ddpie")
+rising_animation = &""
+falling_animation = &""
+air_rising_animation = &""
+jump_sfx = ExtResource("1_wjg8d")
+air_jump_sfx = ExtResource("1_wjg8d")
+coyote_time = 0.12
+max_air_jumps = 1
+air_control_speed = 500.0
+wall_jump_impulse = Vector2(400, -580)
+min_jump_velocity = 260.0
+max_jump_velocity = 580.0
+max_hold_time = 0.08
+hold_accel = 4000.0
+release_cut_multiplier = 0.5
+metadata/_custom_type_script = "uid://brd5hi7x8jvw0"

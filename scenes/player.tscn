@@ -1,4 +1,4 @@
-[gd_scene load_steps=75 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=76 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="2_apa73"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="3_f1ej7"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="3_qfm1y"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="3_qhqgy"]
+[ext_resource type="Resource" uid="uid://t0gwhvsiurco" path="res://resources/player/jump/running_jump_default.tres" id="4_51ujp"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="4_dqkch"]
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="4_fulsm"]
 [ext_resource type="Resource" uid="uid://of3fc8ba47yj" path="res://resources/player/riposte/default.tres" id="5_74r1k"]
@@ -495,6 +496,7 @@ script = ExtResource("1_4flbx")
 base_poise = 10.0
 skill_x = ExtResource("2_apa73")
 jump_profile = ExtResource("3_8svfe")
+running_jump_profile = ExtResource("4_51ujp")
 finisher_profile = ExtResource("29_gl8cc")
 parry_profile = ExtResource("20_i4ail")
 riposte_profile = ExtResource("5_74r1k")

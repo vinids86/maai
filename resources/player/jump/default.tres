@@ -9,6 +9,7 @@ rising_animation = &""
 falling_animation = &""
 air_rising_animation = &""
 jump_sfx = ExtResource("1_vy6cc")
+air_jump_sfx = ExtResource("1_vy6cc")
 coyote_time = 0.12
 max_air_jumps = 1
 air_control_speed = 500.0
