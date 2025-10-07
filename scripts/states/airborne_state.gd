@@ -107,7 +107,7 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	var new_velocity: Vector2
 
 	if current_sub_state == SubStates.ATTACKING:
-		new_velocity = _attack_executor.get_current_movement_velocity()
+		new_velocity = _attack_executor.get_physics_movement_velocity()
 	else:
 		var current_walk_direction = walk_direction
 		if _ignore_air_control_this_frame:

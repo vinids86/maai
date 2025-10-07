@@ -12,31 +12,20 @@ func enter(args: Dictionary = {}):
 	owner_node.facing_locked = true
 	
 	self.current_profile = args.get("profile")
-	self._current_direction = args.get("direction", Vector2.ZERO)
+	self._current_direction = args.get("direction", Vector2.ZERO).normalized()
 
 	if not current_profile:
 		state_machine.on_current_state_finished()
 		return
 
-	if path_follower_component and owner_node.path_target:
-		owner_node.path_target.position = Vector2.ZERO
-		path_follower_component.start_following(owner_node.path_target)
-		
 	_change_phase(Phases.ACTIVE)
 
 func exit():
 	owner_node.facing_locked = false
 
-	if path_follower_component:
-		path_follower_component.stop_following()
-
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
-		return Vector2.ZERO
-
-	var calculated_velocity = Vector2.ZERO
-	if path_follower_component and path_follower_component.is_active():
-		calculated_velocity = path_follower_component.calculate_target_velocity(delta)
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
 
 	time_left_in_phase -= delta
 	
@@ -49,9 +38,24 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 				time_left_in_phase -= time_exceeded
 			Phases.RECOVERY:
 				state_machine.on_current_state_finished()
-				return Vector2.ZERO
+				return physics_component.apply_gravity(Vector2.ZERO, delta)
 	
-	return calculated_velocity
+	var calculated_velocity = Vector2.ZERO
+	match current_phase:
+		Phases.ACTIVE:
+			calculated_velocity = current_profile.active_movement_velocity
+		Phases.RECOVERY:
+			calculated_velocity = current_profile.recovery_movement_velocity
+
+	var final_velocity = Vector2.ZERO
+	if _current_direction == Vector2.ZERO: # Esquiva Neutra
+		final_velocity.x = calculated_velocity.x * owner_node.facing_sign
+		final_velocity.y = calculated_velocity.y
+	else: # Esquiva Direcional
+		final_velocity.x = calculated_velocity.x * _current_direction.x
+		final_velocity.y = calculated_velocity.y * _current_direction.y
+
+	return physics_component.apply_gravity(final_velocity, delta)
 		
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()

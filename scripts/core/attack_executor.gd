@@ -8,6 +8,8 @@ var _owner_node: Node
 var _hitbox: Area2D
 var _hitbox_shape: CollisionShape2D
 var _current_profile: AttackProfile
+var _path_follower_component: PathFollowerComponent
+var _path_target: Node2D
 
 enum Phases { STARTUP, ACTIVE, RECOVERY, NONE }
 var _current_phase: Phases = Phases.NONE
@@ -22,8 +24,14 @@ func setup(owner: Node):
 	if _hitbox:
 		_hitbox_shape = _hitbox.find_child("CollisionShape2D") as CollisionShape2D
 	
+	_path_follower_component = owner.find_child("PathFollowerComponent")
+	_path_target = owner.get_parent().get_node("PathTarget")
+	
 	assert(_hitbox != null, "AttackExecutor: Nó 'AttackHitbox' não encontrado.")
 	assert(_hitbox_shape != null, "AttackExecutor: Nó 'CollisionShape2D' não encontrado.")
+	assert(_path_follower_component != null, "AttackExecutor: Nó 'PathFollowerComponent' não encontrado.")
+	assert(_path_target != null, "AttackExecutor: Nó 'PathTarget' não encontrado como irmão do owner.")
+
 
 func _physics_process(delta: float):
 	if _current_phase == Phases.NONE:
@@ -51,6 +59,11 @@ func execute(profile: AttackProfile):
 		return
 
 	self._current_profile = profile
+	
+	if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
+		_path_target.position = Vector2.ZERO
+		_path_follower_component.start_following(_path_target)
+		
 	set_physics_process(true)
 	_change_phase(Phases.STARTUP)
 
@@ -63,8 +76,8 @@ func get_current_profile() -> AttackProfile:
 func get_current_phase_name() -> String:
 	return Phases.keys()[_current_phase].to_upper()
 
-func get_current_movement_velocity() -> Vector2:
-	if _current_phase == Phases.NONE or not _current_profile:
+func get_physics_movement_velocity() -> Vector2:
+	if _current_phase == Phases.NONE or not _current_profile or _current_profile.movement_type != AttackProfile.MovementType.PHYSICS:
 		return Vector2.ZERO
 		
 	var move_vel = Vector2.ZERO
@@ -82,6 +95,10 @@ func get_current_movement_velocity() -> Vector2:
 	return final_velocity
 
 func _stop_execution():
+	if _current_profile and _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
+		if _path_follower_component:
+			_path_follower_component.stop_following()
+
 	set_physics_process(false)
 	_current_phase = Phases.NONE
 	_current_profile = null

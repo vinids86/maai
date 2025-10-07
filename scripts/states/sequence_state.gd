@@ -48,16 +48,18 @@ func exit():
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	var calculated_velocity = Vector2.ZERO
 
-	if _current_phase == LinkPhases.ACTIVE:
-		if _attack_executor:
-			calculated_velocity = _attack_executor.get_current_movement_velocity()
-	elif _current_phase == LinkPhases.LINK:
+	if _current_phase == LinkPhases.LINK:
 		_time_left_in_link -= delta
 		if _time_left_in_link <= 0.0:
-			_current_phase = LinkPhases.FINISHED
 			state_machine.on_current_state_finished()
 			return physics_component.apply_gravity(Vector2.ZERO, delta)
-	
+	elif _attack_executor and _current_profile:
+		if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
+			if path_follower_component and path_follower_component.is_active():
+				calculated_velocity = path_follower_component.calculate_target_velocity(delta)
+		else: # PHYSICS
+			calculated_velocity = _attack_executor.get_physics_movement_velocity()
+
 	var final_velocity = physics_component.apply_gravity(calculated_velocity, delta)
 	return final_velocity
 

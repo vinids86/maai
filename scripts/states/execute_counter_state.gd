@@ -58,8 +58,12 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 		if _time_left_in_window <= 0.0:
 			state_machine.on_current_state_finished()
 	elif _current_phase == Phases.EXECUTING:
-		if _attack_executor:
-			calculated_velocity = _attack_executor.get_current_movement_velocity()
+		if _attack_executor and _profile:
+			if _profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
+				if path_follower_component and path_follower_component.is_active():
+					calculated_velocity = path_follower_component.calculate_target_velocity(delta)
+			else: # PHYSICS
+				calculated_velocity = _attack_executor.get_physics_movement_velocity()
 
 	var final_velocity = physics_component.apply_gravity(calculated_velocity, delta)
 	return final_velocity
