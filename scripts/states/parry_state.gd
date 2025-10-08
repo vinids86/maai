@@ -1,7 +1,8 @@
 class_name ParryState
 extends State
 
-const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(250, 0)
+const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(150
+, 0)
 
 var current_profile: ParryProfile
 

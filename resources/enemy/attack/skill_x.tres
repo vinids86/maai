@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="SequenceSkill" load_steps=12 format=3 uid="uid://dyb1h7belqw60"]
+[gd_resource type="Resource" script_class="SequenceSkill" load_steps=13 format=3 uid="uid://dyb1h7belqw60"]
 
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="1_ifqvd"]
 [ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_t8hhk"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="3_m1w1k"]
 [ext_resource type="AudioStream" uid="uid://curr3hsosggk4" path="res://audio/attack_2.wav" id="4_f73uo"]
 [ext_resource type="AudioStream" uid="uid://bp66sw0k32ttq" path="res://audio/attack_3.wav" id="5_rfsv2"]
+[ext_resource type="AudioStream" uid="uid://dbm1xt5hw8dp0" path="res://audio/dodge.wav" id="5_t8hhk"]
 [ext_resource type="AudioStream" uid="uid://br3naex6ir5bb" path="res://audio/attack_5.wav" id="6_50mcg"]
 
 [sub_resource type="Resource" id="Resource_7w3jn"]
@@ -14,6 +15,7 @@ active_duration = 0.2
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &"skill_x_1"
+startup_sfx = ExtResource("5_t8hhk")
 active_sfx = ExtResource("4_f73uo")
 hitbox_size = Vector2(90, 64)
 hitbox_position = Vector2(40, 0)
@@ -28,7 +30,8 @@ poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
 unparryable_type = 0
-startup_movement_velocity = Vector2(-100, 0)
+movement_type = 0
+startup_movement_velocity = Vector2(-150, 0)
 active_movement_velocity = Vector2(600, 0)
 recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
@@ -58,6 +61,7 @@ poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
 unparryable_type = 0
+movement_type = 0
 startup_movement_velocity = Vector2(500, -100)
 active_movement_velocity = Vector2(0, 50)
 recovery_movement_velocity = Vector2(0, 50)
@@ -88,6 +92,7 @@ poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
 unparryable_type = 0
+movement_type = 0
 startup_movement_velocity = Vector2(-300, 0)
 active_movement_velocity = Vector2(600, 0)
 recovery_movement_velocity = Vector2(0, 0)
@@ -118,6 +123,7 @@ poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
 parry_interaction = 0
 unparryable_type = 0
+movement_type = 0
 startup_movement_velocity = Vector2(400, 0)
 active_movement_velocity = Vector2(0, 0)
 recovery_movement_velocity = Vector2(0, 0)

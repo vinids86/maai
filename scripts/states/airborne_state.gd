@@ -92,7 +92,6 @@ func exit():
 
 
 func handle_attack_input(profile: AttackProfile) -> InputHandlerResult:
-	# Se já estiver a atacar, rejeita sempre para que o buffer funcione
 	if current_sub_state == SubStates.ATTACKING:
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
@@ -104,46 +103,42 @@ func handle_attack_input(profile: AttackProfile) -> InputHandlerResult:
 
 
 func process_physics(delta: float, walk_direction: float, _is_running: bool) -> Vector2:
-	var new_velocity: Vector2
+	var new_velocity = owner_node.velocity
+	
+	var current_walk_direction = walk_direction
+	if _ignore_air_control_this_frame:
+		current_walk_direction = 0.0
+		_ignore_air_control_this_frame = false
 
-	if current_sub_state == SubStates.ATTACKING:
-		new_velocity = _attack_executor.get_physics_movement_velocity()
+	if _pending_jump_impulse and current_profile:
+		new_velocity.y = -abs(_pending_initial_velocity)
+		_pending_jump_impulse = false
+		owner_node.last_left_ground_ms = -1
+
+	if current_profile:
+		if _holding and _hold_time < current_profile.max_hold_time and new_velocity.y < 0.0:
+			new_velocity.y -= current_profile.hold_accel * delta
+			if abs(new_velocity.y) > abs(current_profile.max_jump_velocity):
+				new_velocity.y = -abs(current_profile.max_jump_velocity)
+			_hold_time += delta
+		if _released_this_frame and new_velocity.y < 0.0:
+			new_velocity.y *= current_profile.release_cut_multiplier
+			_released_this_frame = false
 	else:
-		var current_walk_direction = walk_direction
-		if _ignore_air_control_this_frame:
-			current_walk_direction = 0.0
-			_ignore_air_control_this_frame = false
-		
-		new_velocity = owner_node.velocity
+		if _holding and _hold_time < 0.12 and new_velocity.y < 0.0:
+			_hold_time += delta
 
-		if _pending_jump_impulse and current_profile:
-			new_velocity.y = -abs(_pending_initial_velocity)
-			_pending_jump_impulse = false
-			owner_node.last_left_ground_ms = -1
-
-		if current_profile:
-			if _holding and _hold_time < current_profile.max_hold_time and new_velocity.y < 0.0:
-				new_velocity.y -= current_profile.hold_accel * delta
-				if abs(new_velocity.y) > abs(current_profile.max_jump_velocity):
-					new_velocity.y = -abs(current_profile.max_jump_velocity)
-				_hold_time += delta
-			if _released_this_frame and new_velocity.y < 0.0:
-				new_velocity.y *= current_profile.release_cut_multiplier
-				_released_this_frame = false
-		else:
-			if _holding and _hold_time < 0.12 and new_velocity.y < 0.0:
-				_hold_time += delta
-
-		if current_profile:
-			new_velocity.x = current_walk_direction * current_profile.air_control_speed
-		else:
-			new_velocity.x = current_walk_direction * 200.0
+	if current_profile:
+		new_velocity.x = current_walk_direction * current_profile.air_control_speed
+	else:
+		new_velocity.x = current_walk_direction * 200.0
 
 	new_velocity = physics_component.apply_gravity(new_velocity, delta)
+
 	if new_velocity.y > 0.0:
 		var extra_down_a := 1600 * max(2.2 - 1.0, 0.0)
 		new_velocity.y += extra_down_a * delta
-		
+
 	_update_facing_sign(walk_direction)
 	_update_phase(new_velocity)
 
@@ -214,7 +209,6 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 	var executor_phase_name = _attack_executor.get_current_phase_name()
 	var can_cancel = (executor_phase_name == "RECOVERY")
 
-	# Rejeita o pulo se estiver a atacar E não estiver na fase de recuperação
 	if current_sub_state == SubStates.ATTACKING and not can_cancel:
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 		
@@ -262,15 +256,6 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 		_last_jump_was_air = true
 
 		owner_node.air_jumps_left -= 1
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	var executor_phase_name = _attack_executor.get_current_phase_name()
-	var can_cancel = (executor_phase_name == "RECOVERY")
-
-	if current_sub_state == SubStates.NORMAL or (current_sub_state == SubStates.ATTACKING and can_cancel):
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)

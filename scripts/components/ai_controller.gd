@@ -50,7 +50,8 @@ func on_incoming_attack(_attacker: CharacterBody2D, _hitbox: Hitbox):
 		1:
 			do_parry = false
 		2:
-			do_parry = _rng.randf() < 0.60
+			#do_parry = _rng.randf() < 0.60
+			do_parry = true
 		3:
 			do_parry = true
 
@@ -71,9 +72,9 @@ func _on_phase_changed(phase_data: Dictionary):
 func _decide_and_execute_action():
 	var roll: float = _rng.randf()
 
-	if roll < 0.60:
+	if roll < 0.50:
 		_execute_normal_attack()
-	elif roll < 0.80:
+	elif roll < 0.70:
 		if _owner_actor.has_method("get_skill") and _owner_actor.get_skill("skill_x"):
 			_execute_skill("skill_x")
 		else:

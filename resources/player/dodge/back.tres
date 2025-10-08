@@ -7,6 +7,8 @@
 script = ExtResource("1_urjtw")
 active_duration = 0.25
 recovery_duration = 0.15
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
 stamina_cost = 15.0
 poise_shield_contribution = 5.0
 animation_name = &"dash_back"
