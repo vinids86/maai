@@ -2,8 +2,8 @@ class_name DashProfile
 extends Resource
 
 @export_group("Phases")
-@export var active_duration: float = 0.12
-@export var recovery_duration: float = 0.10
+@export var active_duration: float = 0.2
+@export var recovery_duration: float = 0.1
 
 @export_group("Presentation")
 @export var animation_name: StringName

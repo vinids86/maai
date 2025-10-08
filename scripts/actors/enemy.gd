@@ -38,6 +38,7 @@ extends CharacterBody2D
 @export var locomotion_profile: LocomotionProfile
 @export var countered_profile: CounteredProfile
 @export var death_profile: DeathProfile
+@export var dash_attack_profile: AttackProfile
 @export var wall_slide_profile: WallSlideProfile
 @export var base_poise: float
 

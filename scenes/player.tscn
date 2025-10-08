@@ -1,4 +1,4 @@
-[gd_scene load_steps=86 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=87 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Resource" uid="uid://0pfl3fbcw24b" path="res://resources/player/skills/default_sequence_skill.tres" id="2_apa73"]
@@ -29,6 +29,7 @@
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="16_qfm1y"]
 [ext_resource type="Resource" uid="uid://048h5l4vvq4w" path="res://resources/player/wall/default.tres" id="16_ua5cf"]
 [ext_resource type="Texture2D" uid="uid://bqpwrbau08mpn" path="res://assets/player/spritesheetiddle.png" id="17_fdfoy"]
+[ext_resource type="Resource" uid="uid://cy7dnyidr361f" path="res://resources/player/dash/dash_attack_default.tres" id="17_vau08"]
 [ext_resource type="Texture2D" uid="uid://bbxn0qa386jnl" path="res://assets/player/spritesheetwalk.png" id="18_hhpqf"]
 [ext_resource type="Script" uid="uid://hhcv8mh33t6y" path="res://scripts/components/stamina_component.gd" id="19_4r5pv"]
 [ext_resource type="Script" uid="uid://6j164hqmaqt2" path="res://scripts/states/parry_state.gd" id="19_60mlk"]
@@ -583,6 +584,7 @@ locomotion_profile = ExtResource("9_487ah")
 countered_profile = ExtResource("12_8svfe")
 death_profile = ExtResource("13_2a3c5")
 dash_profile = ExtResource("15_42b1b")
+dash_attack_profile = ExtResource("17_vau08")
 wall_slide_profile = ExtResource("16_ua5cf")
 neutral_dodge_profile = ExtResource("7_fjrip")
 forward_dodge_profile = ExtResource("8_d2wvv")

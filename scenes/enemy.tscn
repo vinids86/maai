@@ -1,4 +1,4 @@
-[gd_scene load_steps=67 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=68 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -28,6 +28,7 @@
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="15_1x4g4"]
 [ext_resource type="Resource" uid="uid://048h5l4vvq4w" path="res://resources/player/wall/default.tres" id="16_b5geg"]
 [ext_resource type="Script" uid="uid://24v4chol2qs0" path="res://scripts/profiles/buffer_profile.gd" id="16_ekh6n"]
+[ext_resource type="Resource" uid="uid://cy7dnyidr361f" path="res://resources/player/dash/dash_attack_default.tres" id="17_5utat"]
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="17_6awcb"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/sound_listener.gd" id="17_shcg2"]
 [ext_resource type="Resource" uid="uid://c13fhm2w824s2" path="res://resources/player/block/default.tres" id="18_wjec0"]
@@ -435,6 +436,7 @@ guard_broken_profile = ExtResource("20_2mchx")
 locomotion_profile = ExtResource("9_2sbpf")
 countered_profile = ExtResource("19_a5akt")
 death_profile = ExtResource("20_4lt7r")
+dash_attack_profile = ExtResource("17_5utat")
 wall_slide_profile = ExtResource("16_b5geg")
 base_poise = 10.0
 
