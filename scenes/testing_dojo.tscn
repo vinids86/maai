@@ -35,7 +35,7 @@ hud = NodePath("CanvasLayer/PlayerHUD")
 position = Vector2(103, 893)
 
 [node name="Enemy" parent="." instance=ExtResource("2_7od0s")]
-position = Vector2(-2431, -359)
+position = Vector2(277, 899)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

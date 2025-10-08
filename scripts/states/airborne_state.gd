@@ -178,7 +178,7 @@ func _on_air_attack_finished():
 	
 	current_sub_state = SubStates.NORMAL
 	
-	var buffered_data = state_machine.buffer_component.consume()
+	var buffered_data = state_machine.query_buffered_action()
 	if buffered_data and buffered_data.action == BufferComponent.BufferedAction.ATTACK:
 		var next_profile = _air_combo_component.get_next_attack_profile()
 		if next_profile and state_machine.action_cost_validator.try_pay_costs(next_profile):
@@ -259,6 +259,9 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.CONSUMED)
 
 func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
 	var executor_phase_name = _attack_executor.get_current_phase_name()

@@ -73,6 +73,11 @@ func emit_phase_change(data: Dictionary):
 func get_current_state() -> State:
 	return current_state
 
+func query_buffered_action() -> Dictionary:
+	if buffer_component:
+		return buffer_component.consume()
+	return {}
+
 func on_jump_pressed(profile: JumpProfile):
 	var result: InputHandlerResult = current_state.handle_jump_input(profile)
 	match result.status:

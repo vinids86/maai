@@ -47,6 +47,7 @@ var _equipped_skills: Dictionary = {}
 @export var countered_profile: CounteredProfile
 @export var death_profile: DeathProfile
 @export var dash_profile: DashProfile
+@export var dash_attack_profile: AttackProfile
 @export var wall_slide_profile: WallSlideProfile
 
 @export_group("Dodge Profiles")
