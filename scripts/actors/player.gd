@@ -2,16 +2,8 @@ class_name Player
 extends CharacterBody2D
 
 @onready var state_machine: StateMachine = $StateMachine
-@onready var hold_input_timer: Timer = $HoldInputTimer
-@onready var run_cancel_timer: Timer = $RunCancelTimer
-@onready var attack_executor: AttackExecutor = $AttackExecutor
-@onready var combo_component: ComboComponent = $ComboComponent
-@onready var air_combo_component: AirComboComponent = $AirComboComponent
-@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
-@onready var visuals: Node2D = $Visuals
-@onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
-@onready var path_target: Node2D = get_parent().get_node("PathTarget")
-@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
+@onready var spine_sprite: SpineSprite = $SpineSprite
+@onready var animation_listener: AnimationListener = $AnimationListener
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var stamina_component: StaminaComponent = $StaminaComponent
 @onready var focus_component: FocusComponent = $FocusComponent
@@ -20,7 +12,17 @@ extends CharacterBody2D
 @onready var buffer_component: BufferComponent = $BufferComponent
 @onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
 @onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
+@onready var hold_input_timer: Timer = $HoldInputTimer
+@onready var run_cancel_timer: Timer = $RunCancelTimer
+@onready var attack_executor: AttackExecutor = $AttackExecutor
+@onready var combo_component: ComboComponent = $ComboComponent
+@onready var air_combo_component: AirComboComponent = $AirComboComponent
+@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
+@onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
+@onready var path_target: Node2D = get_parent().get_node("PathTarget")
+@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
 
+# ... (suas propriedades @export e variáveis continuam aqui) ...
 @export_group("Combat Data")
 @export var base_poise: float
 
@@ -69,6 +71,8 @@ var last_left_ground_ms: int = -1
 func _ready():
 	GameManager.player_node = self
 	
+	animation_listener.setup(state_machine, spine_sprite)
+	
 	action_cost_validator.setup(stamina_component, focus_component)
 	state_machine.setup(
 		self,
@@ -91,6 +95,10 @@ func _ready():
 	surface_contact_component.landed.connect(_on_landed)
 	_build_skill_dictionary()
 
+func _update_facing_direction():
+	if is_instance_valid(spine_sprite):
+		spine_sprite.scale.x = facing_sign
+
 func _exit_tree():
 	if GameManager.player_node == self:
 		GameManager.unregister_player()
@@ -108,10 +116,6 @@ func _build_skill_dictionary():
 	if skill_y: _equipped_skills["skill_y"] = skill_y
 	if skill_a: _equipped_skills["skill_a"] = skill_a
 	if skill_b: _equipped_skills["skill_b"] = skill_b
-
-func _update_facing_direction():
-	if visuals:
-		visuals.scale.x = facing_sign
 
 func _unhandled_input(event: InputEvent):
 	if event.is_action_pressed("jump"):

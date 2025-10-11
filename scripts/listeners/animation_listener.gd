@@ -1,29 +1,48 @@
 class_name AnimationListener
 extends Node
 
-# --- REFERÊNCIAS ---
-# Vamos associar o AnimationPlayer através do editor.
-@export var animation_player: AnimationPlayer
-@export var state_machine: StateMachine
+var spine_sprite: SpineSprite
+var state_machine: StateMachine
 
-# --- CICLO DE VIDA DO GODOT ---
-
-func _ready():
-	# Verificações para garantir que tudo está configurado corretamente.
-	assert(animation_player != null, "AnimationListener: AnimationPlayer não foi atribuído no Inspetor.")
-	assert(state_machine != null, "AnimationListener: StateMachine não foi atribuída no Inspetor.")
+func setup(p_state_machine: StateMachine, p_spine_sprite: SpineSprite):
+	self.state_machine = p_state_machine
+	self.spine_sprite = p_spine_sprite
 	
-	# O Listener conecta-se ao sinal único da StateMachine.
+	assert(state_machine != null, "AnimationListener: StateMachine recebida no setup é nula.")
+	assert(spine_sprite != null, "AnimationListener: SpineSprite recebido no setup é nulo.")
+	
 	state_machine.phase_changed.connect(_on_phase_changed)
 
-# --- HANDLER DO SINAL ---
 
 func _on_phase_changed(phase_data: Dictionary):
-	# O Listener é um executor "burro". Ele apenas verifica se a "encomenda"
-	# tem uma instrução de animação para ele.
+	if not is_instance_valid(spine_sprite): return
+
 	if phase_data.has("animation_to_play"):
-		var anim_name = phase_data["animation_to_play"]
+		var anim_name: StringName = phase_data["animation_to_play"]
+		var spine_anim_name: String = _get_spineboy_animation_for(anim_name)
+
+		var current_anim_name: String = ""
+		var animation_state = spine_sprite.get_animation_state()
+		if animation_state:
+			var current_track_entry = animation_state.get_current(0)
+			if current_track_entry and current_track_entry.get_animation():
+				current_anim_name = current_track_entry.get_animation().get_name()
 		
-		# Tocamos a animação apenas se ela for válida e não for a que já está a tocar.
-		if anim_name and animation_player.current_animation != anim_name:
-			animation_player.play(anim_name)
+		if spine_anim_name and current_anim_name != spine_anim_name:
+			var should_loop: bool = _should_animation_loop(spine_anim_name)
+			
+			animation_state.set_animation(spine_anim_name, should_loop, 0)
+
+
+func _get_spineboy_animation_for(original_anim_name: StringName) -> String:
+	match original_anim_name:
+		&"Idle": return "idle"
+		&"Walk", &"Run": return "run"
+		&"Jump": return "jump"
+		&"light_attack_1": return "shoot"
+		&"Parry": return "portal"
+		_: return "idle"
+
+
+func _should_animation_loop(anim_name: String) -> bool:
+	return anim_name in ["idle", "run"]

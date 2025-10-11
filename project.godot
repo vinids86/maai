@@ -21,6 +21,10 @@ ImpactResolver="*res://scripts/core/impact_resolver.gd"
 GameManager="*res://scripts/core/game_manager.gd"
 HitStop="*res://scripts/components/hit_stop.gd"
 
+[display]
+
+window/size/mode=2
+
 [dotnet]
 
 project/assembly_name="Maai"

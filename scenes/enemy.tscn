@@ -462,10 +462,8 @@ libraries = {
 &"": SubResource("AnimationLibrary_5lniq")
 }
 
-[node name="AnimationListener" type="Node" parent="Enemy" node_paths=PackedStringArray("animation_player", "state_machine")]
+[node name="AnimationListener" type="Node" parent="Enemy"]
 script = ExtResource("22_sdxul")
-animation_player = NodePath("../AnimationPlayer")
-state_machine = NodePath("../StateMachine")
 metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy"]
