@@ -1,0 +1,40 @@
+Hi!
+
+I’m developing a 2D action game and would like you to design the main character, Hana, in your anime/manga style.
+
+The visual tone of the project is melancholic and intense — a world with muted, desaturated colors where red and yellow stand out sharply, representing emotion, danger, and energy.
+The atmosphere should feel dramatic and cinematic, similar to the emotional contrast seen in Sin City — not literally black and white, but with that sense of mood and impact.
+
+About Hana:
+
+Gender: female
+
+Context: inspired by feudal Japan, with traditional samurai elements (cloth layers, armor details, belts, and wraps) adapted into a stylized and expressive design rather than strict historical realism.
+
+Age: young and attractive; confident and agile, with a sense of elegance and strength.
+
+Body: feminine and athletic, with natural curves and balanced proportions.
+
+Hair: long and white, flowing naturally to emphasize movement and emotion.
+
+Expression: calm and determined, carrying a quiet sadness beneath her composure.
+
+Outfit: stylish and slightly revealing battle attire, elegant yet practical, designed to highlight agility, movement, and silhouette.
+
+Weapon: katana
+
+Color palette: mostly soft, muted tones with strong red and yellow accents for emotional contrast.
+
+The goal is for Hana to look graceful, powerful, and emotionally expressive — a warrior who feels human and vulnerable, but exists in a world full of violence and beauty.
+
+Technical requirements:
+
+Please deliver the artwork fully layered (PSD or similar), with all body parts separated (arms, legs, torso, head, hair, clothes, accessories, weapon, etc.), since it will later be used for animation.
+
+Keep the lighting neutral and soft, avoiding strong painted shadows or highlights — this will allow me to apply dynamic lighting and shading in the game later.
+
+Transparent background is preferred.
+
+Let me know if you’d like reference images or have any specific requirements for file format or canvas size.
+
+Thank you! I’m really excited to see your interpretation of Hana.
