@@ -5,9 +5,9 @@
 
 [resource]
 script = ExtResource("1_mor73")
-rising_animation = &""
-falling_animation = &""
-air_rising_animation = &""
+rising_animation = &"jump"
+falling_animation = &"jump"
+air_rising_animation = &"jump"
 jump_sfx = ExtResource("1_vy6cc")
 air_jump_sfx = ExtResource("1_vy6cc")
 coyote_time = 0.12

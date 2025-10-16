@@ -97,7 +97,7 @@ func _ready():
 
 func _update_facing_direction():
 	if is_instance_valid(spine_sprite):
-		spine_sprite.scale.x = facing_sign
+		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
 
 func _exit_tree():
 	if GameManager.player_node == self:
