@@ -2,6 +2,7 @@ class_name Enemy
 extends CharacterBody2D
 
 @onready var state_machine: StateMachine = $StateMachine
+@onready var spine_sprite: SpineSprite = $SpineSprite
 @onready var ai_controller: AIController = $AIController
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var stamina_component: StaminaComponent = $StaminaComponent

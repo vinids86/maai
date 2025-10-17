@@ -38,7 +38,7 @@ enum MovementType {
 @export var damage: float = 1.0
 @export var stamina_cost: float = 0.0
 @export var focus_cost: int = 0
-@export var focus_gain_on_hit: int = 5
+@export var focus_gain_on_hit: int = 0
 @export var stamina_damage: float = 10.0
 @export var poise_impact_contribution: float = 10.0
 @export var poise_momentum_gain: float = 0.0

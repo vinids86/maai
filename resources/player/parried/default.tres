@@ -6,6 +6,6 @@
 script = ExtResource("1_xvk4x")
 animation_name = &""
 recoil_duration = 0.15
-reactive_duration = 0.25
+reactive_duration = 0.5
 poise_shield_contribution = 0.0
 metadata/_custom_type_script = "uid://w08cxomxigmg"

@@ -1,8 +1,7 @@
 class_name ParryState
 extends State
 
-const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(150
-, 0)
+const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(150, 0)
 
 var current_profile: ParryProfile
 
@@ -146,7 +145,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			return result_for_attacker
 
 		Phases.SUCCESS:
-			return _handle_direct_hit(context)
+			return _resolve_default_contact(context)
 
 		Phases.RECOVERY:
 			return _resolve_default_contact(context)
@@ -159,7 +158,7 @@ func get_poise_shield_contribution() -> float:
 	return current_profile.poise_shield_contribution
 
 func get_poise_impact_contribution() -> float:
-	return 0.0
+	return 200.0
 
 func allow_reentry() -> bool:
 	return true

@@ -34,6 +34,13 @@ hud = NodePath("CanvasLayer/PlayerHUD")
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
 position = Vector2(103, 893)
 
+[node name="SpineSprite" parent="PlayerEntity/Player" index="1"]
+preview_animation = "idle"
+
+[node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
+position = Vector2(-18.3688, -328.121)
+rotation = 0.454793
+
 [node name="Enemy" parent="." instance=ExtResource("2_7od0s")]
 position = Vector2(277, 899)
 

@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_ddpie")
-rising_animation = &""
+rising_animation = &"jump"
 falling_animation = &""
 air_rising_animation = &""
 jump_sfx = ExtResource("1_wjg8d")

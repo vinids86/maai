@@ -1,13 +1,79 @@
-[gd_resource type="Resource" script_class="SequenceSkill" load_steps=6 format=3 uid="uid://0pfl3fbcw24b"]
+[gd_resource type="Resource" script_class="SequenceSkill" load_steps=8 format=3 uid="uid://0pfl3fbcw24b"]
 
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="1_8s7ul"]
 [ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_ns2ly"]
-[ext_resource type="Resource" uid="uid://dlojsay7vt6pa" path="res://resources/player/skills/sequence/skill_sequence_1.tres" id="3_vsuqq"]
-[ext_resource type="Resource" uid="uid://emp0ufukyet0" path="res://resources/player/skills/sequence/skill_sequence_2.tres" id="4_l8xua"]
-[ext_resource type="Resource" uid="uid://i7anaqyax30p" path="res://resources/player/skills/sequence/skill_sequence_3.tres" id="5_14l1p"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="3_adecb"]
+[ext_resource type="AudioStream" uid="uid://bp66sw0k32ttq" path="res://audio/attack_3.wav" id="4_vsuqq"]
+
+[sub_resource type="Resource" id="Resource_l8xua"]
+script = ExtResource("3_adecb")
+startup_duration = 0.3
+active_duration = 0.15
+recovery_duration = 0.1
+link_duration = 0.6
+animation_name = &""
+active_sfx = ExtResource("4_vsuqq")
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(40, 0)
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 100.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_14l1p"]
+script = ExtResource("3_adecb")
+startup_duration = 0.1
+active_duration = 0.1
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+active_sfx = ExtResource("4_vsuqq")
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(40, 0)
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(150, -100)
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_ke01m"]
+script = ExtResource("2_ns2ly")
+attacks = Array[ExtResource("3_adecb")]([SubResource("Resource_l8xua"), SubResource("Resource_14l1p")])
+metadata/_custom_type_script = "uid://bwq542vou2wu1"
 
 [resource]
 script = ExtResource("1_8s7ul")
-skill_phases = Array[ExtResource("2_ns2ly")]([ExtResource("3_vsuqq"), ExtResource("4_l8xua"), ExtResource("5_14l1p")])
+skill_phases = Array[ExtResource("2_ns2ly")]([SubResource("Resource_ke01m")])
 skill_name = ""
 metadata/_custom_type_script = "uid://cyu224lucyda8"

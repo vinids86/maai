@@ -5,9 +5,9 @@
 
 [resource]
 script = ExtResource("1_b4ycn")
-startup_duration = 0.3
-active_duration = 0.1
-recovery_duration = 0.1
+startup_duration = 0.22
+active_duration = 0.08
+recovery_duration = 0.18
 link_duration = 0.6
 animation_name = &"light_attack_1"
 active_sfx = ExtResource("1_6g5v0")
@@ -17,7 +17,7 @@ damage = 1.0
 stamina_cost = 0.0
 focus_cost = 0
 focus_gain_on_hit = 5
-stamina_damage = 10.0
+stamina_damage = 2.0
 poise_impact_contribution = 10.0
 poise_momentum_gain = 5.0
 poise_momentum_duration = 1.5

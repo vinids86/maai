@@ -19,30 +19,21 @@ func _on_phase_changed(phase_data: Dictionary):
 
 	if phase_data.has("animation_to_play"):
 		var anim_name: StringName = phase_data["animation_to_play"]
-		var spine_anim_name: String = _get_spineboy_animation_for(anim_name)
+
+		if anim_name == &"":
+			return
+
+		var animation_state = spine_sprite.get_animation_state()
+		if not animation_state: return
 
 		var current_anim_name: String = ""
-		var animation_state = spine_sprite.get_animation_state()
-		if animation_state:
-			var current_track_entry = animation_state.get_current(0)
-			if current_track_entry and current_track_entry.get_animation():
-				current_anim_name = current_track_entry.get_animation().get_name()
+		var current_track_entry = animation_state.get_current(0)
+		if current_track_entry and current_track_entry.get_animation():
+			current_anim_name = current_track_entry.get_animation().get_name()
 		
-		if spine_anim_name and current_anim_name != spine_anim_name:
-			var should_loop: bool = _should_animation_loop(spine_anim_name)
-			
-			animation_state.set_animation(spine_anim_name, should_loop, 0)
+		if current_anim_name != anim_name:
+			var should_loop: bool = _should_animation_loop(anim_name)
+			animation_state.set_animation(anim_name, should_loop, 0)
 
-
-func _get_spineboy_animation_for(original_anim_name: StringName) -> String:
-	match original_anim_name:
-		&"Idle": return "idle"
-		&"Walk", &"Run": return "run"
-		&"Jump": return "jump"
-		&"light_attack_1": return "shoot"
-		&"Parry": return "portal"
-		_: return "idle"
-
-
-func _should_animation_loop(anim_name: String) -> bool:
-	return anim_name in ["idle", "run"]
+func _should_animation_loop(anim_name: StringName) -> bool:
+	return anim_name in [&"idle", &"walk", &"run"]
