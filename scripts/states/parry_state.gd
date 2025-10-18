@@ -2,8 +2,10 @@ class_name ParryState
 extends State
 
 const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(150, 0)
+const KNOCKBACK_DECAY_RATE = 0.1
 
 var current_profile: ParryProfile
+var _knockback_velocity: Vector2 = Vector2.ZERO
 
 enum Phases { ACTIVE, SUCCESS, RECOVERY }
 var current_phase: Phases
@@ -17,6 +19,7 @@ func enter(args: Dictionary = {}):
 		return
 	
 	owner_node.facing_locked = true
+	_knockback_velocity = Vector2.ZERO
 	_change_phase(Phases.ACTIVE)
 
 func exit():
@@ -28,6 +31,9 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 
 	time_left_in_phase -= delta
 	
+	if _knockback_velocity != Vector2.ZERO:
+		_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, KNOCKBACK_DECAY_RATE)
+	
 	if time_left_in_phase <= 0:
 		var time_exceeded = -time_left_in_phase
 		
@@ -37,12 +43,12 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 				time_left_in_phase -= time_exceeded
 			Phases.SUCCESS:
 				state_machine.on_current_state_finished()
-				return physics_component.apply_gravity(Vector2.ZERO, delta)
+				return physics_component.apply_gravity(_knockback_velocity, delta)
 			Phases.RECOVERY:
 				state_machine.on_current_state_finished()
-				return physics_component.apply_gravity(Vector2.ZERO, delta)
+				return physics_component.apply_gravity(_knockback_velocity, delta)
 				
-	return physics_component.apply_gravity(Vector2.ZERO, delta)
+	return physics_component.apply_gravity(_knockback_velocity, delta)
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if current_phase == Phases.SUCCESS:
@@ -133,6 +139,11 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 					current_profile.sword_bonus_on_success,
 					current_profile.bonus_duration
 				)
+			
+			var force_magnitude = context.attack_profile.defender_knockback_on_parry
+			if force_magnitude > 0.0:
+				var direction = (owner_node.global_position - context.attacker_node.global_position).normalized()
+				_knockback_velocity = direction * force_magnitude
 
 			var defender_defensive_poise = context.defender_poise_comp.get_effective_shield_poise()
 			

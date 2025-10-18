@@ -22,6 +22,7 @@ poise_impact_contribution = 10.0
 poise_momentum_gain = 5.0
 poise_momentum_duration = 1.5
 knockback_vector = Vector2(150, -100)
+defender_knockback_on_parry = 70.0
 parry_interaction = 0
 unparryable_type = 0
 movement_type = 0

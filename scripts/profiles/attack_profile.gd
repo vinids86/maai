@@ -44,6 +44,7 @@ enum MovementType {
 @export var poise_momentum_gain: float = 0.0
 @export var poise_momentum_duration: float = 1.5
 @export var knockback_vector: Vector2 = Vector2(150, -100)
+@export var defender_knockback_on_parry: float = 0.0
 @export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
 @export var unparryable_type: UnparryableType = UnparryableType.NONE
 
