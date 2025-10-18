@@ -308,7 +308,6 @@ bone_name = "front-shoulder"
 show_behind_parent = true
 position = Vector2(-45.4704, -348.271)
 rotation = 0.00413158
-scale = Vector2(1, 1)
 
 [node name="PlayerFeedbackComponent" type="Node2D" parent="Player"]
 script = ExtResource("24_vdulj")
