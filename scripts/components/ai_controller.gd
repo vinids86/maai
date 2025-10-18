@@ -2,16 +2,7 @@ class_name AIController
 extends Node
 
 # --- ROTEIRO DE COMPORTAMENTO UNIFICADO ---
-# Edite a lista abaixo para customizar o comportamento da IA.
-# Cada entrada é um Dicionário que representa a reação da IA a um ataque.
-#
-# Chaves disponíveis:
-# - "defense": A ação defensiva. Pode ser "parry" ou "block".
-#              "block" significa que a IA não tentará o parry e apenas receberá o golpe.
-# - "riposte": O contra-ataque a ser usado APÓS um parry BEM-SUCEDIDO.
-#              Pode ser "normal_attack", "skill_x", "skill_y", etc.
-#              Esta chave é ignorada se "defense" for "block".
-#
+# (O seu roteiro completo permanece aqui, omitido por brevidade)
 var behavior_sequence: Array[Dictionary] = [
 	# --- Fase 1: Abertura (ritmo leve, leitura clara) ---
 	{ "defense": "block" },
@@ -55,6 +46,20 @@ var _owner_actor: Node
 var _behavior_sequence_counter: int = 0
 var _pending_riposte_action: String = ""
 
+
+# --- NOVO CÓDIGO PARA DEBUG ---
+func _unhandled_input(event: InputEvent) -> void:
+	# Verifica se a ação "debug_reset_ai" foi pressionada.
+	if event.is_action_pressed("debug_reset_ai"):
+		reset_behavior_sequence()
+
+func reset_behavior_sequence() -> void:
+	print("AI sequence reset to 0.")
+	_behavior_sequence_counter = 0
+	_pending_riposte_action = ""
+# ---------------------------------
+
+
 func _ready():
 	_owner_actor = get_parent()
 	assert(_owner_actor != null, "AIController deve ser filho de um nó de ator.")
@@ -72,12 +77,12 @@ func _ready():
 func _on_player_entered_detection_area(body: Node2D):
 	if body == GameManager.player_node:
 		_facing_component.enable(body)
-		_behavior_sequence_counter = 0
+		reset_behavior_sequence()
 
 func _on_player_exited_detection_area(body: Node2D):
 	if body == GameManager.player_node:
 		_facing_component.disable()
-		_behavior_sequence_counter = 0
+		reset_behavior_sequence()
 
 func get_walk_direction() -> float:
 	return 0.0

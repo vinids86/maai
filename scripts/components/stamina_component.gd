@@ -5,8 +5,8 @@ signal stamina_changed(current_stamina, max_stamina)
 
 @export_group("Configuration")
 @export var max_stamina: float = 100.0
-@export var regeneration_rate: float = 25.0
-@export var regeneration_delay: float = 1.0
+@export var regeneration_rate: float = 15.0
+@export var regeneration_delay: float = 1.5
 
 @onready var delay_timer: Timer = $DelayTimer
 
