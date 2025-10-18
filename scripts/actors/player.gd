@@ -3,7 +3,7 @@ extends CharacterBody2D
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var spine_sprite: SpineSprite = $SpineSprite
-@onready var animation_listener: AnimationListener = $AnimationListener
+@onready var animation_component: AnimationComponent = $AnimationComponent
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var stamina_component: StaminaComponent = $StaminaComponent
 @onready var focus_component: FocusComponent = $FocusComponent
@@ -22,7 +22,6 @@ extends CharacterBody2D
 @onready var path_target: Node2D = get_parent().get_node("PathTarget")
 @onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
 
-# ... (suas propriedades @export e variáveis continuam aqui) ...
 @export_group("Combat Data")
 @export var base_poise: float
 
@@ -71,7 +70,7 @@ var last_left_ground_ms: int = -1
 func _ready():
 	GameManager.player_node = self
 	
-	animation_listener.setup(state_machine, spine_sprite)
+	animation_component.setup(state_machine, spine_sprite)
 	
 	action_cost_validator.setup(stamina_component, focus_component)
 	state_machine.setup(

@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_xblq5")
-startup_duration = 0.2
-active_duration = 0.1
+startup_duration = 0.26
+active_duration = 0.12
 recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &"light_attack_4"
@@ -16,19 +16,19 @@ hitbox_position = Vector2(40, 0)
 damage = 1.0
 stamina_cost = 0.0
 focus_cost = 0
-focus_gain_on_hit = 5
-stamina_damage = 10.0
+focus_gain_on_hit = 0
+stamina_damage = 13.0
 poise_impact_contribution = 10.0
 poise_momentum_gain = 5.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(150, -100)
-defender_knockback_on_parry = 50.0
+knockback_vector = Vector2(2000, -100)
+defender_knockback_on_parry = 320.0
 parry_interaction = 0
 unparryable_type = 0
 movement_type = 0
-startup_movement_velocity = Vector2(300, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
+startup_movement_velocity = Vector2(280, 0)
+active_movement_velocity = Vector2(320, 0)
+recovery_movement_velocity = Vector2(-80, 0)
 link_movement_velocity = Vector2(0, 0)
 startup_poise_shield = 10.0
 active_poise_shield = 10.0

@@ -1,38 +1,32 @@
 class_name AIController
 extends Node
 
-# --- ROTEIRO DE COMPORTAMENTO UNIFICADO ---
-# (O seu roteiro completo permanece aqui, omitido por brevidade)
 var behavior_sequence: Array[Dictionary] = [
-	# --- Fase 1: Abertura (ritmo leve, leitura clara) ---
+	{ "defense": "parry" },
+	{ "defense": "block" },
+	{ "defense": "block" },
+	{ "defense": "parry" },
+	{ "defense": "block" },
 	{ "defense": "block" },
 	{ "defense": "parry", "riposte": "normal_attack" },
 	{ "defense": "block" },
 	{ "defense": "parry", "riposte": "normal_attack" },
-
-	# --- Fase 2: Aquecimento (introduz a primeira skill) ---
 	{ "defense": "block" },
 	{ "defense": "parry", "riposte": "normal_attack" },
 	{ "defense": "block" },
 	{ "defense": "parry", "riposte": "skill_x" },
-
-	# --- Fase 3: Escalada (skill_y entra em cena) ---
 	{ "defense": "block" },
 	{ "defense": "parry", "riposte": "normal_attack" },
 	{ "defense": "block" },
 	{ "defense": "parry", "riposte": "skill_y" },
-
-	# --- Fase 4: Pré-clímax (aproxima as skills) ---
 	{ "defense": "block" },
 	{ "defense": "parry", "riposte": "normal_attack" },
 	{ "defense": "parry", "riposte": "skill_x" },
-
-	# --- Fase 5: Ápice (Skill_Y → Skill_A → Janela de finalização) ---
 	{ "defense": "block" },
 	{ "defense": "parry", "riposte": "skill_y" },
-	{ "defense": "parry", "riposte": "skill_a" }, # termina com o thrust não-parryável
-	{ "defense": "block" }, # respiro / janela de punição do player
-	{ "defense": "parry", "riposte": "normal_attack" }, # encerramento neutro (opcional)
+	{ "defense": "parry", "riposte": "skill_a" },
+	{ "defense": "block" },
+	{ "defense": "block" },
 ]
 
 # --------------------------------

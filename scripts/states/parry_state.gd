@@ -144,7 +144,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			if force_magnitude > 0.0:
 				var direction = (owner_node.global_position - context.attacker_node.global_position).normalized()
 				_knockback_velocity = direction * force_magnitude
-
+				print(_knockback_velocity)
 			var defender_defensive_poise = context.defender_poise_comp.get_effective_shield_poise()
 			
 			if defender_defensive_poise >= context.attacker_offensive_poise:

@@ -1,4 +1,4 @@
-class_name AnimationListener
+class_name AnimationComponent
 extends Node
 
 var spine_sprite: SpineSprite
@@ -8,8 +8,8 @@ func setup(p_state_machine: StateMachine, p_spine_sprite: SpineSprite):
 	self.state_machine = p_state_machine
 	self.spine_sprite = p_spine_sprite
 	
-	assert(state_machine != null, "AnimationListener: StateMachine recebida no setup é nula.")
-	assert(spine_sprite != null, "AnimationListener: SpineSprite recebido no setup é nulo.")
+	assert(state_machine != null, "AnimationComponent: StateMachine recebida no setup é nula.")
+	assert(spine_sprite != null, "AnimationComponent: SpineSprite recebido no setup é nulo.")
 	
 	state_machine.phase_changed.connect(_on_phase_changed)
 

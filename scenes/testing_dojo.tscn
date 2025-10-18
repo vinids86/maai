@@ -38,11 +38,12 @@ position = Vector2(103, 893)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-18.3688, -328.121)
-rotation = 0.454793
+position = Vector2(-18.7032, -327.929)
+rotation = 0.451927
+scale = Vector2(1, 1)
 
 [node name="Enemy" parent="." instance=ExtResource("2_7od0s")]
-position = Vector2(277, 899)
+position = Vector2(373, 903)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

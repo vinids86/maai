@@ -1,10 +1,10 @@
-class_name SoundListener
+class_name SoundComponent
 extends Node
 
 @export var state_machine: StateMachine
 
 func _ready():
-	assert(state_machine != null, "SoundListener: StateMachine não foi atribuída no Inspetor.")
+	assert(state_machine != null, "SoundComponent: StateMachine não foi atribuída no Inspetor.")
 	state_machine.phase_changed.connect(_on_phase_changed)
 
 func _on_phase_changed(phase_data: Dictionary):
