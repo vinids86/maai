@@ -1,0 +1,60 @@
+[gd_scene load_steps=12 format=3 uid="uid://b7t7d0ncgdrv4"]
+
+[ext_resource type="Script" uid="uid://xyafd7ctroa8" path="res://scripts/world/rain_emitter.gd" id="1_tchf5"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_6ipib"]
+blend_mode = 1
+
+[sub_resource type="Curve" id="Curve_gttkq"]
+_limits = [0.0, 0.3, 0.0, 1.0]
+_data = [Vector2(0.00497513, 0), 0.0, 1.22852, 0, 0, Vector2(0.492537, 0.3), 0.0, 0.0, 0, 0, Vector2(1, 0), -1.30409, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_3sofc"]
+curve = SubResource("Curve_gttkq")
+
+[sub_resource type="Gradient" id="Gradient_5g4fq"]
+colors = PackedColorArray(1, 1, 1, 0.0784314, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_utuc1"]
+gradient = SubResource("Gradient_5g4fq")
+
+[sub_resource type="Curve" id="Curve_1x544"]
+_limits = [0.0, 3.0, 0.0, 1.0]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_jr10h"]
+_limits = [0.0, 30.0, 0.0, 30.0]
+_data = [Vector2(0, 14.8852), 0.0, 2.24402, 0, 0, Vector2(7.53731, 30), 0.0, 0.0, 0, 0, Vector2(29.8507, 30), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_6pm7o"]
+_limits = [0.0, 3.0, 0.0, 1.0]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveXYZTexture" id="CurveXYZTexture_1002j"]
+curve_x = SubResource("Curve_1x544")
+curve_y = SubResource("Curve_jr10h")
+curve_z = SubResource("Curve_6pm7o")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_odfno"]
+particle_flag_disable_z = true
+emission_shape_offset = Vector3(0, -200, 0)
+emission_shape = 3
+emission_box_extents = Vector3(1000, 1, 1)
+gravity = Vector3(0, 12000, 0)
+scale_min = 0.2
+scale_over_velocity_curve = SubResource("CurveXYZTexture_1002j")
+color_initial_ramp = SubResource("GradientTexture1D_utuc1")
+alpha_curve = SubResource("CurveTexture_3sofc")
+
+[node name="Rain" type="GPUParticles2D"]
+material = SubResource("CanvasItemMaterial_6ipib")
+amount = 3000
+lifetime = 0.5
+preprocess = 0.5
+visibility_rect = Rect2(-1000, -200, 1920, 800)
+process_material = SubResource("ParticleProcessMaterial_odfno")
+script = ExtResource("1_tchf5")

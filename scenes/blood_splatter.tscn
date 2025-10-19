@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3 uid="uid://db38x4vv58e7c"]
+
+[sub_resource type="Gradient" id="Gradient_7qcpu"]
+colors = PackedColorArray(0.180843, 1.57929e-07, 3.00817e-08, 1, 0.780705, 0, 0, 0.0352941)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_4ixp3"]
+gradient = SubResource("Gradient_7qcpu")
+
+[sub_resource type="Curve" id="Curve_7qcpu"]
+_data = [Vector2(0.0199005, 1), 0.0, 0.0, 0, 0, Vector2(0.278607, 0.33445), -1.4658, -1.4658, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_4ixp3"]
+curve = SubResource("Curve_7qcpu")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jhjh3"]
+particle_flag_disable_z = true
+spread = 10.833
+initial_velocity_min = 436.36
+initial_velocity_max = 668.18
+gravity = Vector3(0, 600, 0)
+scale_min = 0.04
+scale_max = 0.1
+scale_curve = SubResource("CurveTexture_4ixp3")
+
+[node name="BloodSplatter" type="GPUParticles2D"]
+emitting = false
+amount = 3000
+texture = SubResource("GradientTexture2D_4ixp3")
+lifetime = 0.3
+one_shot = true
+process_material = SubResource("ParticleProcessMaterial_jhjh3")

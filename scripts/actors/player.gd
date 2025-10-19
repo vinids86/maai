@@ -4,6 +4,7 @@ extends CharacterBody2D
 @onready var state_machine: StateMachine = $StateMachine
 @onready var spine_sprite: SpineSprite = $SpineSprite
 @onready var animation_component: AnimationComponent = $AnimationComponent
+@onready var vfx_component: VFXComponent = $VFXComponent
 @onready var audio_component: AudioComponent = $AudioComponent
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var stamina_component: StaminaComponent = $StaminaComponent
@@ -125,6 +126,15 @@ func _build_skill_dictionary():
 	if skill_b: _equipped_skills["skill_b"] = skill_b
 
 func _unhandled_input(event: InputEvent):
+	
+	if event.is_action_pressed("debug_vfx"):
+		if vfx_component:
+			var spawn_pos = global_position + Vector2(30 * facing_sign, -15)
+			vfx_component.spawn_vfx("blood_splatter", spawn_pos)
+
+		get_viewport().set_input_as_handled()
+		return
+	
 	if event.is_action_pressed("jump"):
 		var profile = running_jump_profile if is_running else jump_profile
 		if profile:

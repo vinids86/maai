@@ -9,10 +9,10 @@
 [node name="PlayerHUD" type="Control"]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 703.0
-offset_top = 1043.0
-offset_right = 743.0
-offset_bottom = 1047.0
+offset_left = 19.0
+offset_top = 20.0
+offset_right = 59.0
+offset_bottom = 24.0
 rotation = -0.0037477
 script = ExtResource("1_mlvnn")
 
@@ -44,8 +44,10 @@ texture_progress = ExtResource("5_qcjqi")
 
 [node name="FocusSegmentsContainer" type="HBoxContainer" parent="."]
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = -699.079
+offset_top = -1047.63
+offset_right = -659.079
+offset_bottom = -1007.63
 
 [node name="ColorRect" type="ColorRect" parent="FocusSegmentsContainer"]
 layout_mode = 2

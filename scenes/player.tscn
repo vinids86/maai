@@ -1,4 +1,4 @@
-[gd_scene load_steps=85 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=88 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_8txt3"]
@@ -54,6 +54,9 @@
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="34_8svfe"]
 [ext_resource type="AudioStream" uid="uid://7nnpy5lp40x1" path="res://audio/footstep.ogg" id="36_770dr"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
+[ext_resource type="Script" uid="uid://dqatvw6wut2py" path="res://scripts/components/vfx_component.gd" id="37_8f1cb"]
+[ext_resource type="PackedScene" uid="uid://cvmqdrqt8fatk" path="res://scenes/clash_spark.tscn" id="38_vdulj"]
+[ext_resource type="PackedScene" uid="uid://db38x4vv58e7c" path="res://scenes/blood_splatter.tscn" id="39_vau08"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="40_giy8y"]
 [ext_resource type="Script" uid="uid://k7ywlbk605tf" path="res://scripts/components/air_combo_component.gd" id="42_8txt3"]
 [ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="42_h7ic4"]
@@ -337,9 +340,10 @@ up_dodge_profile = ExtResource("10_jej6c")
 down_dodge_profile = ExtResource("11_f1ej7")
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
-offset = Vector2(0, -220)
+offset = Vector2(0, -400)
 position_smoothing_enabled = true
 script = ExtResource("23_8f1cb")
+resting_offset = Vector2(0, -400)
 
 [node name="SpineSprite" type="SpineSprite" parent="Player"]
 skeleton_data_res = ExtResource("25_8txt3")
@@ -363,9 +367,6 @@ hitstop_on_hit = 0.0
 hitstop_on_parry_or_break = 0.6
 hitstop_slow_scale = 0.03
 trauma_att_none = 0.5
-
-[node name="AnimationComponent" type="Node" parent="Player"]
-script = ExtResource("15_a8ls1")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
 visible = false
@@ -397,12 +398,22 @@ one_shot = true
 wait_time = 0.15
 one_shot = true
 
-[node name="SFXPlayer" type="AudioStreamPlayer2D" parent="Player"]
+[node name="AnimationComponent" type="Node" parent="Player"]
+script = ExtResource("15_a8ls1")
 
 [node name="AudioComponent" type="Node" parent="Player" node_paths=PackedStringArray("state_machine")]
 script = ExtResource("16_qfm1y")
 state_machine = NodePath("../StateMachine")
 footstep_sfx = ExtResource("36_770dr")
+
+[node name="SFXPlayer" type="AudioStreamPlayer2D" parent="Player"]
+
+[node name="VFXComponent" type="Node2D" parent="Player"]
+script = ExtResource("37_8f1cb")
+vfx_library = Dictionary[String, PackedScene]({
+"blood_splatter": ExtResource("39_vau08"),
+"clash_spark": ExtResource("38_vdulj")
+})
 
 [node name="HealthComponent" type="Node" parent="Player"]
 script = ExtResource("4_fulsm")

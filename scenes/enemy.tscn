@@ -1,4 +1,4 @@
-[gd_scene load_steps=77 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=79 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -62,6 +62,8 @@
 [ext_resource type="Script" uid="uid://kqlkm03xp1rg" path="res://scripts/states/wall_slide_state.gd" id="54_5utat"]
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="54_b5geg"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="58_0b4fd"]
+[ext_resource type="Script" uid="uid://dqatvw6wut2py" path="res://scripts/components/vfx_component.gd" id="63_kbbx4"]
+[ext_resource type="PackedScene" uid="uid://cvmqdrqt8fatk" path="res://scenes/clash_spark.tscn" id="64_x24ca"]
 
 [sub_resource type="Resource" id="Resource_4lt7r"]
 metadata/__load_path__ = "res://audio/best-sword-sounds-slice-slash-crash-swoosh-etc-224090.ogg"
@@ -690,6 +692,12 @@ offset_left = -87.0
 offset_top = -122.0
 offset_right = -47.0
 offset_bottom = -82.0
+
+[node name="VFXComponent" type="Node2D" parent="Enemy"]
+script = ExtResource("63_kbbx4")
+vfx_library = Dictionary[String, PackedScene]({
+"clash_spark": ExtResource("64_x24ca")
+})
 
 [node name="PathTarget" type="Node2D" parent="."]
 visible = false
