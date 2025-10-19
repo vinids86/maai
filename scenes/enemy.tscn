@@ -1,4 +1,4 @@
-[gd_scene load_steps=76 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=77 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -17,7 +17,6 @@
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="7_8qclf"]
 [ext_resource type="Resource" uid="uid://bqjgtxke4um5v" path="res://resources/player/parried/default.tres" id="7_ekh6n"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="7_x24ca"]
-[ext_resource type="AudioStream" uid="uid://hyw718jdm1ia" path="res://audio/best-sword-sounds-slice-slash-crash-swoosh-etc-224090.ogg" id="8_3yi8r"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_2sbpf"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="9_8qclf"]
 [ext_resource type="AudioStream" uid="uid://duggjplviepmn" path="res://audio/pre_sequence_skill.wav" id="9_yb7ap"]
@@ -48,6 +47,7 @@
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="22_sdxul"]
 [ext_resource type="Script" uid="uid://b31jt2qq4fmkr" path="res://scripts/components/poise_component.gd" id="23_78kod"]
 [ext_resource type="Script" uid="uid://dmqafi2pyifje" path="res://scripts/components/skill_combo_component.gd" id="28_7v6cf"]
+[ext_resource type="AudioStream" uid="uid://7nnpy5lp40x1" path="res://audio/footstep.ogg" id="28_tysqt"]
 [ext_resource type="Script" uid="uid://cqen1cgottixs" path="res://scripts/components/facing_component.gd" id="31_5ie7m"]
 [ext_resource type="Script" uid="uid://k7ywlbk605tf" path="res://scripts/components/air_combo_component.gd" id="34_5utat"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
@@ -63,15 +63,18 @@
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="54_b5geg"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="58_0b4fd"]
 
+[sub_resource type="Resource" id="Resource_4lt7r"]
+metadata/__load_path__ = "res://audio/best-sword-sounds-slice-slash-crash-swoosh-etc-224090.ogg"
+
 [sub_resource type="Resource" id="Resource_by3os"]
 script = ExtResource("7_x24ca")
-startup_duration = 0.55
+startup_duration = 0.7
 active_duration = 0.18
 recovery_duration = 0.34
 link_duration = 0.6
 animation_name = &""
 startup_sfx = ExtResource("9_yb7ap")
-active_sfx = ExtResource("8_3yi8r")
+active_sfx = SubResource("Resource_4lt7r")
 hitbox_size = Vector2(90, 64)
 hitbox_position = Vector2(40, 0)
 damage = 60.0
@@ -87,7 +90,7 @@ defender_knockback_on_parry = 1000.0
 parry_interaction = 1
 unparryable_type = 1
 movement_type = 0
-startup_movement_velocity = Vector2(160, 0)
+startup_movement_velocity = Vector2(-160, 0)
 active_movement_velocity = Vector2(1040, 0)
 recovery_movement_velocity = Vector2(320, 0)
 link_movement_velocity = Vector2(0, 0)
@@ -551,6 +554,7 @@ shape = SubResource("RectangleShape2D_ya47j")
 [node name="AudioComponent" type="Node" parent="Enemy" node_paths=PackedStringArray("state_machine")]
 script = ExtResource("17_shcg2")
 state_machine = NodePath("../StateMachine")
+footstep_sfx = ExtResource("28_tysqt")
 metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 
 [node name="HealthComponent" type="Node" parent="Enemy"]

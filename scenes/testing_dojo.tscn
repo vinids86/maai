@@ -1,9 +1,11 @@
-[gd_scene load_steps=12 format=3 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=14 format=3 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="Script" uid="uid://coil0eyucsysb" path="res://scripts/scenes/testing_dojo.gd" id="1_r8dm2"]
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="2_7od0s"]
 [ext_resource type="PackedScene" uid="uid://cpt4x4lssyjav" path="res://scenes/player_hud.tscn" id="4_o4ihr"]
+[ext_resource type="AudioStream" uid="uid://bg7042lradfdp" path="res://audio/world/Forest Night Storm.ogg" id="5_sr25e"]
+[ext_resource type="AudioStream" uid="uid://c2qtchrwing50" path="res://audio/world/BGM9.Jukaikessen.ogg" id="6_pjkap"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8jaed"]
 size = Vector2(6416, 33)
@@ -38,8 +40,8 @@ position = Vector2(103, 893)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-18.7032, -327.929)
-rotation = 0.451927
+position = Vector2(-23.0162, -331.743)
+rotation = 0.383654
 scale = Vector2(1, 1)
 
 [node name="Enemy" parent="." instance=ExtResource("2_7od0s")]
@@ -52,6 +54,16 @@ offset_left = 730.0
 offset_top = 917.0
 offset_right = 814.0
 offset_bottom = 955.0
+
+[node name="BackgroundSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("5_sr25e")
+volume_db = 15.0
+autoplay = true
+
+[node name="Music" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("6_pjkap")
+volume_db = -5.115
+autoplay = true
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
 position = Vector2(-443, 353)

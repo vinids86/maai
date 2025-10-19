@@ -1,4 +1,4 @@
-[gd_scene load_steps=84 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=85 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_8txt3"]
@@ -52,6 +52,7 @@
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="28_wnwbv"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="29_gl8cc"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="34_8svfe"]
+[ext_resource type="AudioStream" uid="uid://7nnpy5lp40x1" path="res://audio/footstep.ogg" id="36_770dr"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="40_giy8y"]
 [ext_resource type="Script" uid="uid://k7ywlbk605tf" path="res://scripts/components/air_combo_component.gd" id="42_8txt3"]
@@ -401,6 +402,7 @@ one_shot = true
 [node name="AudioComponent" type="Node" parent="Player" node_paths=PackedStringArray("state_machine")]
 script = ExtResource("16_qfm1y")
 state_machine = NodePath("../StateMachine")
+footstep_sfx = ExtResource("36_770dr")
 
 [node name="HealthComponent" type="Node" parent="Player"]
 script = ExtResource("4_fulsm")

@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bg7042lradfdp"
+path="res://.godot/imported/Forest Night Storm.ogg-2c1b9b79930e5860e013c16b16e69cf8.oggvorbisstr"
+
+[deps]
+
+source_file="res://audio/world/Forest Night Storm.ogg"
+dest_files=["res://.godot/imported/Forest Night Storm.ogg-2c1b9b79930e5860e013c16b16e69cf8.oggvorbisstr"]
+
+[params]
+
+loop=true
+loop_offset=0.0
+bpm=0.0
+beat_count=0
+bar_beats=4

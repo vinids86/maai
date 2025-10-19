@@ -4,6 +4,7 @@ extends CharacterBody2D
 @onready var state_machine: StateMachine = $StateMachine
 @onready var spine_sprite: SpineSprite = $SpineSprite
 @onready var animation_component: AnimationComponent = $AnimationComponent
+@onready var audio_component: AudioComponent = $AudioComponent
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var stamina_component: StaminaComponent = $StaminaComponent
 @onready var focus_component: FocusComponent = $FocusComponent
@@ -71,7 +72,7 @@ func _ready():
 	GameManager.player_node = self
 	
 	animation_component.setup(state_machine, spine_sprite)
-	
+	spine_sprite.animation_event.connect(_on_spine_event)
 	action_cost_validator.setup(stamina_component, focus_component)
 	state_machine.setup(
 		self,
@@ -109,6 +110,13 @@ func _physics_process(delta: float):
 	velocity = state_machine.process_physics(delta, walk_direction, is_running)
 
 	move_and_slide()
+	
+func _on_spine_event(sprite: SpineSprite, animation_state: SpineAnimationState, track_entry: SpineTrackEntry, event: SpineEvent):
+	var event_name = event.get_data().get_event_name()
+	
+	match event_name:
+		"footstep":
+			audio_component.play_footstep()
 
 func _build_skill_dictionary():
 	if skill_x: _equipped_skills["skill_x"] = skill_x
