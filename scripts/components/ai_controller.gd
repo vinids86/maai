@@ -29,6 +29,66 @@ var behavior_sequence: Array[Dictionary] = [
 	{ "defense": "block" },
 ]
 
+var behavior_sequence_A: Array[Dictionary] = [
+	# — Abertura: o compasso básico —
+	{ "defense": "parry" },
+	{ "defense": "block" },
+	{ "defense": "block" },
+	{ "defense": "parry" },
+	{ "defense": "block" },
+	{ "defense": "block" },
+
+	# — Primeiro ciclo: ataques normais —
+	{ "defense": "parry", "riposte": "normal_attack" },
+	{ "defense": "block" },
+	{ "defense": "parry", "riposte": "normal_attack" },
+	{ "defense": "block" },
+
+	# — Introdução das skills —
+	{ "defense": "parry", "riposte": "skill_x" },
+	{ "defense": "block" },
+	{ "defense": "parry", "riposte": "normal_attack" },
+	{ "defense": "block" },
+
+	# — Segunda skill (drama e recuo) —
+	{ "defense": "parry", "riposte": "skill_y" },
+	{ "defense": "block" },
+	{ "defense": "parry", "riposte": "normal_attack" },
+
+	# — Fecho da sequência: o ensinamento final —
+	{ "defense": "parry", "riposte": "skill_a" }, # thrust não-parryável
+	{ "defense": "block" },
+	{ "defense": "parry", "riposte": "skill_b" }, # investida mikiri
+	{ "defense": "block" },
+]
+
+var behavior_sequence_B: Array[Dictionary] = [
+	# — Abertura rápida —
+	{ "defense": "parry" },
+	{ "defense": "block" },
+	{ "defense": "parry", "riposte": "normal_attack" },
+	{ "defense": "block" },
+
+	# — Pressão crescente —
+	{ "defense": "parry", "riposte": "skill_x" },
+	{ "defense": "block" },
+	{ "defense": "parry", "riposte": "normal_attack" },
+	{ "defense": "parry", "riposte": "skill_y" },
+
+	# — Transição curta, sem descanso —
+	{ "defense": "block" },
+	{ "defense": "parry", "riposte": "normal_attack" },
+	{ "defense": "block" },
+	{ "defense": "parry", "riposte": "skill_b" }, # investida mikiri
+	{ "defense": "block" },
+
+	# — Clímax absoluto —
+	{ "defense": "parry", "riposte": "skill_y" },
+	{ "defense": "parry", "riposte": "skill_a" },
+	{ "defense": "block" },
+	{ "defense": "parry", "riposte": "normal_attack" },
+]
+
 # --------------------------------
 
 var _rng: RandomNumberGenerator
@@ -85,13 +145,13 @@ func is_running() -> bool:
 	return false
 
 func on_incoming_attack(_attacker: CharacterBody2D, _hitbox: Hitbox):
-	if behavior_sequence.is_empty():
+	if behavior_sequence_B.is_empty():
 		return
 
 	_pending_riposte_action = ""
 
 	# 1. Decide qual ação defensiva tomar com base no roteiro unificado.
-	var current_step = behavior_sequence[_behavior_sequence_counter]
+	var current_step = behavior_sequence_B[_behavior_sequence_counter]
 	var defense_action = current_step.get("defense", "block")
 
 	if defense_action == "parry":
@@ -103,7 +163,7 @@ func on_incoming_attack(_attacker: CharacterBody2D, _hitbox: Hitbox):
 	# Se a ação for "block", nada acontece, e o inimigo recebe o golpe.
 
 	# 2. Avança para a próxima ação no roteiro.
-	_behavior_sequence_counter = (_behavior_sequence_counter + 1) % behavior_sequence.size()
+	_behavior_sequence_counter = (_behavior_sequence_counter + 1) % behavior_sequence_B.size()
 
 func _on_phase_changed(phase_data: Dictionary):
 	if phase_data.get("state_name") == "ParryState" and phase_data.get("phase_name") == "SUCCESS":
