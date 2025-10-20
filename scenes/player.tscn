@@ -1,4 +1,4 @@
-[gd_scene load_steps=88 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=90 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_8txt3"]
@@ -51,6 +51,7 @@
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="27_wqfne"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="28_wnwbv"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="29_gl8cc"]
+[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="31_qsb7e"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="34_8svfe"]
 [ext_resource type="AudioStream" uid="uid://7nnpy5lp40x1" path="res://audio/footstep.ogg" id="36_770dr"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
@@ -91,7 +92,7 @@ stamina_damage = 10.0
 poise_impact_contribution = 200.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, -100)
+knockback_vector = Vector2(400, 0)
 defender_knockback_on_parry = 120.0
 parry_interaction = 0
 unparryable_type = 0
@@ -123,7 +124,7 @@ stamina_damage = 10.0
 poise_impact_contribution = 200.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, -100)
+knockback_vector = Vector2(400, 0)
 defender_knockback_on_parry = 120.0
 parry_interaction = 0
 unparryable_type = 0
@@ -160,7 +161,7 @@ stamina_damage = 10.0
 poise_impact_contribution = 200.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, -100)
+knockback_vector = Vector2(400, 0)
 defender_knockback_on_parry = 120.0
 parry_interaction = 0
 unparryable_type = 0
@@ -229,12 +230,17 @@ skill_phases = Array[ExtResource("44_770dr")]([SubResource("Resource_qk6i7")])
 skill_name = ""
 metadata/_custom_type_script = "uid://cyu224lucyda8"
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qjsmb"]
+shader = ExtResource("31_qsb7e")
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_modifier = 0.0
+
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4gjji"]
-radius = 32.0
+radius = 48.0
 height = 128.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hhpqf"]
-size = Vector2(32, 64)
+size = Vector2(48, 64)
 
 [sub_resource type="Resource" id="Resource_md1ol"]
 script = ExtResource("21_487ah")
@@ -259,7 +265,7 @@ stamina_damage = 10.0
 poise_impact_contribution = 10.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, -100)
+knockback_vector = Vector2(400, 0)
 defender_knockback_on_parry = 120.0
 parry_interaction = 0
 unparryable_type = 0
@@ -291,7 +297,7 @@ stamina_damage = 10.0
 poise_impact_contribution = 10.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, -100)
+knockback_vector = Vector2(400, 0)
 defender_knockback_on_parry = 120.0
 parry_interaction = 0
 unparryable_type = 0
@@ -347,6 +353,7 @@ resting_offset = Vector2(0, -400)
 
 [node name="SpineSprite" type="SpineSprite" parent="Player"]
 skeleton_data_res = ExtResource("25_8txt3")
+normal_material = SubResource("ShaderMaterial_qjsmb")
 preview_skin = "Default"
 preview_animation = "-- Empty --"
 preview_frame = false

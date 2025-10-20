@@ -3,6 +3,8 @@ extends CharacterBody2D
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var spine_sprite: SpineSprite = $SpineSprite
+@onready var animation_component: AnimationComponent = $AnimationComponent
+@onready var audio_component: AudioComponent = $AudioComponent
 @onready var ai_controller: AIController = $AIController
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var stamina_component: StaminaComponent = $StaminaComponent
@@ -11,7 +13,6 @@ extends CharacterBody2D
 @onready var combo_component: ComboComponent = $ComboComponent
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var detection_area: Area2D = $DetectionArea
-@onready var visuals: Node2D = $Visuals
 @onready var path_target: Node2D = get_parent().get_node("PathTarget")
 @onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
 @onready var physics_component: PhysicsComponent = $PhysicsComponent
@@ -51,7 +52,6 @@ extends CharacterBody2D
 @export var down_dodge_profile: DodgeProfile
 
 var _equipped_skills: Dictionary = {}
-var material_ref: ShaderMaterial
 var facing_sign: int = 1
 var facing_locked: bool = false
 
@@ -62,6 +62,9 @@ var last_left_ground_ms: int = -1
 
 func _ready():
 	_build_skill_dictionary()
+	
+	animation_component.setup(state_machine, spine_sprite)
+	spine_sprite.animation_event.connect(_on_spine_event)
 	
 	action_cost_validator.setup(stamina_component, null)
 	state_machine.setup(
@@ -76,15 +79,18 @@ func _ready():
 	
 	attack_executor.setup(self)
 
-	if visuals.get_child_count() > 0 and visuals.get_child(0).material is ShaderMaterial:
-		material_ref = visuals.get_child(0).material
-		
 	health_component.health_changed.connect(status_ui.update_health)
 	stamina_component.stamina_changed.connect(status_ui.update_stamina)
 
 func _physics_process(delta: float):
 	var walk_direction = ai_controller.get_walk_direction()
 	var is_running = ai_controller.is_running()
+	
+	if not facing_locked:
+		if GameManager.player_node:
+			var direction_to_player = GameManager.player_node.global_position.x - global_position.x
+			if abs(direction_to_player) > 1.0:
+				facing_sign = sign(direction_to_player)
 	
 	_update_facing_direction()
 	
@@ -93,6 +99,14 @@ func _physics_process(delta: float):
 	
 	velocity = state_machine.process_physics(delta, walk_direction, is_running)
 	move_and_slide()
+
+func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState, _track_entry: SpineTrackEntry, event: SpineEvent):
+	var event_name = event.get_data().get_event_name()
+	
+	match event_name:
+		"footstep":
+			if audio_component:
+				audio_component.play_footstep()
 
 func _build_skill_dictionary():
 	if skill_x: _equipped_skills["skill_x"] = skill_x
@@ -104,8 +118,8 @@ func get_skill(action_name: String) -> BaseSkill:
 	return _equipped_skills.get(action_name)
 
 func _update_facing_direction():
-	if visuals:
-		visuals.scale.x = facing_sign
+	if is_instance_valid(spine_sprite):
+		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
 	if detection_area:
 		detection_area.scale.x = facing_sign
 
@@ -158,14 +172,3 @@ func reset_air_actions():
 		air_jumps_left = jump_profile.max_air_jumps
 	air_dash_used = false
 	has_locked_air_pool = true
-
-func flash_red():
-	if not material_ref:
-		push_warning("Enemy: Nenhum ShaderMaterial encontrado no nó visual para o efeito de flash.")
-		return
-		
-	var tween = create_tween()
-	tween.set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUINT)
-	
-	tween.tween_property(material_ref, "shader_parameter/flash_modifier", 1.0, 0.0).from(1.0).set_delay(0.05)
-	tween.tween_property(material_ref, "shader_parameter/flash_modifier", 0.0, 0.15)

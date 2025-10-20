@@ -130,7 +130,8 @@ func _unhandled_input(event: InputEvent):
 	if event.is_action_pressed("debug_vfx"):
 		if vfx_component:
 			var spawn_pos = global_position + Vector2(30 * facing_sign, -15)
-			vfx_component.spawn_vfx("blood_splatter", spawn_pos)
+			var direction = Vector2.RIGHT * facing_sign
+			vfx_component.spawn_vfx("blood_splatter", spawn_pos, direction)
 
 		get_viewport().set_input_as_handled()
 		return

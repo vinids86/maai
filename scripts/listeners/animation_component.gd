@@ -1,18 +1,46 @@
 class_name AnimationComponent
 extends Node
 
+@export var flash_duration: float = 0.15
+
 var spine_sprite: SpineSprite
 var state_machine: StateMachine
+var actor: Node
 
 func setup(p_state_machine: StateMachine, p_spine_sprite: SpineSprite):
-	self.state_machine = p_state_machine
-	self.spine_sprite = p_spine_sprite
+	state_machine = p_state_machine
+	spine_sprite = p_spine_sprite
+	actor = get_parent()
 	
 	assert(state_machine != null, "AnimationComponent: StateMachine recebida no setup é nula.")
 	assert(spine_sprite != null, "AnimationComponent: SpineSprite recebido no setup é nulo.")
+	assert(actor != null, "AnimationComponent: Não foi possível obter o nó pai (ator).")
 	
 	state_machine.phase_changed.connect(_on_phase_changed)
 
+	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+
+func play_shader_flash():
+	if not is_instance_valid(spine_sprite) or not spine_sprite.normal_material:
+		return
+		
+	var material = spine_sprite.normal_material as ShaderMaterial
+	if not material:
+		return
+
+	var tween = create_tween()
+	
+	material.set_shader_parameter("flash_modifier", 1.0)
+	
+	tween.tween_property(material, "shader_parameter/flash_modifier", 0.0, flash_duration).set_ease(Tween.EASE_IN)
+
+func _on_impact_resolved(result: ContactResult):
+	print("result.defender_node: ", result.defender_node)
+	if result.defender_node != actor:
+		return
+
+	if result.defender_outcome == ContactResult.DefenderOutcome.BLOCKED:
+		play_shader_flash()
 
 func _on_phase_changed(phase_data: Dictionary):
 	if not is_instance_valid(spine_sprite): return
