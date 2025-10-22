@@ -198,7 +198,7 @@ active_sfx = ExtResource("45_vdulj")
 hitbox_size = Vector2(90, 64)
 hitbox_position = Vector2(40, 0)
 damage = 5.0
-stamina_cost = 10.0
+stamina_cost = 0.0
 focus_cost = 0
 focus_gain_on_hit = 0
 stamina_damage = 10.0
@@ -244,7 +244,7 @@ size = Vector2(48, 64)
 
 [sub_resource type="Resource" id="Resource_md1ol"]
 script = ExtResource("21_487ah")
-buffer_window = 0.5
+buffer_window = 0.7
 metadata/_custom_type_script = "uid://24v4chol2qs0"
 
 [sub_resource type="Resource" id="Resource_8f1cb"]

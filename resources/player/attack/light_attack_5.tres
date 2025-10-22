@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_mlt2x")
-startup_duration = 0.3
-active_duration = 0.16
+startup_duration = 0.2
+active_duration = 0.1
 recovery_duration = 0.5
 link_duration = 0.0
 animation_name = &"light_attack_5"
@@ -26,9 +26,9 @@ defender_knockback_on_parry = 500.0
 parry_interaction = 0
 unparryable_type = 0
 movement_type = 0
-startup_movement_velocity = Vector2(240, 0)
-active_movement_velocity = Vector2(280, 0)
-recovery_movement_velocity = Vector2(-240, 0)
+startup_movement_velocity = Vector2(300, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
 link_movement_velocity = Vector2(0, 0)
 startup_poise_shield = 10.0
 active_poise_shield = 10.0

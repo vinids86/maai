@@ -26,6 +26,7 @@ extends CharacterBody2D
 @export var skill_y: BaseSkill
 @export var skill_a: BaseSkill
 @export var skill_b: BaseSkill
+@export var skill_z: BaseSkill
 
 @export_group("Combat Data")
 @export var jump_profile: JumpProfile

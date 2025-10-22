@@ -35,7 +35,6 @@ func play_shader_flash():
 	tween.tween_property(material, "shader_parameter/flash_modifier", 0.0, flash_duration).set_ease(Tween.EASE_IN)
 
 func _on_impact_resolved(result: ContactResult):
-	print("result.defender_node: ", result.defender_node)
 	if result.defender_node != actor:
 		return
 
