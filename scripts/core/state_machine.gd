@@ -173,6 +173,9 @@ func on_sequence_skill_pressed(skill_attack_set: AttackSet):
 
 func _on_impact_resolved(result: ContactResult):
 	if result.attacker_node == owner_node:
+		if current_state:
+			current_state.handle_attack_outcome(result)
+
 		match result.attacker_outcome:
 			ContactResult.AttackerOutcome.PARRIED:
 				var profile = owner_node.get_parried_profile()

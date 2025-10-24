@@ -1,4 +1,4 @@
-[gd_scene load_steps=83 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=88 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -22,20 +22,23 @@
 [ext_resource type="AudioStream" uid="uid://duggjplviepmn" path="res://audio/pre_sequence_skill.wav" id="9_yb7ap"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="10_s1ycm"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="10_w8i8w"]
+[ext_resource type="AudioStream" uid="uid://mh2334p0m1yp" path="res://audio/parry_active.wav" id="11_1lc1m"]
 [ext_resource type="Script" uid="uid://6j164hqmaqt2" path="res://scripts/states/parry_state.gd" id="11_shcg2"]
 [ext_resource type="Script" uid="uid://hhcv8mh33t6y" path="res://scripts/components/stamina_component.gd" id="11_w8i8w"]
+[ext_resource type="Script" uid="uid://vapdm40oww0x" path="res://scripts/profiles/parry_profile.gd" id="12_4c6tc"]
 [ext_resource type="Resource" uid="uid://of3fc8ba47yj" path="res://resources/player/riposte/default.tres" id="12_13roy"]
-[ext_resource type="Resource" uid="uid://b7kijgne205pc" path="res://resources/player/parry/default.tres" id="12_ile5s"]
 [ext_resource type="PackedScene" uid="uid://ciepgnvn26lbl" path="res://scenes/enemy_status_ui.tscn" id="12_otmr2"]
 [ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="12_rogs8"]
+[ext_resource type="AudioStream" uid="uid://jqweyafgirtf" path="res://audio/parry_success.wav" id="13_1lc1m"]
 [ext_resource type="Script" uid="uid://ba650tjbftjqi" path="res://scripts/states/parried_state.gd" id="13_1x4g4"]
 [ext_resource type="Script" uid="uid://c3f0ddxqxcn8k" path="res://scripts/states/attack_state.gd" id="15_1x4g4"]
+[ext_resource type="Script" uid="uid://nsuhpbn3734f" path="res://scripts/profiles/block_stun_profile.gd" id="16_2qahx"]
 [ext_resource type="Resource" uid="uid://048h5l4vvq4w" path="res://resources/player/wall/default.tres" id="16_b5geg"]
 [ext_resource type="Script" uid="uid://24v4chol2qs0" path="res://scripts/profiles/buffer_profile.gd" id="16_ekh6n"]
+[ext_resource type="AudioStream" uid="uid://br2cgaywljsyq" path="res://audio/clash.ogg" id="17_1lc1m"]
 [ext_resource type="Resource" uid="uid://cy7dnyidr361f" path="res://resources/player/dash/dash_attack_default.tres" id="17_5utat"]
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="17_6awcb"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="17_shcg2"]
-[ext_resource type="Resource" uid="uid://c13fhm2w824s2" path="res://resources/player/block/default.tres" id="18_wjec0"]
 [ext_resource type="Resource" uid="uid://dl072xuq1tgt8" path="res://resources/player/countered/default.tres" id="19_a5akt"]
 [ext_resource type="Script" uid="uid://bnsx7y061rnqe" path="res://scripts/states/guard_broken_state.gd" id="19_i4rgx"]
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="20_2mchx"]
@@ -75,6 +78,7 @@ metadata/__load_path__ = "res://audio/best-sword-sounds-slice-slash-crash-swoosh
 script = ExtResource("7_x24ca")
 startup_duration = 0.7
 active_duration = 0.18
+block_recoil_duration = 0.35
 recovery_duration = 0.34
 link_duration = 0.6
 animation_name = &""
@@ -114,6 +118,29 @@ script = ExtResource("5_tysqt")
 skill_phases = Array[ExtResource("6_kbbx4")]([SubResource("Resource_o6r7o")])
 skill_name = ""
 metadata/_custom_type_script = "uid://cyu224lucyda8"
+
+[sub_resource type="Resource" id="Resource_djthp"]
+script = ExtResource("12_4c6tc")
+active_duration = 0.15
+recovery_duration = 0.3
+success_duration = 0.25
+stamina_cost = 0.0
+poise_shield_contribution = 30.0
+shield_bonus_on_success = 50.0
+sword_bonus_on_success = 25.0
+bonus_duration = 0.1
+animation_name = &""
+active_sfx = ExtResource("11_1lc1m")
+success_sfx = ExtResource("13_1lc1m")
+metadata/_custom_type_script = "uid://vapdm40oww0x"
+
+[sub_resource type="Resource" id="Resource_whoqb"]
+script = ExtResource("16_2qahx")
+duration = 0.2
+animation_name = &""
+sfx = ExtResource("17_1lc1m")
+poise_shield_contribution = 0.0
+metadata/_custom_type_script = "uid://nsuhpbn3734f"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_by3os"]
 shader = ExtResource("23_yb7ap")
@@ -489,10 +516,10 @@ skill_a = ExtResource("4_5utat")
 skill_b = SubResource("Resource_ef2cb")
 jump_profile = ExtResource("5_g0yyi")
 finisher_profile = ExtResource("3_thsr5")
-parry_profile = ExtResource("12_ile5s")
+parry_profile = SubResource("Resource_djthp")
 riposte_profile = ExtResource("12_13roy")
 mikiri_riposte_profile = ExtResource("6_5ie7m")
-block_stun_profile = ExtResource("18_wjec0")
+block_stun_profile = SubResource("Resource_whoqb")
 stagger_profile = ExtResource("12_rogs8")
 parried_profile = ExtResource("7_ekh6n")
 guard_broken_profile = ExtResource("20_2mchx")

@@ -8,6 +8,7 @@
 script = ExtResource("1_dreuq")
 startup_duration = 0.15
 active_duration = 0.1
+block_recoil_duration = 0.35
 recovery_duration = 0.3
 link_duration = 0.6
 animation_name = &""

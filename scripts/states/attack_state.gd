@@ -4,9 +4,9 @@ extends State
 var _attack_executor: AttackExecutor
 var _current_profile: AttackProfile
 
-enum LinkPhases { EXECUTING, LINK }
-var _current_phase: LinkPhases
-var _time_left_in_link: float = 0.0
+enum InternalPhase { EXECUTING, RECOIL, LINK }
+var _current_phase: InternalPhase
+var _time_left_in_phase: float = 0.0
 var _is_initialized: bool = false
 
 func _initialize_references():
@@ -29,7 +29,7 @@ func enter(args: Dictionary = {}):
 		return
 	
 	owner_node.facing_locked = true
-	_current_phase = LinkPhases.EXECUTING
+	_current_phase = InternalPhase.EXECUTING
 	_attack_executor.execute(_current_profile)
 
 func exit():
@@ -41,59 +41,75 @@ func exit():
 			_attack_executor.finished.disconnect(_on_attack_finished)
 
 	owner_node.facing_locked = false
-	_current_phase = LinkPhases.EXECUTING
+	_current_phase = InternalPhase.EXECUTING
 	_current_profile = null
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	var new_velocity = Vector2.ZERO
 	
-	if _current_phase == LinkPhases.LINK:
-		_time_left_in_link -= delta
-		if _time_left_in_link <= 0.0:
-			state_machine.on_current_state_finished()
-			return physics_component.apply_gravity(Vector2.ZERO, delta)
+	match _current_phase:
+		InternalPhase.LINK:
+			_time_left_in_phase -= delta
+			if _time_left_in_phase <= 0.0:
+				state_machine.on_current_state_finished()
+				return physics_component.apply_gravity(Vector2.ZERO, delta)
 			
-		var move_vel = _current_profile.link_movement_velocity
-		new_velocity.x = move_vel.x * owner_node.facing_sign
-		new_velocity.y = move_vel.y
-	elif _attack_executor and _current_profile:
-		if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
-			if path_follower_component and path_follower_component.is_active():
-				new_velocity = path_follower_component.calculate_target_velocity(delta)
-		else: # PHYSICS
-			new_velocity = _attack_executor.get_physics_movement_velocity()
+			var move_vel = _current_profile.link_movement_velocity
+			new_velocity.x = move_vel.x * owner_node.facing_sign
+			new_velocity.y = move_vel.y
+		
+		InternalPhase.RECOIL:
+			_time_left_in_phase -= delta
+			if _time_left_in_phase <= 0.0:
+				_on_attack_finished()
+
+		InternalPhase.EXECUTING:
+			if _attack_executor and _current_profile:
+				if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
+					if path_follower_component and path_follower_component.is_active():
+						new_velocity = path_follower_component.calculate_target_velocity(delta)
+				else: # PHYSICS
+					new_velocity = _attack_executor.get_physics_movement_velocity()
 
 	new_velocity = physics_component.apply_gravity(new_velocity, delta)
 	return new_velocity
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
-	if _current_phase == LinkPhases.LINK:
+	if _current_phase == InternalPhase.LINK:
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
 	var executor_phase = _attack_executor.get_current_phase_name()
 	var in_startup = executor_phase == "STARTUP"
-	var in_link = _current_phase == LinkPhases.LINK
+	var in_link_or_recoil = _current_phase == InternalPhase.LINK or _current_phase == InternalPhase.RECOIL
 	
-	if in_startup or in_link:
+	if in_startup or in_link_or_recoil:
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
 	var executor_phase = _attack_executor.get_current_phase_name()
 	var in_recovery = executor_phase == "RECOVERY"
-	var in_link = _current_phase == LinkPhases.LINK
+	var in_link_or_recoil = _current_phase == InternalPhase.LINK or _current_phase == InternalPhase.RECOIL
 	
-	if in_recovery or in_link:
+	if in_recovery or in_link_or_recoil:
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
+func handle_attack_outcome(result: ContactResult):
+	if result.attacker_outcome == ContactResult.AttackerOutcome.ATTACK_BLOCKED:
+		if _current_phase == InternalPhase.EXECUTING:
+			_attack_executor.stop()
+			_current_phase = InternalPhase.RECOIL
+			_time_left_in_phase = _current_profile.get("block_recoil_duration")
+
+
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var executor_phase = _attack_executor.get_current_phase_name()
 
-	if executor_phase == "RECOVERY" or _current_phase == LinkPhases.LINK:
+	if executor_phase == "RECOVERY" or _current_phase != InternalPhase.EXECUTING:
 		return _resolve_default_contact(context)
 	else:
 		var result = ContactResult.new()
@@ -121,7 +137,7 @@ func get_poise_shield_contribution() -> float:
 	if not _current_profile:
 		return 0.0
 
-	if _current_phase == LinkPhases.LINK:
+	if _current_phase != InternalPhase.EXECUTING:
 		return _current_profile.recovery_poise_shield
 
 	var executor_phase = _attack_executor.get_current_phase_name()
@@ -155,5 +171,5 @@ func _on_attack_finished():
 		state_machine.on_current_state_finished()
 		return
 	else:
-		_current_phase = LinkPhases.LINK
-		_time_left_in_link = _current_profile.link_duration
+		_current_phase = InternalPhase.LINK
+		_time_left_in_phase = _current_profile.link_duration

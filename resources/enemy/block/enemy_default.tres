@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="BlockStunProfile" load_steps=3 format=3 uid="uid://c13fhm2w824s2"]
 
 [ext_resource type="Script" uid="uid://nsuhpbn3734f" path="res://scripts/profiles/block_stun_profile.gd" id="1_lh3w7"]
-[ext_resource type="AudioStream" uid="uid://br2cgaywljsyq" path="res://audio/clash.ogg" id="2_pnc0q"]
+[ext_resource type="AudioStream" uid="uid://dlhojq5kay8ul" path="res://audio/block_2.ogg" id="2_pnc0q"]
 
 [resource]
 script = ExtResource("1_lh3w7")

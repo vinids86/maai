@@ -1,25 +1,36 @@
-class_name BlockStunState
 extends State
+class_name BlockStunState
 
 var current_profile: BlockStunProfile
-
 var time_left_in_phase: float = 0.0
 var _recoil_velocity: Vector2
 
+# ✅ Precarrega as 4 variações só uma vez
+const BLOCK_SFX = [
+	preload("res://audio/clash.ogg"),
+	preload("res://audio/clash1.ogg"),
+	preload("res://audio/clash2.ogg"),
+	preload("res://audio/clash3.ogg"),
+	preload("res://audio/clash4.ogg"),
+	preload("res://audio/clash5.ogg"),
+	preload("res://audio/clash6.ogg"),
+	preload("res://audio/clash7.ogg"),
+	preload("res://audio/clash8.ogg"),
+]
+
 func enter(args: Dictionary = {}):
 	self.current_profile = args.get("profile")
-
 	if not current_profile:
 		state_machine.on_current_state_finished()
 		return
-	
+
 	time_left_in_phase = current_profile.duration
-	
+
 	var recoil: Vector2 = args.get("knockback_vector", Vector2.ZERO)
 	_recoil_velocity = recoil
 	if recoil.x != 0:
 		_recoil_velocity.x *= -owner_node.facing_sign
-	
+
 	_emit_phase_signal()
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
@@ -30,11 +41,9 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 	if time_left_in_phase <= 0:
 		state_machine.on_current_state_finished()
 		return physics_component.apply_gravity(Vector2.ZERO, delta)
-		
+
 	_recoil_velocity = _recoil_velocity.lerp(Vector2.ZERO, 0.15)
-	
 	var final_velocity = physics_component.apply_gravity(_recoil_velocity, delta)
-	
 	return final_velocity
 
 func resolve_contact(context: ContactContext) -> ContactResult:
@@ -49,11 +58,15 @@ func allow_reentry() -> bool:
 	return true
 
 func _emit_phase_signal():
+	# ✅ Sorteia uma das 4 variações
+	var sfx_to_play: AudioStream = BLOCK_SFX[randi() % BLOCK_SFX.size()]
+
 	var phase_data = {
 		"state_name": self.name,
 		"phase_name": "BLOCK_STUN",
 		"profile": current_profile,
 		"animation_to_play": current_profile.animation_name,
-		"sfx_to_play": current_profile.sfx
+		# ✅ passa a variação sorteada
+		"sfx_to_play": sfx_to_play,
 	}
 	state_machine.emit_phase_change(phase_data)

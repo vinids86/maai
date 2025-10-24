@@ -49,6 +49,9 @@ func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
 func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
+func handle_attack_outcome(_result: ContactResult):
+	pass
+
 func resolve_contact(context: ContactContext) -> ContactResult:
 	return _resolve_default_contact(context)
 
@@ -85,7 +88,7 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 		var reason = { "outcome": "BLOCKED", "knockback_vector": recoil_velocity }
 		state_machine.on_current_state_finished(reason)
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.BLOCKED
-		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.ATTACK_BLOCKED
 	else:
 		var reason = { "outcome": "GUARD_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
 		state_machine.on_current_state_finished(reason)

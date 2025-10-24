@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ParryProfile" load_steps=4 format=3 uid="uid://b7kijgne205pc"]
+
+[ext_resource type="Script" uid="uid://vapdm40oww0x" path="res://scripts/profiles/parry_profile.gd" id="1_u1h6j"]
+[ext_resource type="AudioStream" uid="uid://mh2334p0m1yp" path="res://audio/parry_active.wav" id="1_vj1u7"]
+[ext_resource type="AudioStream" uid="uid://w4md867k2yid" path="res://audio/parry_success_2.ogg" id="3_ljc76"]
+
+[resource]
+script = ExtResource("1_u1h6j")
+active_duration = 0.15
+recovery_duration = 0.3
+success_duration = 0.25
+stamina_cost = 0.0
+poise_shield_contribution = 30.0
+shield_bonus_on_success = 50.0
+sword_bonus_on_success = 25.0
+bonus_duration = 0.1
+animation_name = &"Parry"
+active_sfx = ExtResource("1_vj1u7")
+success_sfx = ExtResource("3_ljc76")
+metadata/_custom_type_script = "uid://vapdm40oww0x"
