@@ -78,7 +78,7 @@ metadata/__load_path__ = "res://audio/best-sword-sounds-slice-slash-crash-swoosh
 script = ExtResource("7_x24ca")
 startup_duration = 0.7
 active_duration = 0.18
-block_recoil_duration = 0.35
+block_recoil_duration = 0.55
 recovery_duration = 0.34
 link_duration = 0.6
 animation_name = &""
@@ -621,6 +621,9 @@ script = ExtResource("11_w8i8w")
 [node name="AIController" type="Node" parent="Enemy"]
 script = ExtResource("5_md484")
 metadata/_custom_type_script = "uid://dewrlich57pgi"
+
+[node name="ComboChainTimer" type="Timer" parent="Enemy/AIController"]
+one_shot = true
 
 [node name="AttackExecutor" type="Node" parent="Enemy"]
 script = ExtResource("22_605iw")

@@ -6,4 +6,5 @@
 script = ExtResource("1_5hv1o")
 duration = 2.0
 animation_name = &""
+poise_shield_contribution = -999.0
 metadata/_custom_type_script = "uid://cjf8fjt0ss3wo"

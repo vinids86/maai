@@ -62,7 +62,8 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 			_time_left_in_phase -= delta
 			if _time_left_in_phase <= 0.0:
 				_on_attack_finished()
-
+			var recoil_movement_x = 100.0
+			new_velocity.x = recoil_movement_x * owner_node.facing_sign
 		InternalPhase.EXECUTING:
 			if _attack_executor and _current_profile:
 				if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
