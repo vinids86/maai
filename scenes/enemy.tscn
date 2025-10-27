@@ -1,4 +1,4 @@
-[gd_scene load_steps=88 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=89 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -62,6 +62,7 @@
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
 [ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="42_hyejq"]
+[ext_resource type="Resource" uid="uid://d1elwc0tip686" path="res://resources/player/attack/air_attack_set.tres" id="48_4c6tc"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="48_sm4rh"]
 [ext_resource type="Script" uid="uid://d18awpld4ar25" path="res://scripts/states/dash_state.gd" id="50_7w3jn"]
 [ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="52_uiwvf"]
@@ -76,7 +77,7 @@ metadata/__load_path__ = "res://audio/best-sword-sounds-slice-slash-crash-swoosh
 
 [sub_resource type="Resource" id="Resource_by3os"]
 script = ExtResource("7_x24ca")
-startup_duration = 0.7
+startup_duration = 0.9
 active_duration = 0.18
 block_recoil_duration = 0.55
 recovery_duration = 0.34
@@ -648,6 +649,7 @@ metadata/_custom_type_script = "uid://7awh4v6bsojt"
 
 [node name="AirComboComponent" type="Node" parent="Enemy"]
 script = ExtResource("34_5utat")
+attack_set = ExtResource("48_4c6tc")
 metadata/_custom_type_script = "uid://k7ywlbk605tf"
 
 [node name="SkillComboComponent" type="Node" parent="Enemy"]

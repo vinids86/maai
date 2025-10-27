@@ -1,0 +1,77 @@
+[gd_resource type="Resource" script_class="AttackSet" load_steps=7 format=3 uid="uid://d1elwc0tip686"]
+
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_vrn2r"]
+[ext_resource type="AudioStream" uid="uid://bp66sw0k32ttq" path="res://audio/attack_3.wav" id="2_h5e3q"]
+[ext_resource type="AudioStream" uid="uid://curr3hsosggk4" path="res://audio/attack_2.wav" id="3_6ykm8"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="4_may8p"]
+
+[sub_resource type="Resource" id="Resource_8f1cb"]
+script = ExtResource("1_vrn2r")
+startup_duration = 0.1
+active_duration = 0.07
+block_recoil_duration = 0.55
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+active_sfx = ExtResource("2_h5e3q")
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(40, 0)
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 5
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(400, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_vdulj"]
+script = ExtResource("1_vrn2r")
+startup_duration = 0.1
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.25
+link_duration = 0.6
+animation_name = &""
+active_sfx = ExtResource("3_6ykm8")
+hitbox_size = Vector2(90, 64)
+hitbox_position = Vector2(40, 0)
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 5
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(400, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[resource]
+script = ExtResource("4_may8p")
+attacks = Array[ExtResource("1_vrn2r")]([SubResource("Resource_8f1cb"), SubResource("Resource_vdulj")])
+metadata/_custom_type_script = "uid://bwq542vou2wu1"

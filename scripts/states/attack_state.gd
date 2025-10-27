@@ -45,32 +45,40 @@ func exit():
 	_current_profile = null
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
-	var new_velocity = Vector2.ZERO
+	var new_velocity = owner_node.velocity
 	
 	match _current_phase:
 		InternalPhase.LINK:
 			_time_left_in_phase -= delta
 			if _time_left_in_phase <= 0.0:
 				state_machine.on_current_state_finished()
-				return physics_component.apply_gravity(Vector2.ZERO, delta)
+				new_velocity.x = 0.0
+				return physics_component.apply_gravity(new_velocity, delta)
 			
 			var move_vel = _current_profile.link_movement_velocity
+			
 			new_velocity.x = move_vel.x * owner_node.facing_sign
-			new_velocity.y = move_vel.y
+			if owner_node.is_on_floor():
+				new_velocity.y = move_vel.y
 		
 		InternalPhase.RECOIL:
 			_time_left_in_phase -= delta
 			if _time_left_in_phase <= 0.0:
 				_on_attack_finished()
 			var recoil_movement_x = 100.0
+			
 			new_velocity.x = recoil_movement_x * owner_node.facing_sign
+		
 		InternalPhase.EXECUTING:
 			if _attack_executor and _current_profile:
 				if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
 					if path_follower_component and path_follower_component.is_active():
-						new_velocity = path_follower_component.calculate_target_velocity(delta)
-				else: # PHYSICS
-					new_velocity = _attack_executor.get_physics_movement_velocity()
+						if owner_node.is_on_floor():
+							new_velocity = path_follower_component.calculate_target_velocity(delta)
+						else:
+							new_velocity.x = 0.0
+				else:
+					new_velocity.x = _attack_executor.get_physics_movement_velocity().x
 
 	new_velocity = physics_component.apply_gravity(new_velocity, delta)
 	return new_velocity

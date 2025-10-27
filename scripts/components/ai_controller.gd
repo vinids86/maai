@@ -3,10 +3,10 @@ extends Node
 
 var behavior_sequences: Dictionary = {
 	"phase_1": [
-		{ "defense": "parry" },
+		{ "defense": "parry", "riposte": "normal_attack" },
 		{ "defense": "block" },
 		{ "defense": "block" },
-		{ "defense": "parry" },
+		{ "defense": "parry", "riposte": "normal_attack" },
 		{ "defense": "block" },
 		{ "defense": "parry", "riposte": "normal_attack" },
 		{ "defense": "block" },

@@ -82,6 +82,8 @@ func _ready():
 
 	health_component.health_changed.connect(status_ui.update_health)
 	stamina_component.stamina_changed.connect(status_ui.update_stamina)
+	
+	surface_contact_component.call_deferred("setup", self)
 
 func _physics_process(delta: float):
 	var walk_direction = ai_controller.get_walk_direction()
