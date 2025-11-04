@@ -494,7 +494,7 @@ _data = {
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_e7lhw"]
 radius = 48.0
-height = 128.0
+height = 200.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gst0f"]
 size = Vector2(48, 64)
@@ -539,7 +539,7 @@ preview_animation = "-- Empty --"
 preview_frame = false
 preview_time = 0.0
 position = Vector2(0, 62)
-scale = Vector2(0.2, 0.2)
+scale = Vector2(0.3, 0.3)
 
 [node name="Visuals" type="Node2D" parent="Enemy"]
 
@@ -570,6 +570,7 @@ metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy"]
 visible = false
+position = Vector2(0, -36)
 shape = SubResource("CapsuleShape2D_e7lhw")
 
 [node name="Hurtbox" type="Area2D" parent="Enemy"]
@@ -621,6 +622,7 @@ script = ExtResource("11_w8i8w")
 
 [node name="AIController" type="Node" parent="Enemy"]
 script = ExtResource("5_md484")
+behavior_id = 9
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 
 [node name="ComboChainTimer" type="Timer" parent="Enemy/AIController"]

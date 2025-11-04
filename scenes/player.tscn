@@ -242,7 +242,7 @@ shader_parameter/flash_modifier = 0.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4gjji"]
 radius = 48.0
-height = 128.0
+height = 200.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hhpqf"]
 size = Vector2(48, 64)
@@ -295,14 +295,13 @@ preview_animation = "-- Empty --"
 preview_frame = false
 preview_time = 0.0
 position = Vector2(0, 62)
-scale = Vector2(0.2, 0.2)
+scale = Vector2(0.3, 0.3)
 
 [node name="SpineBoneNode" type="SpineBoneNode" parent="Player/SpineSprite"]
 bone_name = "front-shoulder"
 show_behind_parent = true
-position = Vector2(-45.4704, -348.271)
+position = Vector2(-45.4704, -348.272)
 rotation = 0.00413158
-scale = Vector2(1, 1)
 
 [node name="PlayerFeedbackComponent" type="Node2D" parent="Player"]
 script = ExtResource("24_vdulj")
@@ -313,6 +312,7 @@ trauma_att_none = 0.5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
 visible = false
+position = Vector2(0, -36)
 shape = SubResource("CapsuleShape2D_4gjji")
 
 [node name="Hurtbox" type="Area2D" parent="Player"]
