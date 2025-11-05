@@ -41,11 +41,21 @@ func _execute_mikiri(profile: MikiriCounterProfile, target: Node):
 func _execute_push(profile: PushCounterProfile, target: Node):
 	if not profile or not profile.executor_attack_profile or not target:
 		return
+		
+	if not is_instance_valid(_owner_node) or not is_instance_valid(target):
+		return
 
 	if profile.switch_sides:
-		var facing_component = _owner_node.find_child("FacingComponent")
-		if facing_component:
-			facing_component.facing_sign *= -1
+		var p_mask = _owner_node.collision_mask
+		var t_mask = target.collision_mask
+		
+		_owner_node.collision_mask = p_mask & ~target.collision_layer
+		target.collision_mask = t_mask & ~_owner_node.collision_layer
+		
+		var timer = get_tree().create_timer(profile.execution_duration)
+		timer.timeout.connect(
+			_restore_collisions.bind(_owner_node, target, p_mask, t_mask, profile.switch_sides)
+		)
 
 	var phase_data = {
 		"state_name": "ExecutePushCounter",
@@ -57,3 +67,18 @@ func _execute_push(profile: PushCounterProfile, target: Node):
 	_state_machine.emit_phase_change(phase_data)
 	
 	_attack_executor.execute(profile.executor_attack_profile)
+
+
+func _restore_collisions(owner: Node, target: Node, owner_mask: int, target_mask: int, switch_sides: bool):
+	if is_instance_valid(owner):
+		owner.collision_mask = owner_mask
+		if switch_sides:
+			owner.facing_sign *= -1
+			
+	if is_instance_valid(target):
+		if target.has_node("StateMachine"):
+			var target_state_machine = target.get_node("StateMachine")
+			if target_state_machine and target_state_machine.current_state and "DeathState" in target_state_machine.current_state.name:
+				return
+		
+		target.collision_mask = target_mask
