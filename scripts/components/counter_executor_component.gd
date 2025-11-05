@@ -18,9 +18,8 @@ func execute_counter(profile: CounterExecutionProfile, target: Node):
 
 	if profile is MikiriCounterProfile:
 		_execute_mikiri(profile, target)
-	# (Futuro)
-	# elif profile is PushCounterProfile:
-	# 	_execute_push(profile, target)
+	elif profile is PushCounterProfile:
+		_execute_push(profile, target)
 
 
 func _execute_mikiri(profile: MikiriCounterProfile, target: Node):
@@ -33,6 +32,27 @@ func _execute_mikiri(profile: MikiriCounterProfile, target: Node):
 		"profile": profile,
 		"animation_to_play": profile.executor_animation,
 		"sfx_to_play": profile.mikiri_sfx
+	}
+	_state_machine.emit_phase_change(phase_data)
+	
+	_attack_executor.execute(profile.executor_attack_profile)
+
+
+func _execute_push(profile: PushCounterProfile, target: Node):
+	if not profile or not profile.executor_attack_profile or not target:
+		return
+
+	if profile.switch_sides:
+		var facing_component = _owner_node.find_child("FacingComponent")
+		if facing_component:
+			facing_component.facing_sign *= -1
+
+	var phase_data = {
+		"state_name": "ExecutePushCounter",
+		"phase_name": "EXECUTE",
+		"profile": profile,
+		"animation_to_play": profile.executor_animation_name,
+		"sfx_to_play": profile.sfx_executing
 	}
 	_state_machine.emit_phase_change(phase_data)
 	

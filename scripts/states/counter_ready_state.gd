@@ -56,18 +56,27 @@ func _change_phase(new_phase: Phases):
 		Phases.READY:
 			time_left_in_phase = _current_profile.ready_duration
 			animation_to_play = _current_profile.counter_ready_animation
+			
+			if _current_profile is PushCounterProfile:
+				sfx_to_play = (_current_profile as PushCounterProfile).sfx_ready
 		
 		Phases.EXECUTING:
-			if not _current_profile is MikiriCounterProfile:
-				push_error("CounterReadyState: Perfil de execução não é um MikiriCounterProfile.")
+			counter_executor_component.execute_counter(_current_profile, _triggering_result.attacker_node)
+			
+			if _current_profile is MikiriCounterProfile:
+				var mikiri_profile = _current_profile as MikiriCounterProfile
+				time_left_in_phase = mikiri_profile.execution_duration
+				animation_to_play = mikiri_profile.executor_animation
+			
+			elif _current_profile is PushCounterProfile:
+				var push_profile = _current_profile as PushCounterProfile
+				time_left_in_phase = push_profile.execution_duration
+				animation_to_play = push_profile.executor_animation_name
+			
+			else:
+				push_error("CounterReadyState: Perfil de execução desconhecido: " + _current_profile.get_class())
 				state_machine.on_current_state_finished()
 				return
-
-			var mikiri_profile = _current_profile as MikiriCounterProfile
-			time_left_in_phase = mikiri_profile.execution_duration
-			animation_to_play = mikiri_profile.executor_animation
-			
-			counter_executor_component.execute_counter(_current_profile, _triggering_result.attacker_node)
 
 	var phase_data = {
 		"state_name": self.name,

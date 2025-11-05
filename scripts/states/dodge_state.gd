@@ -82,8 +82,19 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 		else:
-			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGED
-			result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+			var is_neutral_dodge = _current_direction == Vector2.ZERO
+			var is_parryable = context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.STANDARD
+			
+			if is_neutral_dodge and is_parryable and current_profile.counter_execution_profile:
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGE_COUNTER_READY
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.DODGE_COUNTERED_VULNERABLE
+				result_for_attacker.counter_profile = current_profile.counter_execution_profile
+				
+				var reason = {"outcome": "DODGE_COUNTER_READY", "result": result_for_attacker}
+				state_machine.on_current_state_finished(reason)
+			else:
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGED
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 		
 		return result_for_attacker
 	
