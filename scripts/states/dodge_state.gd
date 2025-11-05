@@ -66,12 +66,15 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	if current_phase == Phases.ACTIVE:
 		var is_thrust = context.attack_profile.unparryable_type == AttackProfile.UnparryableType.THRUST
 		var is_forward_dodge = _current_direction.x * owner_node.facing_sign > 0
-
+		
 		if is_thrust:
-			if is_forward_dodge:
-				state_machine.on_current_state_finished({"outcome": "COUNTER_SUCCESS", "context": context})
-				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.COUNTER_SUCCESS
-				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.COUNTERED
+			if is_forward_dodge and current_profile.counter_execution_profile:
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGE_COUNTER_READY
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.DODGE_COUNTERED_VULNERABLE
+				result_for_attacker.counter_profile = current_profile.counter_execution_profile
+				
+				var reason = {"outcome": "DODGE_COUNTER_READY", "result": result_for_attacker}
+				state_machine.on_current_state_finished(reason)
 			else:
 				context.defender_health_comp.take_damage(context.attack_profile.damage)
 				var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }

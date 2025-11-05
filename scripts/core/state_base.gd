@@ -7,14 +7,16 @@ var physics_component: Node
 var path_follower_component: Node
 var surface_contact_component: SurfaceContactComponent
 var wall_detector: WallDetectorComponent
+var counter_executor_component: CounterExecutorComponent
 
-func initialize(sm: StateMachine, owner: Node, physics_comp: Node, path_follower_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+func initialize(sm: StateMachine, owner: Node, physics_comp: Node, path_follower_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent, p_counter_executor_comp: CounterExecutorComponent):
 	self.state_machine = sm
 	self.owner_node = owner
 	self.physics_component = physics_comp
 	self.path_follower_component = path_follower_comp
 	self.surface_contact_component = surface_contact_comp
 	self.wall_detector = p_wall_detector
+	self.counter_executor_component = p_counter_executor_comp
 
 func enter(_args: Dictionary = {}):
 	pass

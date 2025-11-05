@@ -57,7 +57,7 @@ func execute(profile: AttackProfile):
 	if not is_instance_valid(profile):
 		push_warning("AttackExecutor: Tentou executar um AttackProfile inválido.")
 		return
-
+	
 	self._current_profile = profile
 	
 	if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:

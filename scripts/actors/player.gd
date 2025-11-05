@@ -17,6 +17,7 @@ extends CharacterBody2D
 @onready var hold_input_timer: Timer = $HoldInputTimer
 @onready var run_cancel_timer: Timer = $RunCancelTimer
 @onready var attack_executor: AttackExecutor = $AttackExecutor
+@onready var counter_executor_component: CounterExecutorComponent = $CounterExecutorComponent
 @onready var combo_component: ComboComponent = $ComboComponent
 @onready var air_combo_component: AirComboComponent = $AirComboComponent
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
@@ -41,13 +42,11 @@ var _equipped_skills: Dictionary = {}
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var riposte_profile: AttackProfile
-@export var mikiri_riposte_profile: AttackProfile
 @export var block_stun_profile: BlockStunProfile
 @export var stagger_profile: StaggerProfile
 @export var parried_profile: ParriedProfile
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
-@export var countered_profile: CounteredProfile
 @export var death_profile: DeathProfile
 @export var dash_profile: DashProfile
 @export var dash_attack_profile: AttackProfile
@@ -82,7 +81,8 @@ func _ready():
 		buffer_component,
 		action_cost_validator,
 		surface_contact_component,
-		wall_detector
+		wall_detector,
+		counter_executor_component
 	)
 
 	surface_contact_component.call_deferred("setup", self)
@@ -244,9 +244,6 @@ func get_dash_profile() -> DashProfile:
 func get_riposte_profile() -> AttackProfile:
 	return riposte_profile
 
-func get_mikiri_riposte_profile() -> AttackProfile:
-	return mikiri_riposte_profile
-
 func get_finisher_profile() -> FinisherProfile:
 	return finisher_profile
 
@@ -271,9 +268,6 @@ func get_guard_broken_profile() -> GuardBrokenProfile:
 
 func get_locomotion_profile() -> LocomotionProfile:
 	return locomotion_profile
-	
-func get_countered_profile() -> CounteredProfile:
-	return countered_profile
 	
 func get_death_profile() -> DeathProfile:
 	return death_profile

@@ -10,6 +10,7 @@ extends CharacterBody2D
 @onready var stamina_component: StaminaComponent = $StaminaComponent
 @onready var status_ui: EnemyStatusUI = $EnemyStatusUI
 @onready var attack_executor: AttackExecutor = $AttackExecutor
+@onready var counter_executor_component: CounterExecutorComponent = $CounterExecutorComponent
 @onready var combo_component: ComboComponent = $ComboComponent
 @onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
 @onready var detection_area: Area2D = $DetectionArea
@@ -33,13 +34,11 @@ extends CharacterBody2D
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
 @export var riposte_profile: AttackProfile
-@export var mikiri_riposte_profile: AttackProfile
 @export var block_stun_profile: BlockStunProfile
 @export var stagger_profile: StaggerProfile
 @export var parried_profile: ParriedProfile
 @export var guard_broken_profile: GuardBrokenProfile
 @export var locomotion_profile: LocomotionProfile
-@export var countered_profile: CounteredProfile
 @export var death_profile: DeathProfile
 @export var dash_attack_profile: AttackProfile
 @export var wall_slide_profile: WallSlideProfile
@@ -75,7 +74,8 @@ func _ready():
 		buffer_component,
 		action_cost_validator,
 		surface_contact_component,
-		wall_detector
+		wall_detector,
+		counter_executor_component
 	)
 	
 	attack_executor.setup(self)
@@ -128,9 +128,6 @@ func _update_facing_direction():
 
 func get_riposte_profile() -> AttackProfile:
 	return riposte_profile
-
-func get_mikiri_riposte_profile() -> AttackProfile:
-	return mikiri_riposte_profile
 	
 func get_finisher_profile() -> FinisherProfile:
 	return finisher_profile
@@ -158,9 +155,6 @@ func get_guard_broken_profile() -> GuardBrokenProfile:
 func get_locomotion_profile() -> LocomotionProfile:
 	return locomotion_profile
 
-func get_countered_profile() -> CounteredProfile:
-	return countered_profile
-	
 func get_death_profile() -> DeathProfile:
 	return death_profile
 

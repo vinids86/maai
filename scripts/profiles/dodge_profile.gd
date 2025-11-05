@@ -11,7 +11,9 @@ extends Resource
 
 @export_group("Mechanics")
 @export var stamina_cost: float = 15.0
+@export var focus_cost: float = 0.0
 @export var poise_shield_contribution: float = 50.0
+@export var counter_execution_profile: CounterExecutionProfile
 
 @export_group("Presentation")
 @export var animation_name: StringName

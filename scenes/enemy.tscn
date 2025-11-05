@@ -11,7 +11,6 @@
 [ext_resource type="Resource" uid="uid://besl07w08l6s" path="res://resources/player/jump/default.tres" id="5_g0yyi"]
 [ext_resource type="Script" uid="uid://dewrlich57pgi" path="res://scripts/components/ai_controller.gd" id="5_md484"]
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="5_tysqt"]
-[ext_resource type="Resource" uid="uid://5dqv7xvlptll" path="res://resources/player/counter/mikiri.tres" id="6_5ie7m"]
 [ext_resource type="Script" uid="uid://dus5o11ra71f" path="res://scripts/core/state_machine.gd" id="6_ipns3"]
 [ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="6_kbbx4"]
 [ext_resource type="Script" uid="uid://c50xfgbngchgg" path="res://scripts/states/locomotion_state.gd" id="7_8qclf"]
@@ -39,7 +38,6 @@
 [ext_resource type="Resource" uid="uid://cy7dnyidr361f" path="res://resources/player/dash/dash_attack_default.tres" id="17_5utat"]
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="17_6awcb"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="17_shcg2"]
-[ext_resource type="Resource" uid="uid://dl072xuq1tgt8" path="res://resources/player/countered/default.tres" id="19_a5akt"]
 [ext_resource type="Script" uid="uid://bnsx7y061rnqe" path="res://scripts/states/guard_broken_state.gd" id="19_i4rgx"]
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="20_2mchx"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="20_2pwtc"]
@@ -51,6 +49,7 @@
 [ext_resource type="Script" uid="uid://b31jt2qq4fmkr" path="res://scripts/components/poise_component.gd" id="23_78kod"]
 [ext_resource type="SpineSkeletonDataResource" uid="uid://cb6rn6vonqbx0" path="res://assets/player/Spine/spineboy-data-res.tres" id="23_by3os"]
 [ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="23_yb7ap"]
+[ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="24_4c6tc"]
 [ext_resource type="Script" uid="uid://dmqafi2pyifje" path="res://scripts/components/skill_combo_component.gd" id="28_7v6cf"]
 [ext_resource type="AudioStream" uid="uid://7nnpy5lp40x1" path="res://audio/footstep.ogg" id="28_tysqt"]
 [ext_resource type="PackedScene" uid="uid://db38x4vv58e7c" path="res://scenes/blood_splatter.tscn" id="29_3yi8r"]
@@ -61,16 +60,17 @@
 [ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="37_g0yyi"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
-[ext_resource type="Script" uid="uid://cycmw65rta0mh" path="res://scripts/states/execute_counter_state.gd" id="42_hyejq"]
 [ext_resource type="Resource" uid="uid://d1elwc0tip686" path="res://resources/player/attack/air_attack_set.tres" id="48_4c6tc"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="48_sm4rh"]
+[ext_resource type="Script" uid="uid://d28fgt1kpvll5" path="res://scripts/components/counter_executor_component.gd" id="50_4ceth"]
 [ext_resource type="Script" uid="uid://d18awpld4ar25" path="res://scripts/states/dash_state.gd" id="50_7w3jn"]
-[ext_resource type="Script" uid="uid://80lq1gnacaa2" path="res://scripts/states/countered_state.gd" id="52_uiwvf"]
 [ext_resource type="Script" uid="uid://kqlkm03xp1rg" path="res://scripts/states/wall_slide_state.gd" id="54_5utat"]
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="54_b5geg"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="58_0b4fd"]
 [ext_resource type="Script" uid="uid://dqatvw6wut2py" path="res://scripts/components/vfx_component.gd" id="63_kbbx4"]
 [ext_resource type="PackedScene" uid="uid://cvmqdrqt8fatk" path="res://scenes/clash_spark.tscn" id="64_x24ca"]
+[ext_resource type="Script" uid="uid://lrni4bey3mio" path="res://scripts/states/counter_ready_state.gd" id="71_2qahx"]
+[ext_resource type="Script" uid="uid://dwcab8okwt5u2" path="res://scripts/states/countered_vulnerable_state.gd" id="72_4ceth"]
 
 [sub_resource type="Resource" id="Resource_4lt7r"]
 metadata/__load_path__ = "res://audio/best-sword-sounds-slice-slash-crash-swoosh-etc-224090.ogg"
@@ -519,17 +519,16 @@ jump_profile = ExtResource("5_g0yyi")
 finisher_profile = ExtResource("3_thsr5")
 parry_profile = SubResource("Resource_djthp")
 riposte_profile = ExtResource("12_13roy")
-mikiri_riposte_profile = ExtResource("6_5ie7m")
 block_stun_profile = SubResource("Resource_whoqb")
 stagger_profile = ExtResource("12_rogs8")
 parried_profile = ExtResource("7_ekh6n")
 guard_broken_profile = ExtResource("20_2mchx")
 locomotion_profile = ExtResource("9_2sbpf")
-countered_profile = ExtResource("19_a5akt")
 death_profile = ExtResource("20_4lt7r")
 dash_attack_profile = ExtResource("17_5utat")
 wall_slide_profile = ExtResource("16_b5geg")
 base_poise = 10.0
+neutral_dodge_profile = ExtResource("24_4c6tc")
 
 [node name="SpineSprite" type="SpineSprite" parent="Enemy"]
 skeleton_data_res = ExtResource("23_by3os")
@@ -658,6 +657,10 @@ metadata/_custom_type_script = "uid://k7ywlbk605tf"
 script = ExtResource("28_7v6cf")
 metadata/_custom_type_script = "uid://dmqafi2pyifje"
 
+[node name="CounterExecutorComponent" type="Node" parent="Enemy"]
+script = ExtResource("50_4ceth")
+metadata/_custom_type_script = "uid://d28fgt1kpvll5"
+
 [node name="PoiseComponent" type="Node" parent="Enemy"]
 script = ExtResource("23_78kod")
 metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
@@ -721,14 +724,6 @@ metadata/_custom_type_script = "uid://bsk4xllkbirnu"
 script = ExtResource("37_x6q4o")
 metadata/_custom_type_script = "uid://b72ucjj1gl7t2"
 
-[node name="ExecuteCounterState" type="Node" parent="Enemy/StateMachine"]
-script = ExtResource("42_hyejq")
-metadata/_custom_type_script = "uid://cycmw65rta0mh"
-
-[node name="CounteredState" type="Node" parent="Enemy/StateMachine"]
-script = ExtResource("52_uiwvf")
-metadata/_custom_type_script = "uid://80lq1gnacaa2"
-
 [node name="DeathState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("54_b5geg")
 metadata/_custom_type_script = "uid://cjolmubu1vmxi"
@@ -744,6 +739,12 @@ metadata/_custom_type_script = "uid://d18awpld4ar25"
 [node name="WallSlideState" type="Node" parent="Enemy/StateMachine"]
 script = ExtResource("54_5utat")
 metadata/_custom_type_script = "uid://kqlkm03xp1rg"
+
+[node name="CounterReadyState" type="Node" parent="Enemy/StateMachine"]
+script = ExtResource("71_2qahx")
+
+[node name="CounteredVulnerableState" type="Node" parent="Enemy/StateMachine"]
+script = ExtResource("72_4ceth")
 
 [node name="EnemyStatusUI" parent="Enemy" instance=ExtResource("12_otmr2")]
 offset_left = -87.0

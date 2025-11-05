@@ -15,8 +15,9 @@ var buffer_component: BufferComponent
 var action_cost_validator: ActionCostValidator
 var surface_contact_component: SurfaceContactComponent
 var wall_detector: WallDetectorComponent
+var counter_executor_component: Node
 
-func setup(p_owner_node: Node, p_physics_comp: Node, p_path_follower_comp: Node, p_buffer_comp: BufferComponent, p_action_cost_validator: ActionCostValidator, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+func setup(p_owner_node: Node, p_physics_comp: Node, p_path_follower_comp: Node, p_buffer_comp: BufferComponent, p_action_cost_validator: ActionCostValidator, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent, p_counter_executor_comp: Node):
 	owner_node = p_owner_node
 	physics_component = p_physics_comp
 	path_follower_component = p_path_follower_comp
@@ -24,6 +25,7 @@ func setup(p_owner_node: Node, p_physics_comp: Node, p_path_follower_comp: Node,
 	action_cost_validator = p_action_cost_validator
 	surface_contact_component = p_surface_contact_comp
 	wall_detector = p_wall_detector
+	counter_executor_component = p_counter_executor_comp
 	
 	assert(owner_node != null, "StateMachine: owner_node não pode ser nulo.")
 	assert(physics_component != null, "StateMachine: physics_component não pode ser nulo.")
@@ -31,7 +33,8 @@ func setup(p_owner_node: Node, p_physics_comp: Node, p_path_follower_comp: Node,
 	assert(buffer_component != null, "StateMachine: buffer_component não pode ser nulo.")
 	assert(action_cost_validator != null, "StateMachine: action_cost_validator não pode ser nulo.")
 	assert(surface_contact_component != null, "StateMachine: surface_contact_component não pode ser nulo.")
-
+	assert(counter_executor_component != null, "StateMachine: counter_executor_component não pode ser nulo.")
+	counter_executor_component.initialize(owner_node, self) # feio pra carai
 	var health_component = owner_node.find_child("HealthComponent")
 	if health_component:
 		health_component.died.connect(_on_owner_died)
@@ -41,7 +44,7 @@ func setup(p_owner_node: Node, p_physics_comp: Node, p_path_follower_comp: Node,
 	for child in get_children():
 		if child is State:
 			states[child.name] = child
-			child.initialize(self, owner_node, physics_component, path_follower_component, surface_contact_component, wall_detector)
+			child.initialize(self, owner_node, physics_component, path_follower_component, surface_contact_component, wall_detector, counter_executor_component)
 	
 	if states.has(initial_state_key):
 		current_state = states[initial_state_key]
@@ -187,9 +190,8 @@ func _on_impact_resolved(result: ContactResult):
 			ContactResult.AttackerOutcome.TRADE_LOST:
 				var profile = owner_node.get_stagger_profile()
 				transition_to("StaggerState", {"profile": profile})
-			ContactResult.AttackerOutcome.COUNTERED:
-				var profile = owner_node.get_countered_profile()
-				transition_to("CounteredState", {"profile": profile})
+			ContactResult.AttackerOutcome.DODGE_COUNTERED_VULNERABLE:
+				transition_to("CounteredVulnerableState", {"result": result})
 
 func on_current_state_finished(reason: Dictionary = {}):
 	var outcome = reason.get("outcome")
@@ -199,16 +201,9 @@ func on_current_state_finished(reason: Dictionary = {}):
 				owner_node.reset_air_actions()
 				transition_to("WallSlideState", {"profile": owner_node.get_wall_slide_profile()})
 				return
-			"COUNTER_SUCCESS":
-				var context = reason.get("context")
-				if context:
-					var target = context.attacker_node
-					var riposte_profile = owner_node.get_mikiri_riposte_profile()
-					var args = {"target": target, "profile": riposte_profile}
-					var buffered_data = buffer_component.consume()
-					if buffered_data and buffered_data.action == BufferComponent.BufferedAction.ATTACK:
-						args["execute_immediately"] = true
-					transition_to("ExecuteCounterState", args)
+			"DODGE_COUNTER_READY":
+				var result = reason.get("result")
+				transition_to("CounterReadyState", {"result": result})
 				return
 			"BLOCKED":
 				var profile = owner_node.get_block_stun_profile()
