@@ -1,17 +1,63 @@
-[gd_resource type="Resource" script_class="DodgeProfile" load_steps=3 format=3 uid="uid://cfu400oitmjxr"]
+[gd_resource type="Resource" script_class="DodgeProfile" load_steps=7 format=3 uid="uid://cfu400oitmjxr"]
 
 [ext_resource type="AudioStream" uid="uid://dbm1xt5hw8dp0" path="res://audio/dodge.wav" id="1_2y8sx"]
 [ext_resource type="Script" uid="uid://fxnxrf24bhpp" path="res://scripts/profiles/dodge_profile.gd" id="1_f1ysy"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_a58gf"]
+[ext_resource type="Script" uid="uid://dib03dj2lgwj3" path="res://scripts/profiles/sweep_counter_profile.gd" id="3_5uruw"]
+
+[sub_resource type="Resource" id="Resource_fbhof"]
+script = ExtResource("2_a58gf")
+startup_duration = 0.1
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.45
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(200, 64)
+hitbox_position = Vector2(40, 0)
+damage = 50.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(400, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(600, 0)
+active_movement_velocity = Vector2(600, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_28ewt"]
+script = ExtResource("3_5uruw")
+executor_animation_name = &""
+execution_duration = 0.5
+executor_attack_profile = SubResource("Resource_fbhof")
+ready_duration = 0.5
+vulnerable_duration = 0.8
+counter_ready_animation = &""
+victim_vulnerable_animation = &""
+metadata/_custom_type_script = "uid://dib03dj2lgwj3"
 
 [resource]
 script = ExtResource("1_f1ysy")
-active_duration = 0.867
+active_duration = 0.3
 recovery_duration = 0.1
 active_movement_velocity = Vector2(0, 0)
 recovery_movement_velocity = Vector2(0, 0)
-stamina_cost = 15.0
+stamina_cost = 0.0
 focus_cost = 0.0
 poise_shield_contribution = 5.0
+counter_execution_profile = SubResource("Resource_28ewt")
 animation_name = &"Jump"
 active_sfx = ExtResource("1_2y8sx")
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"

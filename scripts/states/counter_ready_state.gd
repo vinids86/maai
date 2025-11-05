@@ -59,6 +59,8 @@ func _change_phase(new_phase: Phases):
 			
 			if _current_profile is PushCounterProfile:
 				sfx_to_play = (_current_profile as PushCounterProfile).sfx_ready
+			elif _current_profile is SweepCounterProfile:
+				sfx_to_play = (_current_profile as SweepCounterProfile).sfx_ready
 		
 		Phases.EXECUTING:
 			counter_executor_component.execute_counter(_current_profile, _triggering_result.attacker_node)
@@ -73,6 +75,11 @@ func _change_phase(new_phase: Phases):
 				time_left_in_phase = push_profile.execution_duration
 				animation_to_play = push_profile.executor_animation_name
 			
+			elif _current_profile is SweepCounterProfile:
+				var sweep_profile = _current_profile as SweepCounterProfile
+				time_left_in_phase = sweep_profile.execution_duration
+				animation_to_play = sweep_profile.executor_animation_name
+
 			else:
 				push_error("CounterReadyState: Perfil de execução desconhecido: " + _current_profile.get_class())
 				state_machine.on_current_state_finished()

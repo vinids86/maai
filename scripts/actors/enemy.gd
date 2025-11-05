@@ -116,6 +116,7 @@ func _build_skill_dictionary():
 	if skill_y: _equipped_skills["skill_y"] = skill_y
 	if skill_a: _equipped_skills["skill_a"] = skill_a
 	if skill_b: _equipped_skills["skill_b"] = skill_b
+	if skill_z: _equipped_skills["skill_z"] = skill_z
 
 func get_skill(action_name: String) -> BaseSkill:
 	return _equipped_skills.get(action_name)

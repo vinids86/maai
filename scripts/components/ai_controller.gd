@@ -19,7 +19,7 @@ enum BehaviorID {
 const ALL_BEHAVIORS = {
 	BehaviorID.ENEMY_INTRO_1: {
 		"phase_1": [
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" },
+			{ "defense": "parry", "riposte": "skill_z" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" },
 			{ "defense": "parry" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "block" }
 		],
 		"phase_2": [

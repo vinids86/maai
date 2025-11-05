@@ -48,10 +48,10 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 			calculated_velocity = current_profile.recovery_movement_velocity
 
 	var final_velocity = Vector2.ZERO
-	if _current_direction == Vector2.ZERO: # Esquiva Neutra
+	if _current_direction == Vector2.ZERO:
 		final_velocity.x = calculated_velocity.x * owner_node.facing_sign
 		final_velocity.y = calculated_velocity.y
-	else: # Esquiva Direcional
+	else:
 		final_velocity.x = calculated_velocity.x * _current_direction.x
 		final_velocity.y = calculated_velocity.y * _current_direction.y
 
@@ -64,10 +64,11 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.attack_profile = context.attack_profile
 	
 	if current_phase == Phases.ACTIVE:
-		var is_thrust = context.attack_profile.unparryable_type == AttackProfile.UnparryableType.THRUST
-		var is_forward_dodge = _current_direction.x * owner_node.facing_sign > 0
-		
-		if is_thrust:
+		var unparryable_type = context.attack_profile.unparryable_type
+
+		if unparryable_type == AttackProfile.UnparryableType.THRUST:
+			var is_forward_dodge = _current_direction.x * owner_node.facing_sign > 0
+			
 			if is_forward_dodge and current_profile.counter_execution_profile:
 				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGE_COUNTER_READY
 				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.DODGE_COUNTERED_VULNERABLE
@@ -81,6 +82,24 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 				state_machine.on_current_state_finished(reason)
 				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+
+		elif unparryable_type == AttackProfile.UnparryableType.SWEEP:
+			var is_up_dodge = _current_direction.y < 0
+			
+			if is_up_dodge and current_profile.counter_execution_profile:
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.DODGE_COUNTER_READY
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.DODGE_COUNTERED_VULNERABLE
+				result_for_attacker.counter_profile = current_profile.counter_execution_profile
+				
+				var reason = {"outcome": "DODGE_COUNTER_READY", "result": result_for_attacker}
+				state_machine.on_current_state_finished(reason)
+			else:
+				context.defender_health_comp.take_damage(context.attack_profile.damage)
+				var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
+				state_machine.on_current_state_finished(reason)
+				result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+				result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+
 		else:
 			var is_neutral_dodge = _current_direction == Vector2.ZERO
 			var is_parryable = context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.STANDARD

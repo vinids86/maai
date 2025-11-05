@@ -1,4 +1,4 @@
-[gd_scene load_steps=89 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=90 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="7_x24ca"]
 [ext_resource type="Resource" uid="uid://bt3sgcgwjxve0" path="res://resources/player/locomotion/default.tres" id="9_2sbpf"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="9_8qclf"]
+[ext_resource type="Resource" uid="uid://c451g22rho0t0" path="res://resources/enemy/attack/skill_z.tres" id="9_ci0sa"]
 [ext_resource type="AudioStream" uid="uid://duggjplviepmn" path="res://audio/pre_sequence_skill.wav" id="9_yb7ap"]
 [ext_resource type="Script" uid="uid://m2bbkg5u3e8f" path="res://scripts/states/stagger_state.gd" id="10_s1ycm"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="10_w8i8w"]
@@ -515,6 +516,7 @@ skill_x = ExtResource("2_gst0f")
 skill_y = ExtResource("3_g0yyi")
 skill_a = ExtResource("4_5utat")
 skill_b = SubResource("Resource_ef2cb")
+skill_z = ExtResource("9_ci0sa")
 jump_profile = ExtResource("5_g0yyi")
 finisher_profile = ExtResource("3_thsr5")
 parry_profile = SubResource("Resource_djthp")
