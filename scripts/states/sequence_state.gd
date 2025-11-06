@@ -179,3 +179,6 @@ func allow_reentry() -> bool:
 
 func _on_phase_changed(phase_data: Dictionary):
 	state_machine.emit_phase_change(phase_data)
+
+func handle_attacker_parried(_result: ContactResult) -> bool:
+	return false

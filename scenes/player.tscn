@@ -255,7 +255,6 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 
 [node name="Player" type="CharacterBody2D" parent="."]
 script = ExtResource("1_4flbx")
-base_poise = 10.0
 skill_x = SubResource("Resource_0yhus")
 skill_y = SubResource("Resource_6c3st")
 jump_profile = ExtResource("3_8svfe")

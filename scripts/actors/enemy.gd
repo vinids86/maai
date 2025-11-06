@@ -30,6 +30,7 @@ extends CharacterBody2D
 @export var skill_z: BaseSkill
 
 @export_group("Combat Data")
+@export var base_poise: float
 @export var jump_profile: JumpProfile
 @export var finisher_profile: FinisherProfile
 @export var parry_profile: ParryProfile
@@ -42,7 +43,6 @@ extends CharacterBody2D
 @export var death_profile: DeathProfile
 @export var dash_attack_profile: AttackProfile
 @export var wall_slide_profile: WallSlideProfile
-@export var base_poise: float
 
 @export_group("Dodge Profiles")
 @export var neutral_dodge_profile: DodgeProfile

@@ -181,9 +181,10 @@ func _on_impact_resolved(result: ContactResult):
 
 		match result.attacker_outcome:
 			ContactResult.AttackerOutcome.PARRIED:
-				var profile = owner_node.get_parried_profile()
-				var knockback = result.knockback_vector
-				transition_to("ParriedState", {"profile": profile, "knockback_vector": knockback})
+				if current_state.handle_attacker_parried(result):
+					var profile = owner_node.get_parried_profile()
+					var knockback = result.knockback_vector
+					transition_to("ParriedState", {"profile": profile, "knockback_vector": knockback})
 			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
 				var profile = owner_node.get_finisher_profile()
 				transition_to("FinisherReadyState", {"profile": profile})

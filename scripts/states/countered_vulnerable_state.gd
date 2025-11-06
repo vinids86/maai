@@ -67,12 +67,19 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.attack_profile = context.attack_profile
 
 	context.defender_health_comp.take_damage(context.attack_profile.damage)
-	context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage)
+	if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
+		var block_recoil_fraction: float = 0.4
+		var base_knockback: Vector2 = context.attack_profile.knockback_vector
+		var recoil_velocity: Vector2 = base_knockback * block_recoil_fraction
+		var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
+		state_machine.on_current_state_finished(reason)
 
-	var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
-	state_machine.on_current_state_finished(reason)
-
-	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
-	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+	else:
+		var reason = { "outcome": "GUARD_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
+		state_machine.on_current_state_finished(reason)
+		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
+		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 	
 	return result_for_attacker

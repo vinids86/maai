@@ -68,8 +68,6 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 				amount = trauma_def_dodged
 			ContactResult.DefenderOutcome.FINISHER_HIT:
 				amount = trauma_def_finisher_hit
-			ContactResult.DefenderOutcome.COUNTER_SUCCESS:
-				amount = trauma_def_counter_success
 			_:
 				amount = fallback_trauma
 	elif i_am_attacker:
@@ -86,8 +84,6 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 				amount = trauma_att_trade_lost
 			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
 				amount = trauma_att_finisher_success
-			ContactResult.AttackerOutcome.COUNTERED:
-				amount = trauma_att_countered
 			_:
 				amount = fallback_trauma
 

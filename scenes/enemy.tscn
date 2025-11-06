@@ -517,6 +517,7 @@ skill_y = ExtResource("3_g0yyi")
 skill_a = ExtResource("4_5utat")
 skill_b = SubResource("Resource_ef2cb")
 skill_z = ExtResource("9_ci0sa")
+base_poise = 200.0
 jump_profile = ExtResource("5_g0yyi")
 finisher_profile = ExtResource("3_thsr5")
 parry_profile = SubResource("Resource_djthp")
@@ -529,7 +530,6 @@ locomotion_profile = ExtResource("9_2sbpf")
 death_profile = ExtResource("20_4lt7r")
 dash_attack_profile = ExtResource("17_5utat")
 wall_slide_profile = ExtResource("16_b5geg")
-base_poise = 10.0
 neutral_dodge_profile = ExtResource("24_4c6tc")
 
 [node name="SpineSprite" type="SpineSprite" parent="Enemy"]

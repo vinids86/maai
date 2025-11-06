@@ -66,6 +66,9 @@ func get_poise_impact_contribution() -> float:
 func allow_reentry() -> bool:
 	return false
 
+func handle_attacker_parried(_result: ContactResult) -> bool:
+	return true
+
 func _resolve_default_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
 	result_for_attacker.attacker_node = context.attacker_node
@@ -79,9 +82,6 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 		return result_for_attacker
-
-	var defender_shield_poise = context.defender_poise_comp.get_effective_shield_poise()
-	var auto_block_succeeds = context.attacker_offensive_poise < defender_shield_poise
 
 	if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
 		var block_recoil_fraction: float = 0.4
