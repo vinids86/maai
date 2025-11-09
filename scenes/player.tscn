@@ -254,6 +254,8 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 [node name="PlayerEntity" type="Node2D" groups=["player"]]
 
 [node name="Player" type="CharacterBody2D" parent="."]
+collision_layer = 2
+collision_mask = 65
 script = ExtResource("1_4flbx")
 skill_x = SubResource("Resource_0yhus")
 skill_y = SubResource("Resource_6c3st")
@@ -396,6 +398,7 @@ metadata/_custom_type_script = "uid://d28fgt1kpvll5"
 
 [node name="FocusComponent" type="Node" parent="Player"]
 script = ExtResource("53_lxlsd")
+current_focus = 100.0
 metadata/_custom_type_script = "uid://cdtcv6tkc4hp1"
 
 [node name="DecayTimer" type="Timer" parent="Player/FocusComponent"]

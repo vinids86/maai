@@ -8,11 +8,11 @@ signal segment_completed(completed_segments)
 @export var segments: int = 3
 @export var decay_delay: float = 3.0
 @export var decay_rate: float = 25.0
+@export var current_focus: float = 0.0
 
 @export_group("Focus Gain")
 @export var focus_gain_on_parry: int = 10
 
-var current_focus: float = 0.0
 var _is_decaying: bool = false 
 
 @onready var decay_timer: Timer = $DecayTimer

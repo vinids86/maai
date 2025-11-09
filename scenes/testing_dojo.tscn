@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=21 format=3 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="Script" uid="uid://coil0eyucsysb" path="res://scripts/scenes/testing_dojo.gd" id="1_r8dm2"]
@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://dojo2btvv2tj0" path="res://scenes/enemy_elt.tscn" id="6_cpmsc"]
 [ext_resource type="AudioStream" uid="uid://c2qtchrwing50" path="res://audio/world/BGM9.Jukaikessen.ogg" id="6_pjkap"]
 [ext_resource type="PackedScene" uid="uid://b7t7d0ncgdrv4" path="res://scenes/rain.tscn" id="7_qq2yu"]
+[ext_resource type="PackedScene" uid="uid://csrmukcaygt8y" path="res://scenes/debug/player_debug_hud.tscn" id="12_87bkg"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8jaed"]
 size = Vector2(6416, 33)
@@ -51,8 +52,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-24.1689, -329.213)
-rotation = 0.375605
+position = Vector2(-20.8838, -333.287)
+rotation = 0.400594
 scale = Vector2(1, 1)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
@@ -106,6 +107,7 @@ camera_to_follow = NodePath("../PlayerEntity/Player/Camera2D")
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
 position = Vector2(-443, 353)
+collision_mask = 66
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
 position = Vector2(1044, 631.5)
@@ -187,5 +189,8 @@ shape = SubResource("RectangleShape2D_w0j1w")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D13"]
 position = Vector2(-9247, -915)
 shape = SubResource("RectangleShape2D_cpmsc")
+
+[node name="PlayerDebugHUD" parent="." instance=ExtResource("12_87bkg")]
+actor_to_watch = NodePath("../PlayerEntity/Player")
 
 [editable path="PlayerEntity"]

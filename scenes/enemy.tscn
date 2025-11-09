@@ -511,6 +511,8 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 [node name="EnemyEntity" type="Node2D"]
 
 [node name="Enemy" type="CharacterBody2D" parent="."]
+collision_layer = 64
+collision_mask = 3
 script = ExtResource("1_md0e3")
 skill_x = ExtResource("2_gst0f")
 skill_y = ExtResource("3_g0yyi")

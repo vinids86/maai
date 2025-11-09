@@ -144,6 +144,9 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			result.attacker_outcome = ContactResult.AttackerOutcome.NONE
 			result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 		else:
+			var reason = { "outcome": "HIT", "knockback_vector": context.attack_profile.knockback_vector }
+			state_machine.on_current_state_finished(reason)
+			
 			result.attacker_outcome = ContactResult.AttackerOutcome.TRADE_LOST
 			result.defender_outcome = ContactResult.DefenderOutcome.HIT
 

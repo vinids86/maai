@@ -133,6 +133,11 @@ func on_attack_pressed(profile: AttackProfile):
 	var result: InputHandlerResult = current_state.handle_attack_input(profile)
 	match result.status:
 		InputHandlerResult.Status.ACCEPTED:
+			var profile_to_use: AttackProfile = profile 
+
+			if result.context.has("override_profile"):
+				profile_to_use = result.context["override_profile"]
+
 			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
 				transition_to("AttackState", {"profile": profile})
@@ -187,7 +192,8 @@ func _on_impact_resolved(result: ContactResult):
 					transition_to("ParriedState", {"profile": profile, "knockback_vector": knockback})
 			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
 				var profile = owner_node.get_finisher_profile()
-				transition_to("FinisherReadyState", {"profile": profile})
+				var args = {"profile": profile, "target": result.defender_node}
+				transition_to("FinisherReadyState", args)
 			ContactResult.AttackerOutcome.TRADE_LOST:
 				var profile = owner_node.get_stagger_profile()
 				transition_to("StaggerState", {"profile": profile})

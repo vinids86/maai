@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://csrmukcaygt8y"]
+
+[ext_resource type="Script" uid="uid://m7n0g36iepka" path="res://scripts/debug/player_debug_hud.gd" id="1_fvn1v"]
+
+[node name="PlayerDebugHUD" type="CanvasLayer"]
+script = ExtResource("1_fvn1v")
+
+[node name="Label" type="Label" parent="."]
+offset_left = 606.0
+offset_top = 202.0
+offset_right = 646.0
+offset_bottom = 225.0
+vertical_alignment = 2
