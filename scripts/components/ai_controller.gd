@@ -144,6 +144,11 @@ var _pending_riposte_action: String = ""
 var _is_in_attack_loop: bool = false
 var _player_last_health: float = -1.0
 
+# --- CONFIGURAÇÃO DE PERSEGUIÇÃO ---
+var _current_target: Node2D = null
+# Aumentado para 80.0 para evitar colisão com o player que impede o inimigo de parar
+@export var stop_distance: float = 120.0 
+@export var run_distance: float = 300.0
 
 func _ready():
 	_owner_actor = get_parent()
@@ -163,8 +168,16 @@ func _ready():
 	_rng.randomize()
 
 	_state_machine.phase_changed.connect(_on_phase_changed)
-	_detection_area.body_entered.connect(_on_player_entered_detection_area)
-	_detection_area.body_exited.connect(_on_player_exited_detection_area)
+	
+	if not _detection_area.body_entered.is_connected(_on_player_entered_detection_area):
+		_detection_area.body_entered.connect(_on_player_entered_detection_area)
+	if not _detection_area.body_exited.is_connected(_on_player_exited_detection_area):
+		_detection_area.body_exited.connect(_on_player_exited_detection_area)
+	
+	await get_tree().process_frame
+	var overlapping_bodies = _detection_area.get_overlapping_bodies()
+	for body in overlapping_bodies:
+		_check_and_set_target(body)
 
 	_health_component = _owner_actor.find_child("HealthComponent")
 	assert(_health_component != null, "AIController: HealthComponent not found in Enemy.")
@@ -172,28 +185,19 @@ func _ready():
 	
 	_on_owner_health_changed(_health_component.current_health, _health_component.max_health)
 
-	await get_tree().process_frame
-
 	if is_instance_valid(GameManager.player_node):
 		var player_health_comp = GameManager.player_node.find_child("HealthComponent")
 		if player_health_comp:
 			player_health_comp.health_changed.connect(_on_player_health_changed)
 			_player_last_health = player_health_comp.current_health
-		else:
-			push_warning("AIController: Player lacks HealthComponent. AI reset logic might fail.")
 
 		var player_state_machine = GameManager.player_node.find_child("StateMachine")
 		if player_state_machine:
 			player_state_machine.transitioned.connect(func(f, t): _debug_log_player_state(f, t))
 			player_state_machine.phase_changed.connect(_on_player_phase_changed)
-		else:
-			push_warning("AIController: Player lacks StateMachine. Finisher logic might fail.")
-	else:
-		push_warning("AIController: GameManager.player_node is not valid.")
-
+	
 	_state_machine.transitioned.connect(func(f, t): _debug_log_ai_state(f, t))
 	_combo_chain_timer.timeout.connect(_on_ComboChainTimer_timeout)
-
 
 func _debug_log_player_state(f: State, t: State):
 	pass
@@ -201,6 +205,56 @@ func _debug_log_player_state(f: State, t: State):
 func _debug_log_ai_state(f: State, t: State):
 	pass
 
+# --- LÓGICA DE MOVIMENTO ---
+
+func get_walk_direction() -> float:
+	if not _current_target or not is_instance_valid(_current_target):
+		return 0.0
+	
+	var my_pos_x = _owner_actor.global_position.x
+	var target_pos_x = _current_target.global_position.x
+	var distance_x = abs(target_pos_x - my_pos_x)
+	
+	# Retorna direção apenas se estiver fora da distância de parada
+	if distance_x > stop_distance:
+		return sign(target_pos_x - my_pos_x)
+	
+	# Se estiver perto, retorna 0.0 explicitamente para parar
+	return 0.0
+
+func is_running() -> bool:
+	if not _current_target or not is_instance_valid(_current_target):
+		return false
+		
+	var distance_x = abs(_current_target.global_position.x - _owner_actor.global_position.x)
+	return distance_x > run_distance
+
+# --- DETECÇÃO DO PLAYER ---
+
+func _check_and_set_target(body: Node2D):
+	var is_player = false
+	
+	if body.name == "Player": is_player = true
+	elif body.is_in_group("Player"): is_player = true
+	elif body == GameManager.player_node: is_player = true
+	
+	if is_player:
+		_current_target = body
+		_facing_component.enable(body)
+		return true
+	return false
+
+func _on_player_entered_detection_area(body: Node2D):
+	_check_and_set_target(body)
+
+func _on_player_exited_detection_area(body: Node2D):
+	if body == _current_target:
+		_current_target = null
+		_facing_component.disable()
+		_combo_chain_timer.stop()
+		reset_behavior_sequence()
+
+# --- COMBATE ---
 
 func on_incoming_attack(_attacker: CharacterBody2D, _hitbox: Hitbox):
 	if _current_behavior_sequence.is_empty(): return
@@ -367,16 +421,3 @@ func _unhandled_input(event: InputEvent):
 	if event.is_action_pressed("debug_reset_ai"):
 		_combo_chain_timer.stop()
 		reset_behavior_sequence()
-
-func _on_player_entered_detection_area(body: Node2D):
-	if body == GameManager.player_node:
-		_facing_component.enable(body)
-
-func _on_player_exited_detection_area(body: Node2D):
-	if body == GameManager.player_node:
-		_facing_component.disable()
-		_combo_chain_timer.stop()
-		reset_behavior_sequence()
-
-func get_walk_direction() -> float: return 0.0
-func is_running() -> bool: return false

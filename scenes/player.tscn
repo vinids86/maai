@@ -309,7 +309,6 @@ hitstop_slow_scale = 0.03
 trauma_att_none = 0.5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
-visible = false
 position = Vector2(0, -36)
 shape = SubResource("CapsuleShape2D_4gjji")
 

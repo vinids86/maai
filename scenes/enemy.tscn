@@ -595,6 +595,7 @@ script = ExtResource("20_2pwtc")
 
 [node name="DetectionArea" type="Area2D" parent="Enemy"]
 visible = false
+collision_mask = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/DetectionArea"]
 position = Vector2(207, -22)
