@@ -147,7 +147,7 @@ var _player_last_health: float = -1.0
 # --- CONFIGURAÇÃO DE PERSEGUIÇÃO ---
 var _current_target: Node2D = null
 # Aumentado para 80.0 para evitar colisão com o player que impede o inimigo de parar
-@export var stop_distance: float = 120.0 
+@export var stop_distance: float = 150.0 
 @export var run_distance: float = 300.0
 
 func _ready():

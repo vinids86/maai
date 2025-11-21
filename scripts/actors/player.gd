@@ -220,6 +220,7 @@ func _on_run_cancel_timer_timeout():
 	is_running = false
 
 func _on_landed():
+	reset_air_actions()
 	if Input.is_action_pressed("dodge"):
 		if hold_input_timer.is_stopped():
 			hold_input_timer.start()

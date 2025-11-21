@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_y4vqf")
-speed = 300.0
-run_speed = 900.0
+speed = 500.0
+run_speed = 1000.0
 poise_shield_contribution = 30.0
 idle_animation = &"idle"
 walk_animation = &"walk"

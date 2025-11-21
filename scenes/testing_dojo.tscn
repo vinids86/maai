@@ -65,7 +65,7 @@ position = Vector2(-101, 149)
 [node name="SpineSprite" parent="PlayerEntity/Player" index="1"]
 preview_animation = "idle"
 
-[node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="0"]
+[node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
 position = Vector2(-45.4707, -348.271)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
