@@ -1,4 +1,4 @@
-[gd_scene load_steps=90 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=91 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -61,6 +61,7 @@
 [ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="37_g0yyi"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
+[ext_resource type="Resource" uid="uid://3vru34ypce3e" path="res://resources/player/attack/light_attack_1.tres" id="40_2qahx"]
 [ext_resource type="Resource" uid="uid://d1elwc0tip686" path="res://resources/player/attack/air_attack_set.tres" id="48_4c6tc"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="48_sm4rh"]
 [ext_resource type="Script" uid="uid://d28fgt1kpvll5" path="res://scripts/components/counter_executor_component.gd" id="50_4ceth"]
@@ -627,6 +628,7 @@ script = ExtResource("11_w8i8w")
 [node name="AIController" type="Node" parent="Enemy"]
 script = ExtResource("5_md484")
 behavior_id = 9
+default_attack_profile = ExtResource("40_2qahx")
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 
 [node name="ComboChainTimer" type="Timer" parent="Enemy/AIController"]

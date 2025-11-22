@@ -144,11 +144,29 @@ var _pending_riposte_action: String = ""
 var _is_in_attack_loop: bool = false
 var _player_last_health: float = -1.0
 
-# --- CONFIGURAÇÃO DE PERSEGUIÇÃO ---
+# --- CONFIGURAÇÃO DE PERSEGUIÇÃO E COMBATE ---
 var _current_target: Node2D = null
-# Aumentado para 80.0 para evitar colisão com o player que impede o inimigo de parar
-@export var stop_distance: float = 150.0 
-@export var run_distance: float = 300.0
+@export_group("Movement Settings")
+@export var stop_distance: float = 200.0 
+@export var run_distance: float = 400.0
+
+@export_group("Combat Initiation Settings")
+## Distância para considerar iniciar um ataque (geralmente similar ou um pouco maior que o alcance do ataque).
+@export var engage_range: float = 210.0
+## Tempo mínimo entre ataques iniciados pelo inimigo.
+@export var min_attack_cooldown: float = 1.5
+## Tempo máximo entre ataques iniciados pelo inimigo.
+@export var max_attack_cooldown: float = 3.0
+## Tempo de reação ("hesitação") antes de atacar quando entra no range.
+@export var reaction_delay: float = 0.3
+## Ataque padrão a ser usado para validar se o inimigo pode atacar. 
+## (Nota: O ataque real será puxado do ComboComponent para manter a sequência)
+@export var default_attack_profile: AttackProfile
+
+# Variáveis de Controle de Ataque
+var _cooldown_timer: float = 0.0
+var _reaction_timer: float = 0.0
+var _is_preparing_attack: bool = false
 
 func _ready():
 	_owner_actor = get_parent()
@@ -166,6 +184,8 @@ func _ready():
 
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
+	
+	_reset_cooldown()
 
 	_state_machine.phase_changed.connect(_on_phase_changed)
 	
@@ -199,6 +219,66 @@ func _ready():
 	_state_machine.transitioned.connect(func(f, t): _debug_log_ai_state(f, t))
 	_combo_chain_timer.timeout.connect(_on_ComboChainTimer_timeout)
 
+func _physics_process(delta: float):
+	if not is_instance_valid(_owner_actor) or not is_instance_valid(_current_target):
+		return
+
+	# Atualiza timers
+	if _cooldown_timer > 0:
+		_cooldown_timer -= delta
+	
+	if _is_preparing_attack:
+		_reaction_timer -= delta
+
+	var distance_to_target = _owner_actor.global_position.distance_to(_current_target.global_position)
+	
+	if distance_to_target <= engage_range:
+		_handle_attack_opportunity(delta)
+	else:
+		_is_preparing_attack = false
+		_reaction_timer = 0.0
+
+func _handle_attack_opportunity(_delta: float):
+	if _cooldown_timer <= 0:
+		if not _is_preparing_attack:
+			_is_preparing_attack = true
+			_reaction_timer = reaction_delay
+		elif _reaction_timer <= 0:
+			_try_start_attack_loop()
+
+func _try_start_attack_loop():
+	# Segurança: Não inicia se já estiver atacando
+	if _is_in_attack_loop:
+		return 
+	
+	var current_state = _state_machine.current_state
+	# Só ataca se estiver livre (Andando ou Parado)
+	if not (current_state is LocomotionState): 
+		return
+
+	if not default_attack_profile:
+		push_warning("AIController: Tentativa de ataque sem 'default_attack_profile' configurado.")
+		_reset_cooldown()
+		return
+
+	# -- CORREÇÃO 1: Inicia o Loop de Ataque --
+	_is_in_attack_loop = true
+	
+	# Reseta o ComboComponent para garantir que comece do primeiro golpe
+	var combo_comp = _owner_actor.find_child("ComboComponent")
+	if combo_comp and combo_comp.has_method("reset_combo"):
+		combo_comp.reset_combo()
+	
+	# Chama a função que executa o ataque e agenda o próximo
+	_execute_normal_attack()
+	
+	_is_preparing_attack = false
+	_reset_cooldown()
+
+func _reset_cooldown():
+	_cooldown_timer = _rng.randf_range(min_attack_cooldown, max_attack_cooldown)
+	_is_preparing_attack = false
+
 func _debug_log_player_state(f: State, t: State):
 	pass
 
@@ -215,11 +295,9 @@ func get_walk_direction() -> float:
 	var target_pos_x = _current_target.global_position.x
 	var distance_x = abs(target_pos_x - my_pos_x)
 	
-	# Retorna direção apenas se estiver fora da distância de parada
 	if distance_x > stop_distance:
 		return sign(target_pos_x - my_pos_x)
 	
-	# Se estiver perto, retorna 0.0 explicitamente para parar
 	return 0.0
 
 func is_running() -> bool:
@@ -252,11 +330,18 @@ func _on_player_exited_detection_area(body: Node2D):
 		_current_target = null
 		_facing_component.disable()
 		_combo_chain_timer.stop()
+		_is_preparing_attack = false 
 		reset_behavior_sequence()
 
 # --- COMBATE ---
 
 func on_incoming_attack(_attacker: CharacterBody2D, _hitbox: Hitbox):
+	# -- CORREÇÃO 2: Reset de Prioridade Defensiva --
+	# Se o inimigo é atacado, ele perde a "concentração" do ataque proativo.
+	# O cooldown é resetado para que ele foque em defender/reagir primeiro.
+	_is_preparing_attack = false
+	_reset_cooldown()
+	
 	if _current_behavior_sequence.is_empty(): return
 	if _is_in_attack_loop: return
 
@@ -276,17 +361,25 @@ func _on_phase_changed(phase_data: Dictionary):
 	var state_name = phase_data.get("state_name")
 	var phase_name = phase_data.get("phase_name")
 
+	# Se a defesa falhou (Guard Break) ou o player quebrou a postura, reseta tudo.
 	if state_name == "GuardBrokenState":
 		_combo_chain_timer.stop()
+		_reset_cooldown() # Garante cooldown se for quebrado
 		reset_behavior_sequence()
 		return
 
-	if (state_name in ["StaggerState", "BlockStunState", "ParriedState"]) and _is_in_attack_loop:
-		_combo_chain_timer.stop()
-		_advance_sequence()
+	# Se entrou em estado de sofrer dano/blockstun, para o ataque proativo se houver
+	if (state_name in ["StaggerState", "BlockStunState", "ParriedState"]):
+		# -- CORREÇÃO 2 (Cont.): Reseta cooldown ao entrar em estados de reação --
+		_reset_cooldown()
+		
+		if _is_in_attack_loop:
+			_combo_chain_timer.stop()
+			_advance_sequence()
 		return
 
 	if state_name == "ParryState" and phase_name == "SUCCESS":
+		# Sucesso no Parry -> Riposte tem prioridade total
 		if not _pending_riposte_action.is_empty():
 			var action_to_take: String = _pending_riposte_action
 			_pending_riposte_action = ""
@@ -394,12 +487,14 @@ func _execute_skill(action_name: String):
 func _execute_normal_attack():
 	var combo_component = _owner_actor.find_child("ComboComponent")
 	if combo_component:
+		# Aqui o ComboComponent decide qual é o próximo golpe da cadeia
 		var profile: AttackProfile = combo_component.get_next_attack_profile()
 
 		if profile:
 			_state_machine.on_attack_pressed(profile)
 
 			if _is_in_attack_loop:
+				# Calcula o tempo para o próximo golpe baseado na duração do atual
 				var time_to_next_input = profile.startup_duration + profile.active_duration + profile.recovery_duration - 0.05
 
 				if time_to_next_input > 0.0:
@@ -407,6 +502,7 @@ func _execute_normal_attack():
 				else:
 					_on_ComboChainTimer_timeout()
 		else:
+			# Acabou os ataques do combo? Para o loop.
 			_combo_chain_timer.stop()
 			if _is_in_attack_loop:
 				_advance_sequence()
