@@ -25,7 +25,6 @@ HitStop="*res://scripts/components/hit_stop.gd"
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/size/mode=2
 
 [dotnet]
 
@@ -128,6 +127,10 @@ debug_vfx={
 2d_physics/layer_5="enemy_hitbox"
 2d_physics/layer_6="player_hurtbox"
 2d_physics/layer_7="enemy_body"
+
+[physics]
+
+2d/default_gravity=2600.0
 
 [rendering]
 

@@ -56,7 +56,7 @@ func enter(args: Dictionary = {}):
 		_landed_connected = true
 
 	if is_wall_jump and current_profile:
-		owner_node.velocity = current_profile.wall_jump_impulse * Vector2(owner_node.facing_sign, 1)
+		owner_node.velocity = current_profile.wall_jump_impulse * Vector2(-owner_node.facing_sign, 1)
 		_holding = true
 		_last_jump_was_air = true
 		_ignore_air_control_this_frame = true

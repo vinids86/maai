@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://btwtwfggg48eu" path="res://scripts/profiles/dash_profile.gd" id="2_syah7"]
 
 [sub_resource type="Curve" id="Curve_1b66g"]
-_data = [Vector2(0.00473934, 0), 0.0, 0.0, 0, 0, Vector2(0.327014, 0.341177), -1.95042, -1.95042, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+_data = [Vector2(0.00473934, 0), 0.0, 0.0, 0, 0, Vector2(0.327014, 0.341177), 2.90791, 2.90791, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
 point_count = 3
 
 [resource]

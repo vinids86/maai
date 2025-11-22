@@ -168,6 +168,9 @@ var _cooldown_timer: float = 0.0
 var _reaction_timer: float = 0.0
 var _is_preparing_attack: bool = false
 
+# CAMPO PARA ARMAZENAR REFERÊNCIA À CÂMERA (Tipado como Camera2D base para evitar erro)
+var _cached_camera: Camera2D = null
+
 func _ready():
 	_owner_actor = get_parent()
 	assert(_owner_actor != null, "AIController must be a child of an actor node.")
@@ -219,6 +222,10 @@ func _ready():
 	_state_machine.transitioned.connect(func(f, t): _debug_log_ai_state(f, t))
 	_combo_chain_timer.timeout.connect(_on_ComboChainTimer_timeout)
 
+func _exit_tree():
+	# GARANTIA DE LIMPEZA: Se o inimigo for deletado, avisamos a câmera para nos esquecer
+	_notify_camera_combat_end()
+
 func _physics_process(delta: float):
 	if not is_instance_valid(_owner_actor) or not is_instance_valid(_current_target):
 		return
@@ -261,7 +268,7 @@ func _try_start_attack_loop():
 		_reset_cooldown()
 		return
 
-	# -- CORREÇÃO 1: Inicia o Loop de Ataque --
+	# Inicia o Loop de Ataque
 	_is_in_attack_loop = true
 	
 	# Reseta o ComboComponent para garantir que comece do primeiro golpe
@@ -284,6 +291,37 @@ func _debug_log_player_state(f: State, t: State):
 
 func _debug_log_ai_state(f: State, t: State):
 	pass
+
+# --- LÓGICA DE CÂMERA E COMBATE ---
+
+func _get_camera() -> Camera2D:
+	if _cached_camera and is_instance_valid(_cached_camera):
+		return _cached_camera
+	
+	# Tenta achar pelo grupo "MainCamera" primeiro (Recomendado adicionar sua câmera a este grupo)
+	var cams = get_tree().get_nodes_in_group("MainCamera")
+	if cams.size() > 0:
+		_cached_camera = cams[0] as Camera2D
+		return _cached_camera
+	
+	# Fallback: Tenta achar no player se ele existir
+	if GameManager.player_node:
+		var cam = GameManager.player_node.find_child("Camera2D")
+		if cam is Camera2D:
+			_cached_camera = cam
+			return _cached_camera
+		
+	return null
+
+func _notify_camera_combat_start():
+	var cam = _get_camera()
+	if cam and cam.has_method("register_enemy_aggro"):
+		cam.register_enemy_aggro(_owner_actor)
+
+func _notify_camera_combat_end():
+	var cam = _get_camera()
+	if cam and cam.has_method("unregister_enemy_aggro"):
+		cam.unregister_enemy_aggro(_owner_actor)
 
 # --- LÓGICA DE MOVIMENTO ---
 
@@ -319,6 +357,8 @@ func _check_and_set_target(body: Node2D):
 	if is_player:
 		_current_target = body
 		_facing_component.enable(body)
+		# AVISO À CÂMERA: Detectou o player -> Entra em modo combate
+		_notify_camera_combat_start()
 		return true
 	return false
 
@@ -332,13 +372,12 @@ func _on_player_exited_detection_area(body: Node2D):
 		_combo_chain_timer.stop()
 		_is_preparing_attack = false 
 		reset_behavior_sequence()
+		# AVISO À CÂMERA: Perdeu o player -> Sai do modo combate
+		_notify_camera_combat_end()
 
 # --- COMBATE ---
 
 func on_incoming_attack(_attacker: CharacterBody2D, _hitbox: Hitbox):
-	# -- CORREÇÃO 2: Reset de Prioridade Defensiva --
-	# Se o inimigo é atacado, ele perde a "concentração" do ataque proativo.
-	# O cooldown é resetado para que ele foque em defender/reagir primeiro.
 	_is_preparing_attack = false
 	_reset_cooldown()
 	
@@ -370,7 +409,6 @@ func _on_phase_changed(phase_data: Dictionary):
 
 	# Se entrou em estado de sofrer dano/blockstun, para o ataque proativo se houver
 	if (state_name in ["StaggerState", "BlockStunState", "ParriedState"]):
-		# -- CORREÇÃO 2 (Cont.): Reseta cooldown ao entrar em estados de reação --
 		_reset_cooldown()
 		
 		if _is_in_attack_loop:

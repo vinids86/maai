@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_owgr6"]
 
-[node name="EnemyEntity" instance=ExtResource("1_owgr6")]
+[node name="EnemyEntity2" instance=ExtResource("1_owgr6")]
 
 [node name="HealthComponent" parent="Enemy" index="11"]
 max_health = 25.0
