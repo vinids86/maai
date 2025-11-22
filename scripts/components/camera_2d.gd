@@ -1,7 +1,6 @@
 class_name GameCamera2D
 extends Camera2D
 
-# --- SEU CÓDIGO ORIGINAL DE SHAKE ---
 enum ShakePreset { LEVE, MEDIO, FORTE }
 
 @export var preset: ShakePreset = ShakePreset.MEDIO : set = set_preset
@@ -9,23 +8,32 @@ enum ShakePreset { LEVE, MEDIO, FORTE }
 @export var max_offset: float = 10.0
 @export var frequency: float = 25.0
 @export var decay_rate: float = 2.5
-@export var resting_offset: Vector2 = Vector2(250, -400) # Seu offset original
+@export var resting_offset: Vector2 = Vector2(250, -400)
 
 var trauma: float = 0.0
 var _rng := RandomNumberGenerator.new()
 var _shake_offset := Vector2.ZERO 
 var _time_accum := 0.0
 
-# --- ADIÇÃO: ZOOM DINÂMICO ---
 @export_group("Dynamic Zoom")
-@export var exploration_zoom: Vector2 = Vector2(0.7, 0.7) # Zoom out fora de combate
-@export var combat_zoom: Vector2 = Vector2(1.0, 1.0)      # Zoom normal em combate
+@export var exploration_zoom: Vector2 = Vector2(0.65, 0.65)
+@export var combat_zoom: Vector2 = Vector2(1.0, 1.0)
 @export var zoom_speed: float = 2.0
 @export var combat_cooldown: float = 3.0
 
 var _combat_timer: float = 0.0
 var _is_in_combat_mode: bool = false
 var _enemies_in_combat: Array[Node] = []
+var _force_exploration_timer: float = 0.0
+
+@export_group("Manual Peek Control")
+@export var max_peek_offset: float = 500.0 
+@export var peek_delay: float = 0.4
+@export var peek_smooth_speed: float = 3.0 
+@export var input_deadzone: float = 0.3
+
+var _peek_offset: Vector2 = Vector2.ZERO
+var _peek_timer: float = 0.0
 
 func _ready():
 	_rng.randomize()
@@ -34,7 +42,6 @@ func _ready():
 	
 	add_to_group("MainCamera")
 	
-	# Começa com o zoom de exploração
 	zoom = exploration_zoom
 
 func set_preset(value):
@@ -60,7 +67,10 @@ func add_trauma(amount: float = 0.35) -> void:
 	trauma = clamp(trauma + amount, 0.0, 1.0)
 
 func _process(delta: float) -> void:	
-	# 1. Lógica de Shake (Original)
+	_update_combat_state(delta)
+	_update_zoom(delta)
+	_process_manual_peek(delta)
+
 	if trauma > 0.0001:
 		_time_accum += delta
 		var interval = 1.0 / max(frequency, 1.0)
@@ -80,23 +90,35 @@ func _process(delta: float) -> void:
 		_shake_offset = _shake_offset.lerp(Vector2.ZERO, 0.15)
 		trauma = 0.0
 		
-	offset = resting_offset + _shake_offset
+	offset = resting_offset + _shake_offset + _peek_offset
+
+func _process_manual_peek(delta: float) -> void:
+	var input_vector = Input.get_vector("camera_look_left", "camera_look_right", "camera_look_up", "camera_look_down")
 	
-	# 2. Lógica de Zoom (Adicionada)
-	_update_combat_state(delta)
-	_update_zoom(delta)
+	if input_vector.length() < input_deadzone:
+		_peek_timer = 0.0
+		_peek_offset = _peek_offset.lerp(Vector2.ZERO, peek_smooth_speed * delta)
+		return
+
+	_peek_timer += delta
+	
+	if _peek_timer >= peek_delay:
+		var target_peek = input_vector.normalized() * max_peek_offset
+		_peek_offset = _peek_offset.lerp(target_peek, peek_smooth_speed * delta)
 
 func _update_combat_state(delta: float) -> void:
-	# Limpa inimigos mortos/deletados
+	if _force_exploration_timer > 0:
+		_force_exploration_timer -= delta
+
 	for i in range(_enemies_in_combat.size() - 1, -1, -1):
 		if not is_instance_valid(_enemies_in_combat[i]):
 			_enemies_in_combat.remove_at(i)
 
-	if _enemies_in_combat.size() > 0:
+	if _enemies_in_combat.size() > 0 and _force_exploration_timer <= 0:
 		_is_in_combat_mode = true
 		_combat_timer = combat_cooldown
 	else:
-		if _combat_timer > 0:
+		if _combat_timer > 0 and _force_exploration_timer <= 0:
 			_combat_timer -= delta
 		else:
 			_is_in_combat_mode = false
@@ -106,16 +128,18 @@ func _update_zoom(delta: float) -> void:
 	if _is_in_combat_mode:
 		target_zoom = combat_zoom
 		
-	# Suaviza a transição do zoom
-	zoom = zoom.lerp(target_zoom, zoom_speed * delta)
-
-# --- MÉTODOS PÚBLICOS PARA O AI CONTROLLER ---
+	var current_zoom_speed = zoom_speed
+	if _force_exploration_timer > 0:
+		current_zoom_speed = zoom_speed * 2.5
+		
+	zoom = zoom.lerp(target_zoom, current_zoom_speed * delta)
 
 func register_enemy_aggro(enemy: Node) -> void:
 	if not _enemies_in_combat.has(enemy):
 		_enemies_in_combat.append(enemy)
-		_is_in_combat_mode = true
-		_combat_timer = combat_cooldown
+		if _force_exploration_timer <= 0:
+			_is_in_combat_mode = true
+			_combat_timer = combat_cooldown
 
 func unregister_enemy_aggro(enemy: Node) -> void:
 	if _enemies_in_combat.has(enemy):
@@ -124,3 +148,7 @@ func unregister_enemy_aggro(enemy: Node) -> void:
 func force_combat_mode(duration: float = 5.0) -> void:
 	_is_in_combat_mode = true
 	_combat_timer = max(_combat_timer, duration)
+
+func on_enemy_death_zoom_out(duration: float = 1.5) -> void:
+	_force_exploration_timer = duration
+	_combat_timer = 0
