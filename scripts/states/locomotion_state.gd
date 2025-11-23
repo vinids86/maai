@@ -10,8 +10,7 @@ func enter(args: Dictionary = {}):
 	self.current_profile = args.get("profile")
 	if not current_profile:
 		push_warning("LocomotionState: Não recebeu um LocomotionProfile. A abortar.")
-		return
-	
+		return	
 	_change_phase(Phases.IDLE)
 
 func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
@@ -30,12 +29,19 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> V
 	var target_speed = current_profile.speed
 	if is_running:
 		target_speed = current_profile.run_speed
-		
-	if walk_direction != 0:
-		new_velocity.x = walk_direction * target_speed
-	else:
-		new_velocity.x = move_toward(new_velocity.x, 0, current_profile.speed)
 	
+	
+	if walk_direction != 0:
+		var is_turning = sign(walk_direction) != sign(new_velocity.x) and abs(new_velocity.x) > 10.0
+		
+		if is_turning:
+			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.friction * 2.0 * delta)
+		else:
+			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.acceleration * delta)
+			
+	else:
+		new_velocity.x = move_toward(new_velocity.x, 0, current_profile.friction * delta)
+		
 	_update_and_emit_phase(walk_direction, is_running)
 	
 	return new_velocity
@@ -81,7 +87,9 @@ func _update_facing_sign(direction: float):
 func _update_and_emit_phase(walk_direction: float, is_running: bool):
 	var new_phase: Phases
 	
-	if walk_direction == 0:
+	# Consideramos IDLE apenas se a velocidade for quase zero E não houver input
+	# Isso permite tocar animação de Walk/Run enquanto desacelera (slide curto)
+	if walk_direction == 0 and is_zero_approx(owner_node.velocity.x):
 		new_phase = Phases.IDLE
 	elif is_running:
 		new_phase = Phases.RUN

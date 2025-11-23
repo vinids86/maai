@@ -107,8 +107,8 @@ const ALL_BEHAVIORS = {
 			{ "defense": "block" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
 		],
 		"phase_2": [
-			{ "defense": "parry", "riposte": "skill_a" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "parry", "riposte": "skill_a" },
-			{ "defense": "block" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
+			{ "defense": "parry", "riposte": "skill_a" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_a" },
+			{ "defense": "parry", "riposte": "skill_a" }, { "defense": "block" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
 		]
 	},
 	BehaviorID.BOSS_DEFAULT: {
@@ -136,6 +136,10 @@ var _owner_actor: Node
 @onready var _detection_area: Area2D = get_parent().find_child("DetectionArea")
 @onready var _facing_component: FacingComponent = get_parent().find_child("FacingComponent")
 @onready var _combo_chain_timer: Timer = find_child("ComboChainTimer")
+
+# REFERÊNCIA AO VISION COMPONENT
+@onready var _vision_component: VisionComponent = get_parent().find_child("VisionComponent")
+
 var _health_component: HealthComponent
 
 var _selected_behavior_data: Dictionary = {}
@@ -151,9 +155,13 @@ var _defending_sequence: bool = false
 var _is_last_sequence_hit: bool = false
 
 var _current_target: Node2D = null
+# LISTA DE ALVOS DENTRO DA ÁREA (MAS TALVEZ AINDA NÃO VISTOS)
+var _potential_targets: Array[Node2D] = []
+
 @export_group("Movement Settings")
 @export var stop_distance: float = 200.0 
 @export var run_distance: float = 400.0
+@export var ledge_check_distance: float = 100.0 # Ajuste aqui a distância de parada da borda
 
 @export_group("Combat Initiation Settings")
 @export var engage_range: float = 210.0
@@ -181,6 +189,10 @@ func _ready():
 	assert(_detection_area != null, "AIController: Node 'DetectionArea' not found in Enemy.")
 	assert(_facing_component != null, "AIController: Node 'FacingComponent' not found in Enemy.")
 	assert(_combo_chain_timer != null, "AIController: Node 'ComboChainTimer' not found.")
+	
+	# Confirma se o VisionComponent foi adicionado (opcional, mas bom pra debug)
+	if _vision_component == null:
+		push_warning("AIController: VisionComponent não encontrado no inimigo. Detecção por paredes não funcionará.")
 
 	_rng = RandomNumberGenerator.new()
 	_rng.randomize()
@@ -223,7 +235,24 @@ func _exit_tree():
 	_notify_camera_combat_end()
 
 func _physics_process(delta: float):
-	if not is_instance_valid(_owner_actor) or not is_instance_valid(_current_target):
+	if not is_instance_valid(_owner_actor):
+		return
+
+	# --- LÓGICA DE VISÃO ---
+	# Se não temos alvo, verificamos se algum dos potenciais alvos ficou visível (saiu de trás da parede)
+	if not is_instance_valid(_current_target) and not _potential_targets.is_empty():
+		for candidate in _potential_targets:
+			if is_instance_valid(candidate):
+				# Se tiver VisionComponent, usa o raio. Se não, assume que viu.
+				if _vision_component and _vision_component.can_see_target(candidate):
+					_engage_target(candidate)
+					break
+				elif not _vision_component:
+					_engage_target(candidate)
+					break
+	# ------------------------
+
+	if not is_instance_valid(_current_target):
 		return
 
 	if _cooldown_timer > 0:
@@ -317,10 +346,31 @@ func get_walk_direction() -> float:
 	var target_pos_x = _current_target.global_position.x
 	var distance_x = abs(target_pos_x - my_pos_x)
 	
+	var direction = 0.0
 	if distance_x > stop_distance:
-		return sign(target_pos_x - my_pos_x)
+		direction = sign(target_pos_x - my_pos_x)
 	
-	return 0.0
+	# --- LÓGICA ANTI-QUEDA SIMPLIFICADA (test_move) ---
+	# Usa a caixa de colisão real do inimigo para testar o chão à frente
+	if _owner_actor.is_on_floor() and direction != 0:
+		# Cria uma cópia da posição/transformada atual
+		var test_transform = _owner_actor.global_transform
+		# Move essa cópia para frente (ledge_check_distance)
+		test_transform.origin.x += ledge_check_distance * direction
+		
+		# Faz o teste de colisão para baixo a partir da posição futura
+		# Se retornar FALSE, significa que não bateu em nada (buraco)
+		var has_floor = (_owner_actor as CharacterBody2D).test_move(test_transform, Vector2(0, 50))
+		
+		if not has_floor:
+			# Se não tem chão e estamos indo nessa direção, pare!
+			if direction == _owner_actor.facing_sign:
+				# Trava a velocidade (Inércia Killer)
+				_owner_actor.velocity.x = 0.0
+				return 0.0
+	# --------------------------------------------------
+	
+	return direction
 
 func is_running() -> bool:
 	if not _current_target or not is_instance_valid(_current_target):
@@ -329,7 +379,8 @@ func is_running() -> bool:
 	var distance_x = abs(_current_target.global_position.x - _owner_actor.global_position.x)
 	return distance_x > run_distance
 
-func _check_and_set_target(body: Node2D):
+# MODIFICADO: Agora apenas identifica e adiciona aos potenciais. Engaja se tiver visão.
+func _check_and_set_target(body: Node2D) -> bool:
 	var is_player = false
 	
 	if body.name == "Player": is_player = true
@@ -337,16 +388,43 @@ func _check_and_set_target(body: Node2D):
 	elif body == GameManager.player_node: is_player = true
 	
 	if is_player:
-		_current_target = body
-		_facing_component.enable(body)
-		_notify_camera_combat_start()
-		return true
+		# Adiciona à lista de candidatos se não estiver lá
+		if body not in _potential_targets:
+			_potential_targets.append(body)
+		
+		# Verifica visão imediata (caso já tenha entrado visível)
+		if _vision_component:
+			if _vision_component.can_see_target(body):
+				_engage_target(body)
+				return true
+			else:
+				# Não tem visão, mas está na lista _potential_targets
+				# O _physics_process vai continuar checando
+				return false
+		else:
+			# Sem componente de visão, detecta sempre
+			_engage_target(body)
+			return true
+			
 	return false
+
+# NOVA FUNÇÃO: Centraliza a lógica de confirmar o alvo
+func _engage_target(body: Node2D):
+	if _current_target == body:
+		return # Já é o alvo
+		
+	_current_target = body
+	_facing_component.enable(body)
+	_notify_camera_combat_start()
 
 func _on_player_entered_detection_area(body: Node2D):
 	_check_and_set_target(body)
 
 func _on_player_exited_detection_area(body: Node2D):
+	# Remove da lista de candidatos
+	if body in _potential_targets:
+		_potential_targets.erase(body)
+		
 	if body == _current_target:
 		_current_target = null
 		_facing_component.disable()

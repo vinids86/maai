@@ -145,7 +145,8 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	if owner_node.is_on_floor() and new_velocity.y >= 0.0:
 		_on_landed()
 		state_machine.on_current_state_finished()
-		return Vector2.ZERO
+		new_velocity.y = 0
+		return new_velocity
 
 	var is_falling = new_velocity.y > 0
 	if is_falling and walk_direction != 0:

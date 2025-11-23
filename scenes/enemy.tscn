@@ -1,4 +1,4 @@
-[gd_scene load_steps=91 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=92 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -66,6 +66,7 @@
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="48_sm4rh"]
 [ext_resource type="Script" uid="uid://d28fgt1kpvll5" path="res://scripts/components/counter_executor_component.gd" id="50_4ceth"]
 [ext_resource type="Script" uid="uid://d18awpld4ar25" path="res://scripts/states/dash_state.gd" id="50_7w3jn"]
+[ext_resource type="Script" uid="uid://bupm1pvrvu681" path="res://scripts/components/vision_component.gd" id="54_4ceth"]
 [ext_resource type="Script" uid="uid://kqlkm03xp1rg" path="res://scripts/states/wall_slide_state.gd" id="54_5utat"]
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="54_b5geg"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="58_0b4fd"]
@@ -502,7 +503,7 @@ height = 200.0
 size = Vector2(48, 64)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ya47j"]
-size = Vector2(698, 108)
+size = Vector2(1500, 200)
 
 [sub_resource type="Resource" id="Resource_2sbpf"]
 script = ExtResource("16_ekh6n")
@@ -573,7 +574,6 @@ script = ExtResource("22_sdxul")
 metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy"]
-visible = false
 position = Vector2(0, -36)
 shape = SubResource("CapsuleShape2D_e7lhw")
 
@@ -599,7 +599,7 @@ visible = false
 collision_mask = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/DetectionArea"]
-position = Vector2(207, -22)
+position = Vector2(597.5, -38)
 shape = SubResource("RectangleShape2D_ya47j")
 
 [node name="VFXComponent" type="Node2D" parent="Enemy"]
@@ -675,6 +675,9 @@ metadata/_custom_type_script = "uid://b31jt2qq4fmkr"
 [node name="FacingComponent" type="Node" parent="Enemy"]
 script = ExtResource("31_5ie7m")
 metadata/_custom_type_script = "uid://cqen1cgottixs"
+
+[node name="VisionComponent" type="Node2D" parent="Enemy"]
+script = ExtResource("54_4ceth")
 
 [node name="SurfaceContactComponent" type="Node" parent="Enemy"]
 script = ExtResource("35_5lniq")

@@ -4,6 +4,8 @@ extends Resource
 @export_group("Physics")
 @export var speed: float = 300.0
 @export var run_speed: float = 500.0
+@export var acceleration: float = 2000.0 
+@export var friction: float = 1500.0
 
 @export_group("Mechanics")
 @export var poise_shield_contribution: float = 30.0

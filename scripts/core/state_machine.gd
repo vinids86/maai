@@ -277,6 +277,8 @@ func on_current_state_finished(reason: Dictionary = {}):
 		transition_to("AirborneState")
 
 func transition_to(new_state_key: String, args: Dictionary = {}):
+	if current_state is DeathState:
+		return
 	if not states.has(new_state_key):
 		push_error("StateMachine Error: Tentativa de transição para o estado inexistente '%s'." % new_state_key)
 		return
