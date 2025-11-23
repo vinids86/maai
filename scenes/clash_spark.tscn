@@ -25,7 +25,7 @@ particle_flag_disable_z = true
 velocity_pivot = Vector3(400, 400, 400)
 direction = Vector3(400, 400, 400)
 spread = 180.0
-initial_velocity_min = 170.45
+initial_velocity_min = 497.72
 initial_velocity_max = 740.91
 orbit_velocity_min = -0.627
 orbit_velocity_max = 0.218
@@ -38,9 +38,9 @@ turbulence_noise_strength = 3.34
 
 [node name="ClashSpark" type="GPUParticles2D"]
 emitting = false
-amount = 200
+amount = 400
 texture = SubResource("GradientTexture2D_gttkq")
-lifetime = 0.25
+lifetime = 0.16
 one_shot = true
 explosiveness = 0.2
 visibility_rect = Rect2(-200, -200, 400, 400)

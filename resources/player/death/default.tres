@@ -5,6 +5,6 @@
 
 [resource]
 script = ExtResource("1_eq68f")
-animation_name = &""
+animation_name = &"death"
 sfx = ExtResource("2_wf4c8")
 metadata/_custom_type_script = "uid://b761fppfyuqaa"

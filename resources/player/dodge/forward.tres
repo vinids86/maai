@@ -28,6 +28,6 @@ stamina_cost = 0.0
 focus_cost = 0.0
 poise_shield_contribution = 5.0
 counter_execution_profile = SubResource("Resource_gn7d4")
-animation_name = &"dash_forward"
+animation_name = &"portal"
 active_sfx = ExtResource("1_f1poj")
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"

@@ -58,6 +58,6 @@ stamina_cost = 0.0
 focus_cost = 0.0
 poise_shield_contribution = 5.0
 counter_execution_profile = SubResource("Resource_28ewt")
-animation_name = &"Jump"
+animation_name = &"portal"
 active_sfx = ExtResource("1_2y8sx")
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"

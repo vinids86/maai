@@ -62,6 +62,6 @@ stamina_cost = 0.0
 focus_cost = 100.0
 poise_shield_contribution = 5.0
 counter_execution_profile = SubResource("Resource_fdery")
-animation_name = &""
+animation_name = &"portal"
 active_sfx = ExtResource("1_sqsrj")
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"
