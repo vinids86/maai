@@ -45,6 +45,12 @@ func exit():
 	_current_profile = null
 	_current_phase = LinkPhases.FINISHED
 
+func is_performing_last_attack() -> bool:
+	if not _skill_sequence or not _current_profile:
+		return false
+	
+	return not _skill_sequence.has_next_step()
+
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	var calculated_velocity = Vector2.ZERO
 

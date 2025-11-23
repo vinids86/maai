@@ -16,6 +16,9 @@ enum BehaviorID {
 
 @export var behavior_id: BehaviorID = BehaviorID.ENEMY_INTRO_1
 
+@export_group("Sequence Skill Counter")
+@export_range(0.0, 1.0) var sequence_parry_chance: float = 0.5
+
 const ALL_BEHAVIORS = {
 	BehaviorID.ENEMY_INTRO_1: {
 		"phase_1": [
@@ -144,31 +147,25 @@ var _pending_riposte_action: String = ""
 var _is_in_attack_loop: bool = false
 var _player_last_health: float = -1.0
 
-# --- CONFIGURAÇÃO DE PERSEGUIÇÃO E COMBATE ---
+var _defending_sequence: bool = false
+var _is_last_sequence_hit: bool = false
+
 var _current_target: Node2D = null
 @export_group("Movement Settings")
 @export var stop_distance: float = 200.0 
 @export var run_distance: float = 400.0
 
 @export_group("Combat Initiation Settings")
-## Distância para considerar iniciar um ataque (geralmente similar ou um pouco maior que o alcance do ataque).
 @export var engage_range: float = 210.0
-## Tempo mínimo entre ataques iniciados pelo inimigo.
 @export var min_attack_cooldown: float = 1.5
-## Tempo máximo entre ataques iniciados pelo inimigo.
 @export var max_attack_cooldown: float = 3.0
-## Tempo de reação ("hesitação") antes de atacar quando entra no range.
 @export var reaction_delay: float = 0.3
-## Ataque padrão a ser usado para validar se o inimigo pode atacar. 
-## (Nota: O ataque real será puxado do ComboComponent para manter a sequência)
 @export var default_attack_profile: AttackProfile
 
-# Variáveis de Controle de Ataque
 var _cooldown_timer: float = 0.0
 var _reaction_timer: float = 0.0
 var _is_preparing_attack: bool = false
 
-# CAMPO PARA ARMAZENAR REFERÊNCIA À CÂMERA (Tipado como Camera2D base para evitar erro)
 var _cached_camera: Camera2D = null
 
 func _ready():
@@ -223,14 +220,12 @@ func _ready():
 	_combo_chain_timer.timeout.connect(_on_ComboChainTimer_timeout)
 
 func _exit_tree():
-	# GARANTIA DE LIMPEZA: Se o inimigo for deletado, avisamos a câmera para nos esquecer
 	_notify_camera_combat_end()
 
 func _physics_process(delta: float):
 	if not is_instance_valid(_owner_actor) or not is_instance_valid(_current_target):
 		return
 
-	# Atualiza timers
 	if _cooldown_timer > 0:
 		_cooldown_timer -= delta
 	
@@ -254,12 +249,10 @@ func _handle_attack_opportunity(_delta: float):
 			_try_start_attack_loop()
 
 func _try_start_attack_loop():
-	# Segurança: Não inicia se já estiver atacando
 	if _is_in_attack_loop:
 		return 
 	
 	var current_state = _state_machine.current_state
-	# Só ataca se estiver livre (Andando ou Parado)
 	if not (current_state is LocomotionState): 
 		return
 
@@ -268,15 +261,12 @@ func _try_start_attack_loop():
 		_reset_cooldown()
 		return
 
-	# Inicia o Loop de Ataque
 	_is_in_attack_loop = true
 	
-	# Reseta o ComboComponent para garantir que comece do primeiro golpe
 	var combo_comp = _owner_actor.find_child("ComboComponent")
 	if combo_comp and combo_comp.has_method("reset_combo"):
 		combo_comp.reset_combo()
 	
-	# Chama a função que executa o ataque e agenda o próximo
 	_execute_normal_attack()
 	
 	_is_preparing_attack = false
@@ -292,19 +282,15 @@ func _debug_log_player_state(f: State, t: State):
 func _debug_log_ai_state(f: State, t: State):
 	pass
 
-# --- LÓGICA DE CÂMERA E COMBATE ---
-
 func _get_camera() -> Camera2D:
 	if _cached_camera and is_instance_valid(_cached_camera):
 		return _cached_camera
 	
-	# Tenta achar pelo grupo "MainCamera" primeiro (Recomendado adicionar sua câmera a este grupo)
 	var cams = get_tree().get_nodes_in_group("MainCamera")
 	if cams.size() > 0:
 		_cached_camera = cams[0] as Camera2D
 		return _cached_camera
 	
-	# Fallback: Tenta achar no player se ele existir
 	if GameManager.player_node:
 		var cam = GameManager.player_node.find_child("Camera2D")
 		if cam is Camera2D:
@@ -322,8 +308,6 @@ func _notify_camera_combat_end():
 	var cam = _get_camera()
 	if cam and cam.has_method("unregister_enemy_aggro"):
 		cam.unregister_enemy_aggro(_owner_actor)
-
-# --- LÓGICA DE MOVIMENTO ---
 
 func get_walk_direction() -> float:
 	if not _current_target or not is_instance_valid(_current_target):
@@ -345,8 +329,6 @@ func is_running() -> bool:
 	var distance_x = abs(_current_target.global_position.x - _owner_actor.global_position.x)
 	return distance_x > run_distance
 
-# --- DETECÇÃO DO PLAYER ---
-
 func _check_and_set_target(body: Node2D):
 	var is_player = false
 	
@@ -357,7 +339,6 @@ func _check_and_set_target(body: Node2D):
 	if is_player:
 		_current_target = body
 		_facing_component.enable(body)
-		# AVISO À CÂMERA: Detectou o player -> Entra em modo combate
 		_notify_camera_combat_start()
 		return true
 	return false
@@ -371,15 +352,43 @@ func _on_player_exited_detection_area(body: Node2D):
 		_facing_component.disable()
 		_combo_chain_timer.stop()
 		_is_preparing_attack = false 
+		_defending_sequence = false
+		_is_last_sequence_hit = false
 		reset_behavior_sequence()
-		# AVISO À CÂMERA: Perdeu o player -> Sai do modo combate
 		_notify_camera_combat_end()
 
-# --- COMBATE ---
-
-func on_incoming_attack(_attacker: CharacterBody2D, _hitbox: Hitbox):
+func on_incoming_attack(attacker: CharacterBody2D, _hitbox: Hitbox):
 	_is_preparing_attack = false
 	_reset_cooldown()
+	
+	_defending_sequence = false
+	_is_last_sequence_hit = false
+	
+	var attacker_state_machine = attacker.find_child("StateMachine")
+	if attacker_state_machine and attacker_state_machine.current_state.name == "SequenceState":
+		if attacker_state_machine.current_state.has_method("is_performing_last_attack"):
+			_is_last_sequence_hit = attacker_state_machine.current_state.is_performing_last_attack()
+		
+		if _rng.randf() <= sequence_parry_chance:
+			_defending_sequence = true 
+			
+			var current_step_data = {}
+			if not _current_behavior_sequence.is_empty():
+				current_step_data = _current_behavior_sequence[_behavior_sequence_counter]
+			
+			var original_defense = current_step_data.get("defense", "block")
+			
+			if original_defense == "parry":
+				_pending_riposte_action = current_step_data.get("riposte", "normal_attack")
+			else:
+				_pending_riposte_action = "normal_attack"
+
+			var profile = _owner_actor.get_parry_profile()
+			if profile:
+				_state_machine.on_parry_pressed(profile)
+			return
+		else:
+			return
 	
 	if _current_behavior_sequence.is_empty(): return
 	if _is_in_attack_loop: return
@@ -400,16 +409,18 @@ func _on_phase_changed(phase_data: Dictionary):
 	var state_name = phase_data.get("state_name")
 	var phase_name = phase_data.get("phase_name")
 
-	# Se a defesa falhou (Guard Break) ou o player quebrou a postura, reseta tudo.
 	if state_name == "GuardBrokenState":
 		_combo_chain_timer.stop()
-		_reset_cooldown() # Garante cooldown se for quebrado
+		_reset_cooldown()
+		_defending_sequence = false
+		_is_last_sequence_hit = false
 		reset_behavior_sequence()
 		return
 
-	# Se entrou em estado de sofrer dano/blockstun, para o ataque proativo se houver
 	if (state_name in ["StaggerState", "BlockStunState", "ParriedState"]):
 		_reset_cooldown()
+		_defending_sequence = false
+		_is_last_sequence_hit = false
 		
 		if _is_in_attack_loop:
 			_combo_chain_timer.stop()
@@ -417,21 +428,44 @@ func _on_phase_changed(phase_data: Dictionary):
 		return
 
 	if state_name == "ParryState" and phase_name == "SUCCESS":
-		# Sucesso no Parry -> Riposte tem prioridade total
-		if not _pending_riposte_action.is_empty():
-			var action_to_take: String = _pending_riposte_action
-			_pending_riposte_action = ""
-			
-			var combo_comp = _owner_actor.find_child("ComboComponent")
-			if combo_comp and combo_comp.has_method("reset_combo"):
-					combo_comp.reset_combo()
+		if _defending_sequence:
+			if _is_last_sequence_hit:
+				if not _pending_riposte_action.is_empty():
+					var action_to_take: String = _pending_riposte_action
+					_pending_riposte_action = ""
+					
+					var combo_comp = _owner_actor.find_child("ComboComponent")
+					if combo_comp and combo_comp.has_method("reset_combo"):
+							combo_comp.reset_combo()
 
-			_is_in_attack_loop = (action_to_take == "normal_attack")
+					_is_in_attack_loop = (action_to_take == "normal_attack")
+					_execute_riposte_action(action_to_take)
+				else:
+					_advance_sequence()
+				
+				_defending_sequence = false 
+				_is_last_sequence_hit = false
+				
+			else:
+				_pending_riposte_action = ""
+				_reset_cooldown()
+				_is_in_attack_loop = false
+				
+		else:
+			if not _pending_riposte_action.is_empty():
+				var action_to_take: String = _pending_riposte_action
+				_pending_riposte_action = ""
+				
+				var combo_comp = _owner_actor.find_child("ComboComponent")
+				if combo_comp and combo_comp.has_method("reset_combo"):
+						combo_comp.reset_combo()
 
-			_execute_riposte_action(action_to_take)
+				_is_in_attack_loop = (action_to_take == "normal_attack")
 
-		elif _pending_riposte_action.is_empty():
-			_advance_sequence()
+				_execute_riposte_action(action_to_take)
+
+			elif _pending_riposte_action.is_empty():
+				_advance_sequence()
 
 	if state_name == "FinisherReadyState":
 		_combo_chain_timer.stop()
@@ -445,6 +479,11 @@ func _on_phase_changed(phase_data: Dictionary):
 func _on_player_phase_changed(phase_data: Dictionary):
 	var player_state_name = phase_data.get("state_name")
 
+	if _state_machine.current_state.name != "ParryState":
+		if player_state_name != "SequenceState":
+			_defending_sequence = false
+			_is_last_sequence_hit = false
+
 	if player_state_name == "GuardBrokenState":
 		if _is_in_attack_loop:
 			return
@@ -454,7 +493,6 @@ func _on_player_phase_changed(phase_data: Dictionary):
 			if combo_comp and combo_comp.has_method("reset_combo"):
 				combo_comp.reset_combo()
 			_execute_normal_attack()
-
 
 func _on_owner_health_changed(current_health: float, max_health: float):
 	var health_percentage: float = current_health / max_health
@@ -525,14 +563,12 @@ func _execute_skill(action_name: String):
 func _execute_normal_attack():
 	var combo_component = _owner_actor.find_child("ComboComponent")
 	if combo_component:
-		# Aqui o ComboComponent decide qual é o próximo golpe da cadeia
 		var profile: AttackProfile = combo_component.get_next_attack_profile()
 
 		if profile:
 			_state_machine.on_attack_pressed(profile)
 
 			if _is_in_attack_loop:
-				# Calcula o tempo para o próximo golpe baseado na duração do atual
 				var time_to_next_input = profile.startup_duration + profile.active_duration + profile.recovery_duration - 0.05
 
 				if time_to_next_input > 0.0:
@@ -540,7 +576,6 @@ func _execute_normal_attack():
 				else:
 					_on_ComboChainTimer_timeout()
 		else:
-			# Acabou os ataques do combo? Para o loop.
 			_combo_chain_timer.stop()
 			if _is_in_attack_loop:
 				_advance_sequence()
