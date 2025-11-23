@@ -2,7 +2,7 @@ class_name VFXComponent
 extends Node2D
 
 @export var vfx_library: Dictionary[String, PackedScene] = {}
-@export var blood_effect_delay: float = 0.22
+@export var blood_effect_delay: float = 0.1
 
 var actor: Node2D
 var health_component: HealthComponent
@@ -31,8 +31,8 @@ func _play_blood_effect_with_delay():
 	if not is_instance_valid(actor):
 		return
 		
-	var spawn_pos = actor.global_position + Vector2(0, 0)
 	var facing_sign = actor.facing_sign if "facing_sign" in actor else 1
+	var spawn_pos = actor.global_position + Vector2(0, 0)
 	var direction = Vector2.RIGHT * -facing_sign
 	spawn_vfx("blood_splatter", spawn_pos, direction)
 
@@ -48,6 +48,11 @@ func _on_impact_resolved(result: ContactResult):
 	match result.defender_outcome:
 		ContactResult.DefenderOutcome.PARRY_SUCCESS:
 			vfx_name = "clash_spark"
+			vfx_pos = actor.global_position + Vector2(30 * facing_sign, -15)
+			vfx_dir = Vector2.LEFT * facing_sign
+
+		ContactResult.DefenderOutcome.BLOCKED:
+			vfx_name = "block_spark"
 			vfx_pos = actor.global_position + Vector2(30 * facing_sign, -15)
 			vfx_dir = Vector2.LEFT * facing_sign
 		

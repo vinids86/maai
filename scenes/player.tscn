@@ -1,4 +1,4 @@
-[gd_scene load_steps=89 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=90 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_8txt3"]
@@ -55,6 +55,7 @@
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
 [ext_resource type="Script" uid="uid://dqatvw6wut2py" path="res://scripts/components/vfx_component.gd" id="37_8f1cb"]
 [ext_resource type="PackedScene" uid="uid://cvmqdrqt8fatk" path="res://scenes/clash_spark.tscn" id="38_vdulj"]
+[ext_resource type="PackedScene" uid="uid://bnr01feof6hnp" path="res://scenes/block_spark.tscn" id="39_qjsmb"]
 [ext_resource type="PackedScene" uid="uid://db38x4vv58e7c" path="res://scenes/blood_splatter.tscn" id="39_vau08"]
 [ext_resource type="Script" uid="uid://k7ywlbk605tf" path="res://scripts/components/air_combo_component.gd" id="42_8txt3"]
 [ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="42_h7ic4"]
@@ -390,6 +391,7 @@ footstep_sfx = ExtResource("36_770dr")
 [node name="VFXComponent" type="Node2D" parent="Player"]
 script = ExtResource("37_8f1cb")
 vfx_library = Dictionary[String, PackedScene]({
+"block_spark": ExtResource("39_qjsmb"),
 "blood_splatter": ExtResource("39_vau08"),
 "clash_spark": ExtResource("38_vdulj")
 })

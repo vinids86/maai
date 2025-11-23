@@ -22,6 +22,9 @@ extends CharacterBody2D
 @onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
 @onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
 
+@export_group("Settings")
+@export var facing_sign: int = -1 
+
 @export_group("Equipped Skills")
 @export var skill_x: BaseSkill
 @export var skill_y: BaseSkill
@@ -52,16 +55,18 @@ extends CharacterBody2D
 @export var down_dodge_profile: DodgeProfile
 
 var _equipped_skills: Dictionary = {}
-var facing_sign: int = 1
 var facing_locked: bool = false
 
 var air_jumps_left: int = 0
 var air_dash_used: bool = false
 var has_locked_air_pool: bool = false
 var last_left_ground_ms: int = -1
+var _target_detected: Node2D = null
 
 func _ready():
 	_build_skill_dictionary()
+	
+	_update_facing_direction()
 	
 	animation_component.setup(state_machine, spine_sprite)
 	spine_sprite.animation_event.connect(_on_spine_event)
@@ -84,16 +89,18 @@ func _ready():
 	stamina_component.stamina_changed.connect(status_ui.update_stamina)
 	
 	surface_contact_component.call_deferred("setup", self)
+	if detection_area:
+		detection_area.body_entered.connect(_on_detection_entered)
+		detection_area.body_exited.connect(_on_detection_exited)
 
 func _physics_process(delta: float):
 	var walk_direction = ai_controller.get_walk_direction()
 	var is_running = ai_controller.is_running()
 	
-	if not facing_locked:
-		if GameManager.player_node:
-			var direction_to_player = GameManager.player_node.global_position.x - global_position.x
-			if abs(direction_to_player) > 1.0:
-				facing_sign = sign(direction_to_player)
+	if not facing_locked and is_instance_valid(_target_detected) and not (state_machine.current_state is DeathState):
+		var direction_to_target = _target_detected.global_position.x - global_position.x
+		if abs(direction_to_target) > 10.0: 
+			facing_sign = sign(direction_to_target)
 	
 	_update_facing_direction()
 	
@@ -110,6 +117,14 @@ func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState
 		"footstep":
 			if audio_component:
 				audio_component.play_footstep()
+
+func _on_detection_entered(body: Node2D):
+	if body is Player:
+		_target_detected = body
+
+func _on_detection_exited(body: Node2D):
+	if body == _target_detected:
+		_target_detected = null
 
 func _build_skill_dictionary():
 	if skill_x: _equipped_skills["skill_x"] = skill_x

@@ -1,4 +1,4 @@
-[gd_scene load_steps=92 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=93 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -58,6 +58,7 @@
 [ext_resource type="Script" uid="uid://k7ywlbk605tf" path="res://scripts/components/air_combo_component.gd" id="34_5utat"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 [ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="35_5lniq"]
+[ext_resource type="PackedScene" uid="uid://bnr01feof6hnp" path="res://scenes/block_spark.tscn" id="35_djthp"]
 [ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="37_g0yyi"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
@@ -133,7 +134,7 @@ poise_shield_contribution = 30.0
 shield_bonus_on_success = 50.0
 sword_bonus_on_success = 25.0
 bonus_duration = 0.1
-animation_name = &""
+animation_name = &"aim"
 active_sfx = ExtResource("11_1lc1m")
 success_sfx = ExtResource("13_1lc1m")
 metadata/_custom_type_script = "uid://vapdm40oww0x"
@@ -503,7 +504,7 @@ height = 200.0
 size = Vector2(48, 64)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ya47j"]
-size = Vector2(1500, 200)
+size = Vector2(1922.5, 386)
 
 [sub_resource type="Resource" id="Resource_2sbpf"]
 script = ExtResource("16_ekh6n")
@@ -595,16 +596,16 @@ script = ExtResource("20_2pwtc")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/AttackHitbox"]
 
 [node name="DetectionArea" type="Area2D" parent="Enemy"]
-visible = false
 collision_mask = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/DetectionArea"]
-position = Vector2(597.5, -38)
+position = Vector2(386.25, -131)
 shape = SubResource("RectangleShape2D_ya47j")
 
 [node name="VFXComponent" type="Node2D" parent="Enemy"]
 script = ExtResource("63_kbbx4")
 vfx_library = Dictionary[String, PackedScene]({
+"block_spark": ExtResource("35_djthp"),
 "blood_splatter": ExtResource("29_3yi8r"),
 "clash_spark": ExtResource("64_x24ca")
 })

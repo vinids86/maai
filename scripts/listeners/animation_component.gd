@@ -16,6 +16,8 @@ func setup(p_state_machine: StateMachine, p_spine_sprite: SpineSprite):
 	assert(spine_sprite != null, "AnimationComponent: SpineSprite recebido no setup é nulo.")
 	assert(actor != null, "AnimationComponent: Não foi possível obter o nó pai (ator).")
 	
+	if spine_sprite.normal_material:
+		spine_sprite.normal_material = spine_sprite.normal_material.duplicate()	
 	state_machine.phase_changed.connect(_on_phase_changed)
 
 	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
@@ -58,9 +60,7 @@ func _on_phase_changed(phase_data: Dictionary):
 		if current_track_entry and current_track_entry.get_animation():
 			current_anim_name = current_track_entry.get_animation().get_name()
 		
-		if current_anim_name != anim_name:
-			var should_loop: bool = _should_animation_loop(anim_name)
-			animation_state.set_animation(anim_name, should_loop, 0)
+		animation_state.set_animation(anim_name, _should_animation_loop(anim_name), 0)
 
 func _should_animation_loop(anim_name: StringName) -> bool:
 	return anim_name in [&"idle", &"walk", &"run"]
