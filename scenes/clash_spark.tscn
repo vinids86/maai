@@ -26,9 +26,9 @@ velocity_pivot = Vector3(400, 400, 400)
 direction = Vector3(400, 400, 400)
 spread = 180.0
 initial_velocity_min = 170.45
-initial_velocity_max = 222.73
-orbit_velocity_min = -1.054
-orbit_velocity_max = -0.418
+initial_velocity_max = 740.91
+orbit_velocity_min = -0.627
+orbit_velocity_max = 0.218
 gravity = Vector3(0, 0, 0)
 scale_min = 0.1
 scale_max = 0.5
@@ -38,9 +38,10 @@ turbulence_noise_strength = 3.34
 
 [node name="ClashSpark" type="GPUParticles2D"]
 emitting = false
-amount = 50
+amount = 200
 texture = SubResource("GradientTexture2D_gttkq")
 lifetime = 0.25
 one_shot = true
 explosiveness = 0.2
+visibility_rect = Rect2(-200, -200, 400, 400)
 process_material = SubResource("ParticleProcessMaterial_utuc1")
