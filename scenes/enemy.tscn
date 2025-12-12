@@ -1,4 +1,4 @@
-[gd_scene load_steps=93 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=92 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -55,10 +55,10 @@
 [ext_resource type="AudioStream" uid="uid://7nnpy5lp40x1" path="res://audio/footstep.ogg" id="28_tysqt"]
 [ext_resource type="PackedScene" uid="uid://db38x4vv58e7c" path="res://scenes/blood_splatter.tscn" id="29_3yi8r"]
 [ext_resource type="Script" uid="uid://cqen1cgottixs" path="res://scripts/components/facing_component.gd" id="31_5ie7m"]
+[ext_resource type="PackedScene" uid="uid://cne3lhc1twp34" path="res://scenes/metal_sparks.tscn" id="33_4ceth"]
 [ext_resource type="Script" uid="uid://k7ywlbk605tf" path="res://scripts/components/air_combo_component.gd" id="34_5utat"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 [ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="35_5lniq"]
-[ext_resource type="PackedScene" uid="uid://bnr01feof6hnp" path="res://scenes/block_spark.tscn" id="35_djthp"]
 [ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="37_g0yyi"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
@@ -72,7 +72,6 @@
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="54_b5geg"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="58_0b4fd"]
 [ext_resource type="Script" uid="uid://dqatvw6wut2py" path="res://scripts/components/vfx_component.gd" id="63_kbbx4"]
-[ext_resource type="PackedScene" uid="uid://cvmqdrqt8fatk" path="res://scenes/clash_spark.tscn" id="64_x24ca"]
 [ext_resource type="Script" uid="uid://lrni4bey3mio" path="res://scripts/states/counter_ready_state.gd" id="71_2qahx"]
 [ext_resource type="Script" uid="uid://dwcab8okwt5u2" path="res://scripts/states/countered_vulnerable_state.gd" id="72_4ceth"]
 
@@ -605,9 +604,9 @@ shape = SubResource("RectangleShape2D_ya47j")
 [node name="VFXComponent" type="Node2D" parent="Enemy"]
 script = ExtResource("63_kbbx4")
 vfx_library = Dictionary[String, PackedScene]({
-"block_spark": ExtResource("35_djthp"),
+"block_spark": ExtResource("33_4ceth"),
 "blood_splatter": ExtResource("29_3yi8r"),
-"clash_spark": ExtResource("64_x24ca")
+"clash_spark": ExtResource("33_4ceth")
 })
 
 [node name="AudioComponent" type="Node" parent="Enemy" node_paths=PackedStringArray("state_machine")]

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cne3lhc1twp34"]
+
+[ext_resource type="Script" uid="uid://dkw5hm1df453d" path="res://scripts/vfx/spark_controller.gd" id="1_8gnxb"]
+
+[node name="Node2D" type="GPUParticles2D"]
+script = ExtResource("1_8gnxb")

@@ -44,17 +44,21 @@ func _on_impact_resolved(result: ContactResult):
 	var vfx_pos = Vector2.ZERO
 	var vfx_dir = Vector2.ZERO
 	var facing_sign = actor.facing_sign if "facing_sign" in actor else 1
+	
+	var params = {}
 
 	match result.defender_outcome:
 		ContactResult.DefenderOutcome.PARRY_SUCCESS:
-			vfx_name = "clash_spark"
-			vfx_pos = actor.global_position + Vector2(30 * facing_sign, -15)
+			vfx_name = "clash_spark" 
+			vfx_pos = actor.global_position + Vector2(60 * facing_sign, -50)
 			vfx_dir = Vector2.LEFT * facing_sign
+			params = {"is_parry": true}
 
 		ContactResult.DefenderOutcome.BLOCKED:
-			vfx_name = "block_spark"
-			vfx_pos = actor.global_position + Vector2(30 * facing_sign, -15)
+			vfx_name = "block_spark" 
+			vfx_pos = actor.global_position + Vector2(60 * facing_sign, -50)
 			vfx_dir = Vector2.LEFT * facing_sign
+			params = {"is_parry": false}
 		
 		ContactResult.DefenderOutcome.DODGED:
 			vfx_name = "dodge_dust"
@@ -62,9 +66,9 @@ func _on_impact_resolved(result: ContactResult):
 			vfx_dir = Vector2.DOWN
 	
 	if not vfx_name.is_empty():
-		spawn_vfx(vfx_name, vfx_pos, vfx_dir)
+		spawn_vfx(vfx_name, vfx_pos, vfx_dir, params)
 
-func spawn_vfx(vfx_name: String, spawn_position: Vector2, direction: Vector2):
+func spawn_vfx(vfx_name: String, spawn_position: Vector2, direction: Vector2, params: Dictionary = {}):
 	if not vfx_library.has(vfx_name):
 		return
 
@@ -79,5 +83,9 @@ func spawn_vfx(vfx_name: String, spawn_position: Vector2, direction: Vector2):
 	if direction != Vector2.ZERO:
 		vfx_instance.rotation = direction.angle()
 	
+	if vfx_instance.has_method("configure_type") and params.has("is_parry"):
+		vfx_instance.configure_type(params["is_parry"])
+	
 	vfx_instance.emitting = true
+	
 	vfx_instance.finished.connect(vfx_instance.queue_free.bind())
