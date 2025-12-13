@@ -145,6 +145,6 @@ func _animate_flash() -> void:
 		var tween = create_tween()
 		tween.set_parallel(true)
 		# O flash herda a escala do pai (que já é oval), então scale uniforme aqui mantém a proporção oval
-		tween.tween_property(flash, "scale", Vector2(1.8, 1.8), 0.05).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+		tween.tween_property(flash, "scale", Vector2(2.0, 2.0), 0.05).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 		tween.tween_property(flash, "modulate:a", 0.0, 0.12) 
 		tween.chain().tween_callback(func(): flash.visible = false)

@@ -1,8 +1,8 @@
 class_name ParryState
 extends State
 
-const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(150, 0)
-const KNOCKBACK_DECAY_RATE = 0.1
+const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(450, 0)
+const KNOCKBACK_DECAY_RATE = 2
 
 var current_profile: ParryProfile
 var _knockback_velocity: Vector2 = Vector2.ZERO

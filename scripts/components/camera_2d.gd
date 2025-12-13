@@ -41,7 +41,6 @@ func _ready():
 	offset = resting_offset
 	
 	add_to_group("MainCamera")
-	
 	zoom = exploration_zoom
 
 func set_preset(value):
