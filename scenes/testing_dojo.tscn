@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=4 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=20 format=4 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="Script" uid="uid://coil0eyucsysb" path="res://scripts/scenes/testing_dojo.gd" id="1_r8dm2"]
@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://bvcs2sunoeq08" path="res://assets/world/default.png" id="13_8esgq"]
 [ext_resource type="Script" uid="uid://m1marhep8fr1" path="res://scripts/level/combat_zone.gd" id="14_erwad"]
 [ext_resource type="PackedScene" uid="uid://d3d5tokp7sjew" path="res://scenes/enemy_joke.tscn" id="15_m2w8e"]
+[ext_resource type="PackedScene" uid="uid://dtjlr4crlrjgr" path="res://scenes/token.tscn" id="16_hi14r"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_8esgq"]
 texture = ExtResource("13_8esgq")
@@ -49,8 +50,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-22.7656, -331.965)
-rotation = 0.385632
+position = Vector2(-23.668, -327.802)
+rotation = 0.384759
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
 position = Vector2(-6267, 623)
@@ -130,6 +131,24 @@ position = Vector2(-2537, -33)
 position = Vector2(-1724, -20)
 
 [node name="EnemyJoke" parent="." instance=ExtResource("15_m2w8e")]
-position = Vector2(-10951, 968)
+position = Vector2(-12574, 1029)
+
+[node name="Token" parent="." instance=ExtResource("16_hi14r")]
+position = Vector2(-11021, 725)
+
+[node name="Token2" parent="." instance=ExtResource("16_hi14r")]
+position = Vector2(-10631, 668)
+
+[node name="Token3" parent="." instance=ExtResource("16_hi14r")]
+position = Vector2(-10297, 472)
+
+[node name="Token4" parent="." instance=ExtResource("16_hi14r")]
+position = Vector2(-9874, 594)
+
+[node name="Token5" parent="." instance=ExtResource("16_hi14r")]
+position = Vector2(-9516, 318)
+
+[node name="Token6" parent="." instance=ExtResource("16_hi14r")]
+position = Vector2(-9150, 106)
 
 [editable path="PlayerEntity"]

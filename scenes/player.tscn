@@ -1,4 +1,4 @@
-[gd_scene load_steps=89 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=92 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_8txt3"]
@@ -67,7 +67,9 @@
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="52_sc3ue"]
 [ext_resource type="Script" uid="uid://cdtcv6tkc4hp1" path="res://scripts/components/focus_component.gd" id="53_lxlsd"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="54_ha2mi"]
+[ext_resource type="Script" uid="uid://bv3cptq4miw0k" path="res://scripts/components/smart_targeting_component.gd" id="55_qjsmb"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="56_74r1k"]
+[ext_resource type="Script" uid="uid://btwtwfggg48eu" path="res://scripts/profiles/dash_profile.gd" id="56_mwp2n"]
 [ext_resource type="Script" uid="uid://d18awpld4ar25" path="res://scripts/states/dash_state.gd" id="60_h7ic4"]
 [ext_resource type="Script" uid="uid://kqlkm03xp1rg" path="res://scripts/states/wall_slide_state.gd" id="63_tk41t"]
 [ext_resource type="Script" uid="uid://lrni4bey3mio" path="res://scripts/states/counter_ready_state.gd" id="73_qjsmb"]
@@ -289,6 +291,23 @@ script = ExtResource("21_487ah")
 buffer_window = 0.7
 metadata/_custom_type_script = "uid://24v4chol2qs0"
 
+[sub_resource type="Resource" id="Resource_irpag"]
+script = ExtResource("56_mwp2n")
+active_duration = 0.2
+recovery_duration = 0.1
+dash_distance = 250.0
+recovery_friction = 1000.0
+travel_speed = 1200.0
+arrival_tolerance = 15.0
+auto_jump_force = -600.0
+max_distance = 400.0
+detection_cone = 0.5
+same_target_lockout = false
+animation_name = "dash"
+active_sfx = ExtResource("8_770dr")
+stamina_cost = 10.0
+metadata/_custom_type_script = "uid://btwtwfggg48eu"
+
 [node name="PlayerEntity" type="Node2D" groups=["player"]]
 
 [node name="Player" type="CharacterBody2D" parent="."]
@@ -457,6 +476,10 @@ script = ExtResource("44_51ujp")
 visible = false
 target_position = Vector2(60, 0)
 
+[node name="SmartTargetingComponent" type="Node2D" parent="Player"]
+script = ExtResource("55_qjsmb")
+profile = SubResource("Resource_irpag")
+
 [node name="AttackExecutor" type="Node" parent="Player"]
 script = ExtResource("25_hax0n")
 metadata/_custom_type_script = "uid://b0lnh740qgaih"
@@ -513,8 +536,9 @@ metadata/_custom_type_script = "uid://cjolmubu1vmxi"
 script = ExtResource("56_74r1k")
 metadata/_custom_type_script = "uid://clhnftdn6qup"
 
-[node name="DashState" type="Node" parent="Player/StateMachine"]
+[node name="DashState" type="Node" parent="Player/StateMachine" node_paths=PackedStringArray("targeting_component")]
 script = ExtResource("60_h7ic4")
+targeting_component = NodePath("../../SmartTargetingComponent")
 metadata/_custom_type_script = "uid://d18awpld4ar25"
 
 [node name="WallSlideState" type="Node" parent="Player/StateMachine"]

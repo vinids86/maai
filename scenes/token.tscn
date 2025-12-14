@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3 uid="uid://dtjlr4crlrjgr"]
+
+[ext_resource type="Script" uid="uid://crtj3bfohs31n" path="res://scripts/world/token.gd" id="1_7438t"]
+[ext_resource type="Texture2D" uid="uid://dldp8qkalqpnr" path="res://icon.svg" id="2_20bui"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jds53"]
+size = Vector2(23, 22)
+
+[node name="Token" type="Area2D"]
+script = ExtResource("1_7438t")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_20bui")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_jds53")

@@ -269,10 +269,17 @@ func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
 	var can_cancel = (executor_phase_name == "RECOVERY")
 
 	if current_sub_state == SubStates.NORMAL or (current_sub_state == SubStates.ATTACKING and can_cancel):
-		if owner_node.air_dash_used:
-			return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-		owner_node.air_dash_used = true
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+		
+		var targeting = owner_node.find_child("SmartTargetingComponent")
+		
+		if targeting and targeting.current_target:
+			return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
+		if not owner_node.air_dash_used:
+			owner_node.air_dash_used = true
+			return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+			
+		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 

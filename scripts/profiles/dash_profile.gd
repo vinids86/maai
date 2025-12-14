@@ -1,6 +1,7 @@
-class_name DashProfile
 extends Resource
+class_name DashProfile
 
+@export_category("Classic Dash")
 @export_group("Phases")
 @export var active_duration: float = 0.2
 @export var recovery_duration: float = 0.1
@@ -17,10 +18,18 @@ extends Resource
 ## Quão rápido o personagem desacelera na fase de recuperação (pixels/s^2).
 @export var recovery_friction: float = 1000.0
 
-@export_group("Presentation")
-@export var animation_name: StringName
+@export_category("Grapple Mechanics")
+@export var travel_speed: float = 1200.0
+@export var arrival_tolerance: float = 15.0
+@export var auto_jump_force: float = -600.0
 
-@export_group("Audio")
+@export_category("Smart Targeting")
+@export var max_distance: float = 400.0
+@export_range(0.0, 1.0) var detection_cone: float = 0.5
+@export var same_target_lockout: bool = true
+
+@export_category("Visuals/Audio")
+@export var animation_name: String = "dash"
 @export var active_sfx: AudioStream
 @export var recovery_sfx: AudioStream
 
