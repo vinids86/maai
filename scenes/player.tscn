@@ -283,8 +283,9 @@ shader_parameter/flash_modifier = 0.0
 radius = 48.0
 height = 200.0
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hhpqf"]
-size = Vector2(48, 64)
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_mwp2n"]
+radius = 48.0
+height = 200.0
 
 [sub_resource type="Resource" id="Resource_md1ol"]
 script = ExtResource("21_487ah")
@@ -370,17 +371,18 @@ hitstop_slow_scale = 0.03
 trauma_att_none = 0.5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+visible = false
 position = Vector2(0, -36)
 shape = SubResource("CapsuleShape2D_4gjji")
 
 [node name="Hurtbox" type="Area2D" parent="Player"]
-visible = false
 collision_layer = 32
 collision_mask = 16
 script = ExtResource("24_l71n6")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player/Hurtbox"]
-shape = SubResource("RectangleShape2D_hhpqf")
+position = Vector2(0, -36)
+shape = SubResource("CapsuleShape2D_mwp2n")
 
 [node name="AttackHitbox" type="Area2D" parent="Player"]
 collision_layer = 4
@@ -560,3 +562,5 @@ offset_top = -132.0
 offset_right = 40.0
 offset_bottom = 65.0
 metadata/_edit_use_anchors_ = true
+
+[connection signal="area_entered" from="Player/Hurtbox" to="Player/Hurtbox" method="_on_area_entered"]

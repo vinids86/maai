@@ -4,21 +4,30 @@ extends Node
 @export var flash_duration: float = 0.15
 
 var spine_sprite: SpineSprite
-var state_machine: StateMachine
+# Alterado de StateMachine para Node para aceitar tanto StateMachine quanto SimpleStateMachine
+var state_machine: Node 
 var actor: Node
 
-func setup(p_state_machine: StateMachine, p_spine_sprite: SpineSprite):
-	state_machine = p_state_machine
+func setup(p_state_machine: StateMachine, p_spine_sprite: SpineSprite, p_simple_state_machine: SimpleStateMachine = null):
+	# Lógica de prioridade: Usa a StateMachine padrão se existir, senão tenta a SimpleStateMachine
+	if p_state_machine:
+		state_machine = p_state_machine
+	elif p_simple_state_machine:
+		state_machine = p_simple_state_machine
+	
 	spine_sprite = p_spine_sprite
 	actor = get_parent()
 	
-	assert(state_machine != null, "AnimationComponent: StateMachine recebida no setup é nula.")
+	assert(state_machine != null, "AnimationComponent: Nenhuma StateMachine (padrão ou simples) fornecida no setup.")
 	assert(spine_sprite != null, "AnimationComponent: SpineSprite recebido no setup é nulo.")
 	assert(actor != null, "AnimationComponent: Não foi possível obter o nó pai (ator).")
 	
 	if spine_sprite.normal_material:
 		spine_sprite.normal_material = spine_sprite.normal_material.duplicate()	
-	state_machine.phase_changed.connect(_on_phase_changed)
+	
+	# Ambas as máquinas de estado emitem esse sinal
+	if state_machine.has_signal("phase_changed"):
+		state_machine.phase_changed.connect(_on_phase_changed)
 
 	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=4 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=21 format=4 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="Script" uid="uid://coil0eyucsysb" path="res://scripts/scenes/testing_dojo.gd" id="1_r8dm2"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" uid="uid://m1marhep8fr1" path="res://scripts/level/combat_zone.gd" id="14_erwad"]
 [ext_resource type="PackedScene" uid="uid://d3d5tokp7sjew" path="res://scenes/enemy_joke.tscn" id="15_m2w8e"]
 [ext_resource type="PackedScene" uid="uid://dtjlr4crlrjgr" path="res://scenes/token.tscn" id="16_hi14r"]
+[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="17_5ycas"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_8esgq"]
 texture = ExtResource("13_8esgq")
@@ -38,7 +39,7 @@ player = NodePath("PlayerEntity/Player")
 hud = NodePath("CanvasLayer/PlayerHUD")
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(16892, 822)
+position = Vector2(17938, 686)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -50,8 +51,9 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-23.668, -327.802)
-rotation = 0.384759
+position = Vector2(-17.8984, -334.636)
+rotation = 0.424577
+scale = Vector2(1, 1)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
 position = Vector2(-6267, 623)
@@ -150,5 +152,8 @@ position = Vector2(-9516, 318)
 
 [node name="Token6" parent="." instance=ExtResource("16_hi14r")]
 position = Vector2(-9150, 106)
+
+[node name="SimpleEnemy" parent="." instance=ExtResource("17_5ycas")]
+position = Vector2(-10825, 1054)
 
 [editable path="PlayerEntity"]

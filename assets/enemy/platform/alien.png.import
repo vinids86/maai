@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://iv3mkbhyvk87"
-path="res://.godot/imported/spritesheetreiddlemale.png-b4e5c8ffef6d62f365de6847c5ed1479.ctex"
+uid="uid://dr5yton8we0q7"
+path="res://.godot/imported/alien.png-35206816baac2b48a1d912e6e91feeda.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/enemy/spritesheetreiddlemale.png"
-dest_files=["res://.godot/imported/spritesheetreiddlemale.png-b4e5c8ffef6d62f365de6847c5ed1479.ctex"]
+source_file="res://assets/enemy/platform/alien.png"
+dest_files=["res://.godot/imported/alien.png-35206816baac2b48a1d912e6e91feeda.ctex"]
 
 [params]
 

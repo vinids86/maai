@@ -1,0 +1,16 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+uid="uid://cyq1lt0qmhd5o"
+path="res://.godot/imported/alien-pma.atlas-8e7e62e6eacfb3165e0a61055b7166b1.spatlas"
+
+[deps]
+
+source_file="res://assets/enemy/platform/alien-pma.atlas"
+dest_files=["res://.godot/imported/alien-pma.atlas-8e7e62e6eacfb3165e0a61055b7166b1.spatlas"]
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

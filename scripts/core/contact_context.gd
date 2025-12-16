@@ -17,7 +17,7 @@ var defender_attack_profile: AttackProfile = null
 var defender_health_comp: HealthComponent
 var defender_stamina_comp: StaminaComponent
 var defender_poise_comp: PoiseComponent
-var defender_state_machine: StateMachine
+var defender_state_machine: Node
 
 # --- Dados Calculados pelo ImpactResolver ---
 var attacker_offensive_poise: float = 0.0
