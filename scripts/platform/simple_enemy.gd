@@ -59,3 +59,10 @@ func set_facing_direction(direction: float) -> void:
 
 func _on_health_component_died():
 	state_machine.transition_to("SimpleDeathState")
+
+func set_hitbox_enabled(is_enabled: bool) -> void:
+	if not is_instance_valid(hitbox):
+		return
+	
+	hitbox.set_deferred("monitorable", is_enabled)
+	hitbox.set_deferred("monitoring", is_enabled)

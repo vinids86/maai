@@ -85,6 +85,8 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 				amount = trauma_att_trade_lost
 			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
 				amount = trauma_att_finisher_success
+			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+				amount = trauma_att_guard_break_success
 			_:
 				amount = fallback_trauma
 
@@ -102,6 +104,8 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS, \
 			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
 				duration = hitstop_on_parry_or_break
+			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+				duration = 0.08
 			_:
 				duration = hitstop_on_hit
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://def1lykxj4wss"]
+[gd_scene load_steps=30 format=3 uid="uid://def1lykxj4wss"]
 
 [ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
@@ -17,7 +17,9 @@
 [ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
 [ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
 [ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
+[ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
+[ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
 
 [sub_resource type="Resource" id="Resource_tvabn"]
@@ -83,14 +85,13 @@ shader_parameter/flash_modifier = 0.0
 radius = 38.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
-radius = 46.0
+radius = 38.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
 radius = 38.0
 
 [node name="SimpleEnemy" type="CharacterBody2D"]
 collision_layer = 64
-collision_mask = 3
 script = ExtResource("1_m6jwr")
 attack_profile = SubResource("Resource_tvabn")
 locomotion_profile = SubResource("Resource_omdno")
@@ -122,6 +123,11 @@ metadata/_custom_type_script = "uid://j6611u6es7ei"
 script = ExtResource("10_pm6ks")
 metadata/_custom_type_script = "uid://nkr7lri0t1dn"
 
+[node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("12_wfdv6")
+audio = ExtResource("13_skhkn")
+metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
+
 [node name="AnimationComponent" type="Node" parent="."]
 script = ExtResource("8_skhkn")
 metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
@@ -133,7 +139,6 @@ metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("9_ir8sv")
-max_health = 1.0
 metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
 
 [node name="PhysicsComponent" type="Node" parent="."]

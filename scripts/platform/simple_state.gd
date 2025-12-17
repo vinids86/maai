@@ -23,25 +23,29 @@ func exit():
 func process_physics(_delta: float) -> Vector2:
 	return Vector2.ZERO
 
-# Método essencial para o ImpactResolver funcionar com este tipo de inimigo.
-# Diferente do State original, aqui ignoramos Stamina/Poise e aplicamos dano direto.
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
 	result_for_attacker.attacker_node = context.attacker_node
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
 
-	# Aplica dano direto à vida
 	if context.defender_health_comp:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
+		
+		if not context.defender_health_comp.is_dead():
+			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
+			var push_force = 550.0 # Valor base, idealmente viria do AttackProfile mas mantemos simples aqui
+			
+			# Se o AttackProfile tiver dados de knockback, podemos usar (opcional)
+			# if context.attack_profile.knockback_vector != Vector2.ZERO: ...
+			
+			var knockback = direction * push_force
+			knockback.y = -100.0 # Um leve pulinho para tirar do chão
+			
+			var reason = { "outcome": "HIT", "knockback_vector": knockback }
+			state_machine.on_current_state_finished(reason)
 
-	# Define o resultado como HIT padrão.
-	# Isso informa ao atacante (Player) que o golpe conectou com sucesso (gerando hitstop, som, etc.)
 	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
-	
-	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
+	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY
 
-	# Nota: Se desejarmos que este inimigo sofra knockback no futuro,
-	# podemos calcular e retornar o vetor aqui, similar ao State original.
-	
 	return result_for_attacker

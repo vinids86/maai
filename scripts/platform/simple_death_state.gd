@@ -22,9 +22,7 @@ func enter(_args: Dictionary = {}):
 		hurtbox_shape.set_deferred("disabled", true)
 		
 	# Desabilita Hitbox (não dá mais dano se o player encostar no corpo caindo)
-	var hitbox_shape = owner_node.get_node_or_null("Hitbox/CollisionShape2D")
-	if hitbox_shape:
-		hitbox_shape.set_deferred("disabled", true)
+	owner_node.set_hitbox_enabled(false)
 
 func process_physics(_delta: float) -> Vector2:
 	# Para o movimento completamente
