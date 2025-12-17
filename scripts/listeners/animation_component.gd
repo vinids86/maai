@@ -1,7 +1,7 @@
 class_name AnimationComponent
 extends Node
 
-@export var flash_duration: float = 0.15
+@export var flash_duration: float = 0.30
 
 var spine_sprite: SpineSprite
 # Alterado de StateMachine para Node para aceitar tanto StateMachine quanto SimpleStateMachine
@@ -49,7 +49,8 @@ func _on_impact_resolved(result: ContactResult):
 	if result.defender_node != actor:
 		return
 
-	if result.defender_outcome == ContactResult.DefenderOutcome.BLOCKED:
+	if result.defender_outcome == ContactResult.DefenderOutcome.BLOCKED or \
+	   result.defender_outcome == ContactResult.DefenderOutcome.HIT:
 		play_shader_flash()
 
 func _on_phase_changed(phase_data: Dictionary):

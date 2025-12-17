@@ -91,13 +91,13 @@ Uma implementação otimizada (`SimpleEnemy.gd`) para inimigos que atuam como ob
 
 #### Principais Diferenças:
 1.  **SimpleStateMachine:**
-    - Uma versão leve da máquina de estados que remove sistemas de **Input Buffer**, **Action Cost** e **Stamina Management**.
-    - Mantém a interface pública compatível (`transition_to`, sinais de fase) para se integrar transparentemente com componentes globais como `AnimationComponent`.
+	- Uma versão leve da máquina de estados que remove sistemas de **Input Buffer**, **Action Cost** e **Stamina Management**.
+	- Mantém a interface pública compatível (`transition_to`, sinais de fase) para se integrar transparentemente com componentes globais como `AnimationComponent`.
 
 2.  **SimpleState e Resolução de Impacto:**
-    - Os estados herdam de `SimpleState`, que implementa uma versão simplificada de `resolve_contact()`.
-    - **Dano Direto:** Ao ser atacado, o `SimpleState` ignora cálculos de Poise/Stamina e aplica o dano diretamente ao `HealthComponent`.
-    - **Combate Passivo:** Utiliza `Hitbox` sempre ativa para causar dano por contato, sem depender de janelas de animação de ataque.
+	- Os estados herdam de `SimpleState`, que implementa uma versão simplificada de `resolve_contact()`.
+	- **Dano Direto:** Ao ser atacado, o `SimpleState` ignora cálculos de Poise/Stamina e aplica o dano diretamente ao `HealthComponent`.
+	- **Combate Passivo:** Utiliza `Hitbox` sempre ativa para causar dano por contato, sem depender de janelas de animação de ataque.
 
 3.  **Integração Híbrida:**
-    - O sistema central `ImpactResolver` e `ContactContext` foram adaptados para suportar tanto a `StateMachine` complexa quanto a `SimpleStateMachine`, permitindo que o Player combata ambos os tipos de inimigos usando as mesmas mecânicas de ataque.
+	- O sistema central `ImpactResolver` e `ContactContext` foram adaptados para suportar tanto a `StateMachine` complexa quanto a `SimpleStateMachine`, permitindo que o Player combata ambos os tipos de inimigos usando as mesmas mecânicas de ataque.
