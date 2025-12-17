@@ -336,9 +336,9 @@ vfx_library = Dictionary[String, PackedScene]({
 "clash_spark": ExtResource("33_4ceth")
 })
 
-[node name="AudioComponent" type="Node" parent="Enemy" node_paths=PackedStringArray("state_machine")]
+[node name="AudioComponent" type="Node" parent="Enemy" node_paths=PackedStringArray("e_state_machine")]
 script = ExtResource("17_shcg2")
-state_machine = NodePath("../StateMachine")
+e_state_machine = NodePath("../StateMachine")
 footstep_sfx = ExtResource("28_tysqt")
 metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 

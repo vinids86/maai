@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://def1lykxj4wss"]
+[gd_scene load_steps=26 format=3 uid="uid://def1lykxj4wss"]
 
 [ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
@@ -6,7 +6,7 @@
 [ext_resource type="SpineAtlasResource" uid="uid://cyq1lt0qmhd5o" path="res://assets/enemy/platform/alien-pma.atlas" id="4_pm6ks"]
 [ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
 [ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
-[ext_resource type="AudioStream" uid="uid://bgiotnuc2o8gq" path="res://audio/male_die.mp3" id="5_pm6ks"]
+[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
 [ext_resource type="Script" uid="uid://rl2jebk5cpgg" path="res://scripts/platform/simple_state_machine.gd" id="6_dct62"]
 [ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
 [ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
 [ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
+[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
 [ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
@@ -117,6 +118,11 @@ metadata/_custom_type_script = "uid://nkr7lri0t1dn"
 [node name="AnimationComponent" type="Node" parent="."]
 script = ExtResource("8_skhkn")
 metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
+
+[node name="AudioComponent" type="Node" parent="." node_paths=PackedStringArray("e_simple_state_machine")]
+script = ExtResource("12_2wo0y")
+e_simple_state_machine = NodePath("../SimpleStateMachine")
+metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("9_ir8sv")

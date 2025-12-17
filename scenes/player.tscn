@@ -404,9 +404,9 @@ one_shot = true
 [node name="AnimationComponent" type="Node" parent="Player"]
 script = ExtResource("15_a8ls1")
 
-[node name="AudioComponent" type="Node" parent="Player" node_paths=PackedStringArray("state_machine")]
+[node name="AudioComponent" type="Node" parent="Player" node_paths=PackedStringArray("e_state_machine")]
 script = ExtResource("16_qfm1y")
-state_machine = NodePath("../StateMachine")
+e_state_machine = NodePath("../StateMachine")
 footstep_sfx = ExtResource("36_770dr")
 
 [node name="SFXPlayer" type="AudioStreamPlayer2D" parent="Player"]
