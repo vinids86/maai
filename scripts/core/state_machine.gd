@@ -132,16 +132,17 @@ func on_dash_pressed(profile: DashProfile):
 func on_attack_pressed(profile: AttackProfile):
 	var result: InputHandlerResult = current_state.handle_attack_input(profile)
 	match result.status:
-		InputHandlerResult.Status.ACCEPTED:
+		InputHandlerResult.Status.ACCEPTED:			
 			var profile_to_use: AttackProfile = profile 
 
 			if result.context.has("override_profile"):
 				profile_to_use = result.context["override_profile"]
 
-			if action_cost_validator.try_pay_costs(profile):
+			if action_cost_validator.try_pay_costs(profile_to_use):
 				buffer_component.clear()
-				transition_to("AttackState", {"profile": profile})
-		InputHandlerResult.Status.REJECTED:
+				transition_to("AttackState", {"profile": profile_to_use})
+				
+		InputHandlerResult.Status.REJECTED:			
 			var profile_to_buffer: AttackProfile
 			if result.context.has("override_profile"):
 				profile_to_buffer = result.context["override_profile"]
@@ -149,6 +150,7 @@ func on_attack_pressed(profile: AttackProfile):
 				profile_to_buffer = profile
 			var context_to_buffer = {"profile": profile_to_buffer}
 			buffer_component.capture(BufferComponent.BufferedAction.ATTACK, context_to_buffer)
+			
 		InputHandlerResult.Status.CONSUMED:
 			pass
 

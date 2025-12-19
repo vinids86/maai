@@ -39,7 +39,7 @@ player = NodePath("PlayerEntity/Player")
 hud = NodePath("CanvasLayer/PlayerHUD")
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(12500, 625)
+position = Vector2(13002, 682)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -51,8 +51,9 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-20.1406, -333.695)
-rotation = 0.406544
+position = Vector2(-14.2188, -334.498)
+rotation = 0.450504
+scale = Vector2(1, 1)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
 position = Vector2(-6267, 623)
@@ -168,6 +169,6 @@ position = Vector2(-14709, 1010)
 position = Vector2(-13794, 969)
 
 [node name="EnemyJoke3" parent="." instance=ExtResource("15_m2w8e")]
-position = Vector2(-10628, 965)
+position = Vector2(-12806, 965)
 
 [editable path="PlayerEntity"]

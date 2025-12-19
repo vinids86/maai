@@ -111,7 +111,7 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
 				duration = 0.04
 			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
-				duration = 0.08
+				duration = 0.06
 			_:
 				duration = hitstop_on_hit
 

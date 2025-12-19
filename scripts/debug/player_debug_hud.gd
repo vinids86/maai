@@ -27,4 +27,4 @@ func _on_phase_changed(data: Dictionary):
 	var output_text = "%s: %s: %s" % [actor_name, state_name, phase_name]
 	
 	label.text = output_text
-	print(output_text)
+	#print(output_text)
