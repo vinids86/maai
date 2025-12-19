@@ -23,7 +23,7 @@ enum BehaviorID {
 const ALL_BEHAVIORS = {
 	BehaviorID.ENEMY_JOKE: {
 		"phase_1": [
-			{ "defense": "block" },
+			{ "defense": "parry" }, { "defense": "block" },
 		],
 		"phase_2": [
 			{ "defense": "block" },

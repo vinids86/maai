@@ -2,6 +2,7 @@ class_name ContactResult
 extends Resource
 
 enum DefenderOutcome {
+	NONE,
 	HIT,
 	POISE_BROKEN,
 	PARRY_SUCCESS,
