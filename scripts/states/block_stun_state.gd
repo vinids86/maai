@@ -5,6 +5,10 @@ var current_profile: BlockStunProfile
 var time_left_in_phase: float = 0.0
 var _recoil_velocity: Vector2
 
+# --- Adição: Variável para controlar a ordem dos sons ---
+var _current_sfx_index: int = 0
+# ------------------------------------------------------
+
 # ✅ Precarrega as 4 variações só uma vez
 const BLOCK_SFX = [
 	preload("res://audio/clash.ogg"),
@@ -58,15 +62,18 @@ func allow_reentry() -> bool:
 	return true
 
 func _emit_phase_signal():
-	# ✅ Sorteia uma das 4 variações
-	var sfx_to_play: AudioStream = BLOCK_SFX[randi() % BLOCK_SFX.size()]
+	# ✅ Seleciona sequencialmente usando o índice atual
+	var sfx_to_play: AudioStream = BLOCK_SFX[_current_sfx_index % BLOCK_SFX.size()]
+	
+	# Incrementa para o próximo hit (cicla infinitamente)
+	_current_sfx_index += 1
 
 	var phase_data = {
 		"state_name": self.name,
 		"phase_name": "BLOCK_STUN",
 		"profile": current_profile,
 		"animation_to_play": current_profile.animation_name,
-		# ✅ passa a variação sorteada
+		# ✅ passa a variação sequencial
 		"sfx_to_play": sfx_to_play,
 	}
 	state_machine.emit_phase_change(phase_data)

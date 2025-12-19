@@ -34,7 +34,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 		
 		if not context.defender_health_comp.is_dead():
 			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
-			var push_force = 550.0 # Valor base, idealmente viria do AttackProfile mas mantemos simples aqui
+			var push_force = 450.0 # Valor base, idealmente viria do AttackProfile mas mantemos simples aqui
 			
 			# Se o AttackProfile tiver dados de knockback, podemos usar (opcional)
 			# if context.attack_profile.knockback_vector != Vector2.ZERO: ...

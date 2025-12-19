@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
-[ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_2sbpf"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="2_4ra3w"]
 [ext_resource type="Resource" uid="uid://dyb1h7belqw60" path="res://resources/enemy/attack/skill_x.tres" id="2_gst0f"]
 [ext_resource type="Resource" uid="uid://d2ugp2qfxmk3k" path="res://resources/enemy/attack/skill_y.tres" id="3_g0yyi"]
@@ -62,6 +61,7 @@
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
 [ext_resource type="Resource" uid="uid://3vru34ypce3e" path="res://resources/player/attack/light_attack_1.tres" id="40_2qahx"]
+[ext_resource type="Resource" uid="uid://cbaql87g71xyk" path="res://resources/enemy/attack/enemy_light_combo.tres" id="46_2qahx"]
 [ext_resource type="Resource" uid="uid://d1elwc0tip686" path="res://resources/player/attack/air_attack_set.tres" id="48_4c6tc"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="48_sm4rh"]
 [ext_resource type="Script" uid="uid://d28fgt1kpvll5" path="res://scripts/components/counter_executor_component.gd" id="50_4ceth"]
@@ -87,8 +87,8 @@ link_duration = 0.6
 animation_name = &"shoot"
 startup_sfx = ExtResource("9_yb7ap")
 active_sfx = SubResource("Resource_4lt7r")
-hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(40, 0)
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
 damage = 60.0
 stamina_cost = 0.0
 focus_cost = 0
@@ -301,6 +301,7 @@ script = ExtResource("22_sdxul")
 metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy"]
+visible = false
 position = Vector2(0, -36)
 shape = SubResource("CapsuleShape2D_e7lhw")
 
@@ -311,6 +312,7 @@ collision_mask = 4
 script = ExtResource("2_4ra3w")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/Hurtbox"]
+visible = false
 shape = SubResource("RectangleShape2D_gst0f")
 
 [node name="AttackHitbox" type="Area2D" parent="Enemy"]
@@ -322,9 +324,11 @@ script = ExtResource("20_2pwtc")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/AttackHitbox"]
 
 [node name="DetectionArea" type="Area2D" parent="Enemy"]
+visible = false
 collision_mask = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy/DetectionArea"]
+visible = false
 position = Vector2(386.25, -131)
 shape = SubResource("RectangleShape2D_ya47j")
 
@@ -379,7 +383,7 @@ metadata/_custom_type_script = "uid://dtl5q4dyb0mxr"
 
 [node name="ComboComponent" type="Node" parent="Enemy"]
 script = ExtResource("35_2sbpf")
-attack_set = ExtResource("2_2sbpf")
+attack_set = ExtResource("46_2qahx")
 metadata/_custom_type_script = "uid://7awh4v6bsojt"
 
 [node name="AirComboComponent" type="Node" parent="Enemy"]

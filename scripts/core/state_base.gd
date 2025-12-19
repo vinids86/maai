@@ -84,7 +84,7 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 		return result_for_attacker
 
 	if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
-		var block_recoil_fraction: float = 0.4
+		var block_recoil_fraction: float = 0.65
 		var base_knockback: Vector2 = context.attack_profile.knockback_vector
 		var recoil_velocity: Vector2 = base_knockback * block_recoil_fraction
 		var reason = { "outcome": "BLOCKED", "knockback_vector": recoil_velocity }

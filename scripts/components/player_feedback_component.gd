@@ -16,7 +16,7 @@ extends Node
 @export_group("Defender Outcomes (quando o Player DEFENDE)")
 @export var trauma_def_hit: float = 0.30
 @export var trauma_def_poise_broken: float = 0.55
-@export var trauma_def_parry_success: float = 0.65
+@export var trauma_def_parry_success: float = 0.85
 @export var trauma_def_blocked: float = 0.20
 @export var trauma_def_guard_broken: float = 0.60
 @export var trauma_def_dodged: float = 0.0
@@ -87,6 +87,8 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 				amount = trauma_att_finisher_success
 			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
 				amount = trauma_att_guard_break_success
+			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
+				amount = trauma_att_guard_break_success
 			_:
 				amount = fallback_trauma
 
@@ -97,6 +99,8 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 		match contact.defender_outcome:
 			ContactResult.DefenderOutcome.GUARD_BROKEN:
 				duration = hitstop_on_parry_or_break
+			ContactResult.DefenderOutcome.BLOCKED:
+				duration = 0.1
 			_:
 				duration = hitstop_on_hit
 	elif i_am_attacker:
@@ -104,6 +108,8 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS, \
 			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
 				duration = hitstop_on_parry_or_break
+			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
+				duration = 0.04
 			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
 				duration = 0.08
 			_:

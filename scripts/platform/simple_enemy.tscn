@@ -30,8 +30,8 @@ block_recoil_duration = 0.55
 recovery_duration = 0.45
 link_duration = 0.6
 animation_name = &""
-hitbox_size = Vector2(90, 64)
-hitbox_position = Vector2(40, 0)
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
 damage = 10.0
 stamina_cost = 0.0
 focus_cost = 0
@@ -139,6 +139,7 @@ metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("9_ir8sv")
+max_health = 3.0
 metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
 
 [node name="PhysicsComponent" type="Node" parent="."]

@@ -12,6 +12,7 @@ enum BehaviorID {
 	ENEMY_ELITE_1,
 	ENEMY_ELITE_2,
 	BOSS_DEFAULT,
+	ENEMY_JOKE,
 }
 
 @export var behavior_id: BehaviorID = BehaviorID.ENEMY_INTRO_1
@@ -20,6 +21,14 @@ enum BehaviorID {
 @export_range(0.0, 1.0) var sequence_parry_chance: float = 0.5
 
 const ALL_BEHAVIORS = {
+	BehaviorID.ENEMY_JOKE: {
+		"phase_1": [
+			{ "defense": "block" },
+		],
+		"phase_2": [
+			{ "defense": "block" },
+		]
+	},
 	BehaviorID.ENEMY_INTRO_1: {
 		"phase_1": [
 			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_z" }, { "defense": "block" },

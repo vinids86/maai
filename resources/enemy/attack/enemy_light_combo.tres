@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AttackSet" load_steps=8 format=3 uid="uid://cbaql87g71xyk"]
+
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="1_xyoc0"]
+[ext_resource type="Resource" uid="uid://cefhiih4qr15w" path="res://resources/enemy/attack/light_attack_1.tres" id="2_xyoc0"]
+[ext_resource type="Resource" uid="uid://v7tca32dgfui" path="res://resources/enemy/attack/light_attack_2.tres" id="3_xyoc0"]
+[ext_resource type="Resource" uid="uid://b80s8bsa4vxr8" path="res://resources/enemy/attack/light_attack_3.tres" id="4_xyoc0"]
+[ext_resource type="Resource" uid="uid://cbg8g5cencbdq" path="res://resources/enemy/attack/light_attack_4.tres" id="5_4wfio"]
+[ext_resource type="Resource" uid="uid://dx6lojdcjei7" path="res://resources/enemy/attack/light_attack_5.tres" id="6_nvf7c"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="7_1bykf"]
+
+[resource]
+script = ExtResource("7_1bykf")
+attacks = Array[ExtResource("1_xyoc0")]([ExtResource("2_xyoc0"), ExtResource("3_xyoc0"), ExtResource("4_xyoc0"), ExtResource("5_4wfio"), ExtResource("6_nvf7c")])
+metadata/_custom_type_script = "uid://bwq542vou2wu1"

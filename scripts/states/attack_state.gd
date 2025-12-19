@@ -65,9 +65,9 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 			_time_left_in_phase -= delta
 			if _time_left_in_phase <= 0.0:
 				_on_attack_finished()
-			var recoil_movement_x = 100.0
+			var recoil_movement_x = -40.0
 			
-			new_velocity.x = recoil_movement_x * owner_node.facing_sign
+			new_velocity.x = recoil_movement_x * -owner_node.facing_sign
 		
 		InternalPhase.EXECUTING:
 			if _attack_executor and _current_profile:
@@ -108,7 +108,7 @@ func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHan
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_attack_outcome(result: ContactResult):
-	if result.attacker_outcome == ContactResult.AttackerOutcome.ATTACK_BLOCKED:
+	if result.attacker_outcome == ContactResult.AttackerOutcome.ATTACK_BLOCKED or result.attacker_outcome == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
 		if _current_phase == InternalPhase.EXECUTING:
 			_attack_executor.stop()
 			_current_phase = InternalPhase.RECOIL
