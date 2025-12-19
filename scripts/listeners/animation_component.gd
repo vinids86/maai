@@ -4,12 +4,10 @@ extends Node
 @export var flash_duration: float = 0.30
 
 var spine_sprite: SpineSprite
-# Alterado de StateMachine para Node para aceitar tanto StateMachine quanto SimpleStateMachine
 var state_machine: Node 
 var actor: Node
 
-func setup(p_state_machine: StateMachine, p_spine_sprite: SpineSprite, p_simple_state_machine: SimpleStateMachine = null):
-	# Lógica de prioridade: Usa a StateMachine padrão se existir, senão tenta a SimpleStateMachine
+func setup(p_state_machine: StateMachine, p_spine_sprite: SpineSprite, p_simple_state_machine: BaseSimpleStateMachine = null):
 	if p_state_machine:
 		state_machine = p_state_machine
 	elif p_simple_state_machine:

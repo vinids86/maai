@@ -7,10 +7,10 @@
 [ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
 [ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
 [ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
-[ext_resource type="Script" uid="uid://rl2jebk5cpgg" path="res://scripts/platform/simple_state_machine.gd" id="6_dct62"]
 [ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
 [ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="8_dct62"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
+[ext_resource type="Script" uid="uid://bthf74x16lurg" path="res://scripts/platform/goomba_state_machine.gd" id="9_a8aot"]
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="9_ir8sv"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
 [ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
@@ -113,7 +113,8 @@ position = Vector2(0, -38)
 shape = SubResource("CircleShape2D_ikhq6")
 
 [node name="SimpleStateMachine" type="Node" parent="."]
-script = ExtResource("6_dct62")
+script = ExtResource("9_a8aot")
+initial_state_key = "SimplePatrolState"
 metadata/_custom_type_script = "uid://rl2jebk5cpgg"
 
 [node name="SimplePatrolState" type="Node" parent="SimpleStateMachine"]
@@ -126,11 +127,16 @@ metadata/_custom_type_script = "uid://nkr7lri0t1dn"
 
 [node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
 script = ExtResource("12_wfdv6")
+stagger_duration = null
+friction = null
 audio = ExtResource("13_skhkn")
 metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
 
 [node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
 script = ExtResource("14_ir8sv")
+recoil_duration = null
+recoil_speed = null
+friction = null
 metadata/_custom_type_script = "uid://7cvdf53tkds2"
 
 [node name="AnimationComponent" type="Node" parent="."]

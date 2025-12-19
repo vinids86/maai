@@ -2,7 +2,7 @@ class_name AudioComponent
 extends Node
 
 @export var e_state_machine: StateMachine
-@export var e_simple_state_machine: SimpleStateMachine
+@export var e_simple_state_machine: BaseSimpleStateMachine
 @export var footstep_sfx: AudioStream
 
 func _ready():

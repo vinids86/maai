@@ -1,10 +1,10 @@
-class_name SimpleStateMachine
+class_name BaseSimpleStateMachine
 extends Node
 
 signal phase_changed(phase_data: Dictionary)
 signal transitioned(from_state: SimpleState, to_state: SimpleState)
 
-@export var initial_state_key: String = "SimplePatrolState"
+@export var initial_state_key: String = ""
 
 var states: Dictionary = {}
 var current_state: SimpleState
@@ -19,8 +19,8 @@ func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: Sur
 	surface_contact_component = p_surface_contact_comp
 	wall_detector = p_wall_detector
 	
-	assert(owner_node != null, "SimpleStateMachine: owner_node não pode ser nulo.")
-	assert(physics_component != null, "SimpleStateMachine: physics_component não pode ser nulo.")
+	assert(owner_node != null, "BaseSimpleStateMachine: owner_node não pode ser nulo.")
+	assert(physics_component != null, "BaseSimpleStateMachine: physics_component não pode ser nulo.")
 
 	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
 
@@ -29,11 +29,14 @@ func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: Sur
 			states[child.name] = child
 			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
 	
-	if states.has(initial_state_key):
+	_start_initial_state()
+
+func _start_initial_state():
+	if not initial_state_key.is_empty() and states.has(initial_state_key):
 		current_state = states[initial_state_key]
 		current_state.enter({})
-	else:
-		push_error("SimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
+	elif not initial_state_key.is_empty():
+		push_error("BaseSimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
 
 func process_physics(delta: float) -> Vector2:
 	if not current_state:
@@ -52,23 +55,14 @@ func _on_impact_resolved(result: ContactResult):
 			current_state.handle_attack_outcome(result)
 
 func on_current_state_finished(reason: Dictionary = {}):
-	var outcome = reason.get("outcome")
-	
-	if outcome == "ATTACK_CONNECTED":
-		transition_to("SimpleRecoilState", reason)
-		return
-	
-	if outcome == "HIT":
-		var knockback = reason.get("knockback_vector", Vector2.ZERO)
-		transition_to("SimpleStaggerState", {"knockback_vector": knockback})
-		return
+	_decide_next_state(reason)
 
-	if states.has(initial_state_key):
-		transition_to(initial_state_key)
+func _decide_next_state(_reason: Dictionary):
+	pass
 
 func transition_to(new_state_key: String, args: Dictionary = {}):
 	if not states.has(new_state_key):
-		push_error("SimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
+		push_error("BaseSimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
 		return
 
 	var new_state = states[new_state_key]

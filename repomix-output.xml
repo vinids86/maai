@@ -106,6 +106,7 @@ scripts/platform/simple_death_state.gd
 scripts/platform/simple_enemy.gd
 scripts/platform/simple_enemy.tscn
 scripts/platform/simple_patrol_state.gd
+scripts/platform/simple_recoil_state.gd
 scripts/platform/simple_stagger_state.gd
 scripts/platform/simple_state_machine.gd
 scripts/platform/simple_state.gd
@@ -1319,6 +1320,47 @@ func _flip_owner():
 		owner_node.set_facing_direction(_direction)
 </file>
 
+<file path="scripts/platform/simple_recoil_state.gd">
+class_name SimpleRecoilState
+extends SimpleState
+
+@export var recoil_duration: float = 0.4
+@export var recoil_speed: float = 300.0
+@export var friction: float = 1000.0
+
+var _timer: float = 0.0
+var _current_velocity: Vector2 = Vector2.ZERO
+
+func enter(args: Dictionary = {}):
+	owner_node.set_hitbox_enabled(false)
+	
+	var target_pos = args.get("target_position", Vector2.ZERO)
+	var my_pos = owner_node.global_position
+	
+	var direction = sign(my_pos.x - target_pos.x)
+	if direction == 0:
+		direction = -owner_node.facing_sign
+		
+	_current_velocity = Vector2(direction * recoil_speed, -150.0)
+	_timer = recoil_duration
+
+func exit():
+	owner_node.set_hitbox_enabled(true)
+
+func process_physics(delta: float) -> Vector2:
+	_timer -= delta
+	if _timer <= 0.0:
+		state_machine.on_current_state_finished()
+		return Vector2.ZERO
+
+	if not owner_node.is_on_floor():
+		_current_velocity.y += 980.0 * delta
+	
+	_current_velocity.x = move_toward(_current_velocity.x, 0.0, friction * delta)
+	
+	return _current_velocity
+</file>
+
 <file path="scripts/platform/simple_stagger_state.gd">
 class_name SimpleStaggerState
 extends SimpleState
@@ -2132,86 +2174,6 @@ func set_hitbox_enabled(is_enabled: bool) -> void:
 	hitbox.set_deferred("monitoring", is_enabled)
 </file>
 
-<file path="scripts/platform/simple_state_machine.gd">
-class_name SimpleStateMachine
-extends Node
-
-signal phase_changed(phase_data: Dictionary)
-signal transitioned(from_state: SimpleState, to_state: SimpleState)
-
-@export var initial_state_key: String = "SimplePatrolState"
-
-var states: Dictionary = {}
-var current_state: SimpleState
-var owner_node: Node
-var physics_component: Node
-var wall_detector: WallDetectorComponent
-var surface_contact_component: SurfaceContactComponent 
-
-func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
-	owner_node = p_owner_node
-	physics_component = p_physics_comp
-	surface_contact_component = p_surface_contact_comp
-	wall_detector = p_wall_detector
-	
-	assert(owner_node != null, "SimpleStateMachine: owner_node não pode ser nulo.")
-	assert(physics_component != null, "SimpleStateMachine: physics_component não pode ser nulo.")
-
-	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
-
-	for child in get_children():
-		if child is SimpleState:
-			states[child.name] = child
-			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
-	
-	if states.has(initial_state_key):
-		current_state = states[initial_state_key]
-		current_state.enter({})
-	else:
-		push_error("SimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
-
-func process_physics(delta: float) -> Vector2:
-	if not current_state:
-		return Vector2.ZERO
-	return current_state.process_physics(delta)
-
-func emit_phase_change(data: Dictionary):
-	emit_signal("phase_changed", data)
-	
-func get_current_state() -> SimpleState:
-	return current_state
-
-func _on_impact_resolved(result: ContactResult):
-	if result.attacker_node == owner_node:
-		pass
-
-func on_current_state_finished(reason: Dictionary = {}):
-	var outcome = reason.get("outcome")
-	
-	if outcome == "HIT":
-		var knockback = reason.get("knockback_vector", Vector2.ZERO)
-		transition_to("SimpleStaggerState", {"knockback_vector": knockback})
-		return
-
-	if states.has(initial_state_key):
-		transition_to(initial_state_key)
-
-func transition_to(new_state_key: String, args: Dictionary = {}):
-	if not states.has(new_state_key):
-		push_error("SimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
-		return
-
-	var new_state = states[new_state_key]
-	var previous_state = current_state
-	
-	if previous_state:
-		previous_state.exit()
-
-	current_state = new_state
-	current_state.enter(args)
-	emit_signal("transitioned", previous_state, current_state)
-</file>
-
 <file path="scripts/profiles/parried_profile.gd">
 class_name ParriedProfile
 extends Resource
@@ -2947,6 +2909,91 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 		emit_signal("impact_resolved", result_for_attacker)
 </file>
 
+<file path="scripts/platform/simple_state_machine.gd">
+class_name SimpleStateMachine
+extends Node
+
+signal phase_changed(phase_data: Dictionary)
+signal transitioned(from_state: SimpleState, to_state: SimpleState)
+
+@export var initial_state_key: String = "SimplePatrolState"
+
+var states: Dictionary = {}
+var current_state: SimpleState
+var owner_node: Node
+var physics_component: Node
+var wall_detector: WallDetectorComponent
+var surface_contact_component: SurfaceContactComponent 
+
+func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+	owner_node = p_owner_node
+	physics_component = p_physics_comp
+	surface_contact_component = p_surface_contact_comp
+	wall_detector = p_wall_detector
+	
+	assert(owner_node != null, "SimpleStateMachine: owner_node não pode ser nulo.")
+	assert(physics_component != null, "SimpleStateMachine: physics_component não pode ser nulo.")
+
+	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+
+	for child in get_children():
+		if child is SimpleState:
+			states[child.name] = child
+			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
+	
+	if states.has(initial_state_key):
+		current_state = states[initial_state_key]
+		current_state.enter({})
+	else:
+		push_error("SimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
+
+func process_physics(delta: float) -> Vector2:
+	if not current_state:
+		return Vector2.ZERO
+	return current_state.process_physics(delta)
+
+func emit_phase_change(data: Dictionary):
+	emit_signal("phase_changed", data)
+	
+func get_current_state() -> SimpleState:
+	return current_state
+
+func _on_impact_resolved(result: ContactResult):
+	if result.attacker_node == owner_node:
+		if current_state:
+			current_state.handle_attack_outcome(result)
+
+func on_current_state_finished(reason: Dictionary = {}):
+	var outcome = reason.get("outcome")
+	
+	if outcome == "ATTACK_CONNECTED":
+		transition_to("SimpleRecoilState", reason)
+		return
+	
+	if outcome == "HIT":
+		var knockback = reason.get("knockback_vector", Vector2.ZERO)
+		transition_to("SimpleStaggerState", {"knockback_vector": knockback})
+		return
+
+	if states.has(initial_state_key):
+		transition_to(initial_state_key)
+
+func transition_to(new_state_key: String, args: Dictionary = {}):
+	if not states.has(new_state_key):
+		push_error("SimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
+		return
+
+	var new_state = states[new_state_key]
+	var previous_state = current_state
+	
+	if previous_state:
+		previous_state.exit()
+
+	current_state = new_state
+	current_state.enter(args)
+	emit_signal("transitioned", previous_state, current_state)
+</file>
+
 <file path="scripts/profiles/dodge_profile.gd">
 class_name DodgeProfile
 extends Resource
@@ -3534,60 +3581,6 @@ func _play_sound_instance(sound_stream: AudioStream):
 	player.finished.connect(player.queue_free)
 	add_child(player)
 	player.play()
-</file>
-
-<file path="scripts/platform/simple_state.gd">
-class_name SimpleState
-extends Node
-
-var state_machine: SimpleStateMachine
-var owner_node: Node
-var physics_component: Node
-var surface_contact_component: SurfaceContactComponent
-var wall_detector: WallDetectorComponent
-
-func initialize(sm: SimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
-	self.state_machine = sm
-	self.owner_node = owner
-	self.physics_component = physics_comp
-	self.surface_contact_component = surface_contact_comp
-	self.wall_detector = p_wall_detector
-
-func enter(_args: Dictionary = {}):
-	pass
-
-func exit():
-	pass
-
-func process_physics(_delta: float) -> Vector2:
-	return Vector2.ZERO
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	var result_for_attacker = ContactResult.new()
-	result_for_attacker.attacker_node = context.attacker_node
-	result_for_attacker.defender_node = context.defender_node
-	result_for_attacker.attack_profile = context.attack_profile
-
-	if context.defender_health_comp:
-		context.defender_health_comp.take_damage(context.attack_profile.damage)
-		
-		if not context.defender_health_comp.is_dead():
-			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
-			var push_force = 350.0 # Valor base, idealmente viria do AttackProfile mas mantemos simples aqui
-			
-			# Se o AttackProfile tiver dados de knockback, podemos usar (opcional)
-			# if context.attack_profile.knockback_vector != Vector2.ZERO: ...
-			
-			var knockback = direction * push_force
-			knockback.y = -100.0 # Um leve pulinho para tirar do chão
-			
-			var reason = { "outcome": "HIT", "knockback_vector": knockback }
-			state_machine.on_current_state_finished(reason)
-
-	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
-	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY
-
-	return result_for_attacker
 </file>
 
 <file path="scripts/profiles/dash_profile.gd">
@@ -4333,41 +4326,71 @@ func _on_DecayTimer_timeout() -> void:
 		_is_decaying = true
 </file>
 
-<file path="scripts/core/contact_result.gd">
-class_name ContactResult
-extends Resource
+<file path="scripts/platform/simple_state.gd">
+class_name SimpleState
+extends Node
 
-enum DefenderOutcome {
-	NONE,
-	HIT,
-	POISE_BROKEN,
-	PARRY_SUCCESS,
-	BLOCKED,
-	GUARD_BROKEN,
-	DODGED,
-	FINISHER_HIT,
-	DODGE_COUNTER_READY,
-}
-enum AttackerOutcome {
-	NONE,
-	PARRIED,
-	DEFLECTED,
-	GUARD_BREAK_SUCCESS,
-	TRADE_LOST,
-	FINISHER_SUCCESS,
-	ATTACK_BLOCKED,
-	DODGE_COUNTERED_VULNERABLE,
-	HIT_SUCCESS_SIMPLE_ENEMY,
-}
+var state_machine: SimpleStateMachine
+var owner_node: Node
+var physics_component: Node
+var surface_contact_component: SurfaceContactComponent
+var wall_detector: WallDetectorComponent
 
-var attacker_node: Node
-var defender_node: Node
-var attack_profile: AttackProfile
-var knockback_vector: Vector2
-var counter_profile: CounterExecutionProfile
+func initialize(sm: SimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+	self.state_machine = sm
+	self.owner_node = owner
+	self.physics_component = physics_comp
+	self.surface_contact_component = surface_contact_comp
+	self.wall_detector = p_wall_detector
 
-var defender_outcome: DefenderOutcome
-var attacker_outcome: AttackerOutcome = AttackerOutcome.NONE
+func enter(_args: Dictionary = {}):
+	pass
+
+func exit():
+	pass
+
+func process_physics(_delta: float) -> Vector2:
+	return Vector2.ZERO
+
+func handle_attack_outcome(result: ContactResult):
+	print("result.attacker_outcome: ", result.attacker_outcome)
+	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT:
+		var target_pos = Vector2.ZERO
+		if is_instance_valid(result.defender_node):
+			target_pos = result.defender_node.global_position
+			
+		var reason = {
+			"outcome": "ATTACK_CONNECTED",
+			"target_position": target_pos
+		}
+		state_machine.on_current_state_finished(reason)
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var result_for_attacker = ContactResult.new()
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
+
+	if context.defender_health_comp:
+		context.defender_health_comp.take_damage(context.attack_profile.damage)
+		
+		if not context.defender_health_comp.is_dead():
+			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
+			var push_force = 350.0 # Valor base, idealmente viria do AttackProfile mas mantemos simples aqui
+			
+			# Se o AttackProfile tiver dados de knockback, podemos usar (opcional)
+			# if context.attack_profile.knockback_vector != Vector2.ZERO: ...
+			
+			var knockback = direction * push_force
+			knockback.y = -100.0 # Um leve pulinho para tirar do chão
+			
+			var reason = { "outcome": "HIT", "knockback_vector": knockback }
+			state_machine.on_current_state_finished(reason)
+
+	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
+	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY
+
+	return result_for_attacker
 </file>
 
 <file path="scripts/states/block_stun_state.gd">
@@ -4791,6 +4814,44 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 		HitStop.apply(duration, hitstop_slow_scale)
 </file>
 
+<file path="scripts/core/contact_result.gd">
+class_name ContactResult
+extends Resource
+
+enum DefenderOutcome {
+	NONE,
+	HIT,
+	POISE_BROKEN,
+	PARRY_SUCCESS,
+	BLOCKED,
+	GUARD_BROKEN,
+	DODGED,
+	FINISHER_HIT,
+	DODGE_COUNTER_READY,
+}
+enum AttackerOutcome {
+	NONE,
+	PARRIED,
+	DEFLECTED,
+	GUARD_BREAK_SUCCESS,
+	TRADE_LOST,
+	FINISHER_SUCCESS,
+	ATTACK_BLOCKED,
+	DODGE_COUNTERED_VULNERABLE,
+	HIT_SUCCESS_SIMPLE_ENEMY,
+	SIMPLE_ENEMY_HIT,
+}
+
+var attacker_node: Node
+var defender_node: Node
+var attack_profile: AttackProfile
+var knockback_vector: Vector2
+var counter_profile: CounterExecutionProfile
+
+var defender_outcome: DefenderOutcome
+var attacker_outcome: AttackerOutcome = AttackerOutcome.NONE
+</file>
+
 <file path="scripts/listeners/animation_component.gd">
 class_name AnimationComponent
 extends Node
@@ -4868,191 +4929,6 @@ func _on_phase_changed(phase_data: Dictionary):
 
 func _should_animation_loop(anim_name: StringName) -> bool:
 	return anim_name in [&"idle", &"walk", &"run"]
-</file>
-
-<file path="scripts/platform/simple_enemy.tscn">
-[gd_scene load_steps=30 format=3 uid="uid://def1lykxj4wss"]
-
-[ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
-[ext_resource type="Script" uid="uid://m6k761rpsw2b" path="res://scripts/profiles/locomotion_profile.gd" id="3_yyhko"]
-[ext_resource type="SpineAtlasResource" uid="uid://cyq1lt0qmhd5o" path="res://assets/enemy/platform/alien-pma.atlas" id="4_pm6ks"]
-[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
-[ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
-[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
-[ext_resource type="Script" uid="uid://rl2jebk5cpgg" path="res://scripts/platform/simple_state_machine.gd" id="6_dct62"]
-[ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
-[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="8_dct62"]
-[ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
-[ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="9_ir8sv"]
-[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
-[ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
-[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
-[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
-[ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
-[ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
-[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
-[ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
-[ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
-
-[sub_resource type="Resource" id="Resource_tvabn"]
-script = ExtResource("2_5vwvj")
-startup_duration = 0.3
-active_duration = 0.1
-block_recoil_duration = 0.55
-recovery_duration = 0.45
-link_duration = 0.6
-animation_name = &""
-hitbox_size = Vector2(160, 140)
-hitbox_position = Vector2(100, -30)
-damage = 10.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 0
-stamina_damage = 10.0
-poise_impact_contribution = 10.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, 0)
-defender_knockback_on_parry = 120.0
-parry_interaction = 0
-unparryable_type = 0
-movement_type = 0
-startup_movement_velocity = Vector2(0, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_omdno"]
-script = ExtResource("3_yyhko")
-speed = 300.0
-run_speed = 500.0
-acceleration = 2000.0
-friction = 1500.0
-poise_shield_contribution = 30.0
-idle_animation = &""
-walk_animation = &"run"
-run_animation = &""
-metadata/_custom_type_script = "uid://m6k761rpsw2b"
-
-[sub_resource type="Resource" id="Resource_2wo0y"]
-script = ExtResource("4_yyhko")
-animation_name = &"death"
-sfx = ExtResource("5_pm6ks")
-metadata/_custom_type_script = "uid://b761fppfyuqaa"
-
-[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_fik6p"]
-atlas_res = ExtResource("4_pm6ks")
-skeleton_file_res = ExtResource("5_2wo0y")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_wfdv6"]
-shader = ExtResource("8_dct62")
-shader_parameter/flash_color = Color(1, 1, 1, 1)
-shader_parameter/flash_modifier = 0.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
-radius = 38.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
-radius = 38.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
-radius = 38.0
-
-[node name="SimpleEnemy" type="CharacterBody2D"]
-collision_layer = 64
-script = ExtResource("1_m6jwr")
-attack_profile = SubResource("Resource_tvabn")
-locomotion_profile = SubResource("Resource_omdno")
-death_profile = SubResource("Resource_2wo0y")
-
-[node name="SpineSprite" type="SpineSprite" parent="."]
-skeleton_data_res = SubResource("SpineSkeletonDataResource_fik6p")
-normal_material = SubResource("ShaderMaterial_wfdv6")
-preview_skin = "Default"
-preview_animation = "run"
-preview_frame = false
-preview_time = 0.0
-scale = Vector2(0.2, 0.2)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-visible = false
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_ikhq6")
-
-[node name="SimpleStateMachine" type="Node" parent="."]
-script = ExtResource("6_dct62")
-metadata/_custom_type_script = "uid://rl2jebk5cpgg"
-
-[node name="SimplePatrolState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("7_wfdv6")
-metadata/_custom_type_script = "uid://j6611u6es7ei"
-
-[node name="SimpleDeathState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("10_pm6ks")
-metadata/_custom_type_script = "uid://nkr7lri0t1dn"
-
-[node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("12_wfdv6")
-audio = ExtResource("13_skhkn")
-metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
-
-[node name="AnimationComponent" type="Node" parent="."]
-script = ExtResource("8_skhkn")
-metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
-
-[node name="AudioComponent" type="Node" parent="." node_paths=PackedStringArray("e_simple_state_machine")]
-script = ExtResource("12_2wo0y")
-e_simple_state_machine = NodePath("../SimpleStateMachine")
-metadata/_custom_type_script = "uid://nl1a7e12lrfa"
-
-[node name="HealthComponent" type="Node" parent="."]
-script = ExtResource("9_ir8sv")
-max_health = 5.0
-metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
-
-[node name="PhysicsComponent" type="Node" parent="."]
-script = ExtResource("10_a8aot")
-metadata/_custom_type_script = "uid://bjvp3kd6bmkho"
-
-[node name="SurfaceContactComponent" type="Node" parent="."]
-script = ExtResource("11_kttm4")
-metadata/_custom_type_script = "uid://dhdu4hixec0wa"
-
-[node name="WallDetectorComponent" type="Node2D" parent="."]
-script = ExtResource("12_lh40x")
-metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
-
-[node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
-position = Vector2(0, -38)
-target_position = Vector2(45, 0)
-
-[node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
-position = Vector2(40, 0)
-target_position = Vector2(0, 21)
-
-[node name="Hitbox" type="Area2D" parent="."]
-collision_layer = 16
-collision_mask = 32
-script = ExtResource("13_r4g4d")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_yo2nc")
-
-[node name="Hurtbox" type="Area2D" parent="."]
-visible = false
-collision_layer = 8
-collision_mask = 4
-script = ExtResource("14_yf6nf")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_3xv3x")
 </file>
 
 <file path="scripts/states/locomotion_state.gd">
@@ -5177,6 +5053,196 @@ func _change_phase(new_phase: Phases):
 	}
 	
 	state_machine.emit_phase_change(phase_data)
+</file>
+
+<file path="scripts/platform/simple_enemy.tscn">
+[gd_scene load_steps=31 format=3 uid="uid://def1lykxj4wss"]
+
+[ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
+[ext_resource type="Script" uid="uid://m6k761rpsw2b" path="res://scripts/profiles/locomotion_profile.gd" id="3_yyhko"]
+[ext_resource type="SpineAtlasResource" uid="uid://cyq1lt0qmhd5o" path="res://assets/enemy/platform/alien-pma.atlas" id="4_pm6ks"]
+[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
+[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
+[ext_resource type="Script" uid="uid://rl2jebk5cpgg" path="res://scripts/platform/simple_state_machine.gd" id="6_dct62"]
+[ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
+[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="8_dct62"]
+[ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
+[ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="9_ir8sv"]
+[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
+[ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
+[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
+[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
+[ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
+[ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
+[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
+[ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
+[ext_resource type="Script" uid="uid://7cvdf53tkds2" path="res://scripts/platform/simple_recoil_state.gd" id="14_ir8sv"]
+[ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
+
+[sub_resource type="Resource" id="Resource_tvabn"]
+script = ExtResource("2_5vwvj")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.45
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 10.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(400, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_omdno"]
+script = ExtResource("3_yyhko")
+speed = 300.0
+run_speed = 500.0
+acceleration = 2000.0
+friction = 1500.0
+poise_shield_contribution = 30.0
+idle_animation = &""
+walk_animation = &"run"
+run_animation = &""
+metadata/_custom_type_script = "uid://m6k761rpsw2b"
+
+[sub_resource type="Resource" id="Resource_2wo0y"]
+script = ExtResource("4_yyhko")
+animation_name = &"death"
+sfx = ExtResource("5_pm6ks")
+metadata/_custom_type_script = "uid://b761fppfyuqaa"
+
+[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_fik6p"]
+atlas_res = ExtResource("4_pm6ks")
+skeleton_file_res = ExtResource("5_2wo0y")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wfdv6"]
+shader = ExtResource("8_dct62")
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_modifier = 0.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
+radius = 38.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
+radius = 38.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
+radius = 38.0
+
+[node name="SimpleEnemy" type="CharacterBody2D"]
+collision_layer = 64
+script = ExtResource("1_m6jwr")
+attack_profile = SubResource("Resource_tvabn")
+locomotion_profile = SubResource("Resource_omdno")
+death_profile = SubResource("Resource_2wo0y")
+
+[node name="SpineSprite" type="SpineSprite" parent="."]
+skeleton_data_res = SubResource("SpineSkeletonDataResource_fik6p")
+normal_material = SubResource("ShaderMaterial_wfdv6")
+preview_skin = "Default"
+preview_animation = "run"
+preview_frame = false
+preview_time = 0.0
+scale = Vector2(0.2, 0.2)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+visible = false
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_ikhq6")
+
+[node name="SimpleStateMachine" type="Node" parent="."]
+script = ExtResource("6_dct62")
+metadata/_custom_type_script = "uid://rl2jebk5cpgg"
+
+[node name="SimplePatrolState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("7_wfdv6")
+metadata/_custom_type_script = "uid://j6611u6es7ei"
+
+[node name="SimpleDeathState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("10_pm6ks")
+metadata/_custom_type_script = "uid://nkr7lri0t1dn"
+
+[node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("12_wfdv6")
+audio = ExtResource("13_skhkn")
+metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
+
+[node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("14_ir8sv")
+metadata/_custom_type_script = "uid://7cvdf53tkds2"
+
+[node name="AnimationComponent" type="Node" parent="."]
+script = ExtResource("8_skhkn")
+metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
+
+[node name="AudioComponent" type="Node" parent="." node_paths=PackedStringArray("e_simple_state_machine")]
+script = ExtResource("12_2wo0y")
+e_simple_state_machine = NodePath("../SimpleStateMachine")
+metadata/_custom_type_script = "uid://nl1a7e12lrfa"
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("9_ir8sv")
+max_health = 5.0
+metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
+
+[node name="PhysicsComponent" type="Node" parent="."]
+script = ExtResource("10_a8aot")
+metadata/_custom_type_script = "uid://bjvp3kd6bmkho"
+
+[node name="SurfaceContactComponent" type="Node" parent="."]
+script = ExtResource("11_kttm4")
+metadata/_custom_type_script = "uid://dhdu4hixec0wa"
+
+[node name="WallDetectorComponent" type="Node2D" parent="."]
+script = ExtResource("12_lh40x")
+metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
+
+[node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
+position = Vector2(0, -38)
+target_position = Vector2(45, 0)
+
+[node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
+position = Vector2(40, 0)
+target_position = Vector2(0, 21)
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 32
+script = ExtResource("13_r4g4d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_yo2nc")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+visible = false
+collision_layer = 8
+collision_mask = 4
+script = ExtResource("14_yf6nf")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_3xv3x")
 </file>
 
 <file path="scripts/states/dodge_state.gd">
@@ -5835,6 +5901,16 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.attacker_node = context.attacker_node
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
+
+	if context.attacker_node is SimpleEnemy:
+		context.defender_health_comp.take_damage(context.attack_profile.damage)
+		
+		var reason = { "outcome": "HIT", "knockback_vector": context.attack_profile.knockback_vector }
+		state_machine.on_current_state_finished(reason)
+		
+		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
+		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT
+		return result_for_attacker
 
 	if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
@@ -7966,7 +8042,7 @@ player = NodePath("PlayerEntity/Player")
 hud = NodePath("CanvasLayer/PlayerHUD")
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(13002, 682)
+position = Vector2(16773, 849)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -7978,9 +8054,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-14.2188, -334.498)
-rotation = 0.450504
-scale = Vector2(1, 1)
+position = Vector2(-22.1055, -332.496)
+rotation = 0.390866
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
 position = Vector2(-6267, 623)

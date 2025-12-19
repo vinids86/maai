@@ -1,13 +1,13 @@
 class_name SimpleState
 extends Node
 
-var state_machine: SimpleStateMachine
+var state_machine: BaseSimpleStateMachine
 var owner_node: Node
 var physics_component: Node
 var surface_contact_component: SurfaceContactComponent
 var wall_detector: WallDetectorComponent
 
-func initialize(sm: SimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+func initialize(sm: BaseSimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
 	self.state_machine = sm
 	self.owner_node = owner
 	self.physics_component = physics_comp
