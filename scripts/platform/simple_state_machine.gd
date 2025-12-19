@@ -48,10 +48,15 @@ func get_current_state() -> SimpleState:
 
 func _on_impact_resolved(result: ContactResult):
 	if result.attacker_node == owner_node:
-		pass
+		if current_state:
+			current_state.handle_attack_outcome(result)
 
 func on_current_state_finished(reason: Dictionary = {}):
 	var outcome = reason.get("outcome")
+	
+	if outcome == "ATTACK_CONNECTED":
+		transition_to("SimpleRecoilState", reason)
+		return
 	
 	if outcome == "HIT":
 		var knockback = reason.get("knockback_vector", Vector2.ZERO)

@@ -23,6 +23,19 @@ func exit():
 func process_physics(_delta: float) -> Vector2:
 	return Vector2.ZERO
 
+func handle_attack_outcome(result: ContactResult):
+	print("result.attacker_outcome: ", result.attacker_outcome)
+	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT:
+		var target_pos = Vector2.ZERO
+		if is_instance_valid(result.defender_node):
+			target_pos = result.defender_node.global_position
+			
+		var reason = {
+			"outcome": "ATTACK_CONNECTED",
+			"target_position": target_pos
+		}
+		state_machine.on_current_state_finished(reason)
+
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
 	result_for_attacker.attacker_node = context.attacker_node

@@ -22,6 +22,7 @@ enum AttackerOutcome {
 	ATTACK_BLOCKED,
 	DODGE_COUNTERED_VULNERABLE,
 	HIT_SUCCESS_SIMPLE_ENEMY,
+	SIMPLE_ENEMY_HIT,
 }
 
 var attacker_node: Node

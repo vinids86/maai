@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://def1lykxj4wss"]
+[gd_scene load_steps=31 format=3 uid="uid://def1lykxj4wss"]
 
 [ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
@@ -20,6 +20,7 @@
 [ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
 [ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
 [ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
+[ext_resource type="Script" uid="uid://7cvdf53tkds2" path="res://scripts/platform/simple_recoil_state.gd" id="14_ir8sv"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
 
 [sub_resource type="Resource" id="Resource_tvabn"]
@@ -127,6 +128,10 @@ metadata/_custom_type_script = "uid://nkr7lri0t1dn"
 script = ExtResource("12_wfdv6")
 audio = ExtResource("13_skhkn")
 metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
+
+[node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("14_ir8sv")
+metadata/_custom_type_script = "uid://7cvdf53tkds2"
 
 [node name="AnimationComponent" type="Node" parent="."]
 script = ExtResource("8_skhkn")

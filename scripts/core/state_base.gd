@@ -75,6 +75,16 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
 
+	if context.attacker_node is SimpleEnemy:
+		context.defender_health_comp.take_damage(context.attack_profile.damage)
+		
+		var reason = { "outcome": "HIT", "knockback_vector": context.attack_profile.knockback_vector }
+		state_machine.on_current_state_finished(reason)
+		
+		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
+		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT
+		return result_for_attacker
+
 	if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
 		var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }

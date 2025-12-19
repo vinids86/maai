@@ -356,6 +356,24 @@ func _on_area_entered(area: Area2D) -> void:
 	ImpactResolver.resolve_contact(hb, self)
 </file>
 
+<file path="scripts/components/input_handler_result.gd">
+class_name InputHandlerResult
+extends RefCounted
+
+enum Status {
+	REJECTED,
+	ACCEPTED,
+	CONSUMED,
+}
+
+var status: Status
+var context: Dictionary
+
+func _init(p_status: Status, p_context: Dictionary = {}):
+	self.status = p_status
+	self.context = p_context
+</file>
+
 <file path="scripts/components/poise_component.gd">
 class_name PoiseComponent
 extends Node
@@ -956,44 +974,6 @@ func heal(amount: float):
 
 func is_dead() -> bool:
 	return _is_dead
-</file>
-
-<file path="scripts/components/input_handler_result.gd">
-class_name InputHandlerResult
-extends RefCounted
-
-enum Status {
-	REJECTED,
-	ACCEPTED,
-	CONSUMED,
-}
-
-var status: Status
-var context: Dictionary
-
-func _init(p_status: Status, p_context: Dictionary = {}):
-	self.status = p_status
-	self.context = p_context
-</file>
-
-<file path="scripts/components/physics_component.gd">
-class_name PhysicsComponent
-extends Node
-
-var owner_node: CharacterBody2D
-
-func _ready():
-	owner_node = get_parent() as CharacterBody2D
-	assert(owner_node != null, "PhysicsComponent deve ser filho de um CharacterBody2D.")
-
-func apply_gravity(current_velocity: Vector2, delta: float) -> Vector2:
-	if owner_node.is_on_floor():
-		return current_velocity
-
-	var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
-	var new_velocity = current_velocity
-	new_velocity.y += gravity * delta
-	return new_velocity
 </file>
 
 <file path="scripts/components/smart_targeting_component.gd">
@@ -1921,6 +1901,24 @@ func apply(duration: float, slow_scale: float = 0.01) -> void:
 		Engine.time_scale = 1.0
 		_active = false
 		_end_time = 0.0
+</file>
+
+<file path="scripts/components/physics_component.gd">
+class_name PhysicsComponent
+extends Node
+
+var owner_node: CharacterBody2D
+
+func _ready():
+	owner_node = get_parent() as CharacterBody2D
+	assert(owner_node != null, "PhysicsComponent deve ser filho de um CharacterBody2D.")
+
+func apply_gravity(current_velocity: Vector2, delta: float) -> Vector2:
+	var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
+	var new_velocity = current_velocity
+	
+	new_velocity.y += gravity * delta
+	return new_velocity
 </file>
 
 <file path="scripts/components/stamina_component.gd">
@@ -2949,39 +2947,6 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 		emit_signal("impact_resolved", result_for_attacker)
 </file>
 
-<file path="scripts/debug/player_debug_hud.gd">
-extends CanvasLayer
-
-@export var actor_to_watch: NodePath
-@onready var label: Label = $Label
-
-var actor_name: String = "ACTOR" 
-
-func _ready():
-	var actor_node = get_node_or_null(actor_to_watch)
-	if not is_instance_valid(actor_node):
-		label.text = "HUD ERRO: Ator nao encontrado."
-		return
-		
-	actor_name = actor_node.name.to_upper()
-		
-	var state_machine = actor_node.get_node("StateMachine")
-	if not is_instance_valid(state_machine):
-		label.text = "HUD ERRO: StateMachine nao encontrada."
-		return
-
-	state_machine.phase_changed.connect(_on_phase_changed)
-
-func _on_phase_changed(data: Dictionary):
-	var state_name = data.get("state_name", "ESTADO_DESCONHECIDO").to_upper()
-	var phase_name = data.get("phase_name", "FASE_DESCONHECIDA").to_upper()
-	
-	var output_text = "%s: %s: %s" % [actor_name, state_name, phase_name]
-	
-	label.text = output_text
-	print(output_text)
-</file>
-
 <file path="scripts/profiles/dodge_profile.gd">
 class_name DodgeProfile
 extends Resource
@@ -3496,6 +3461,39 @@ func spawn_vfx(vfx_name: String, spawn_position: Vector2, direction: Vector2, pa
 	vfx_instance.emitting = true
 	
 	vfx_instance.finished.connect(vfx_instance.queue_free.bind())
+</file>
+
+<file path="scripts/debug/player_debug_hud.gd">
+extends CanvasLayer
+
+@export var actor_to_watch: NodePath
+@onready var label: Label = $Label
+
+var actor_name: String = "ACTOR" 
+
+func _ready():
+	var actor_node = get_node_or_null(actor_to_watch)
+	if not is_instance_valid(actor_node):
+		label.text = "HUD ERRO: Ator nao encontrado."
+		return
+		
+	actor_name = actor_node.name.to_upper()
+		
+	var state_machine = actor_node.get_node("StateMachine")
+	if not is_instance_valid(state_machine):
+		label.text = "HUD ERRO: StateMachine nao encontrada."
+		return
+
+	state_machine.phase_changed.connect(_on_phase_changed)
+
+func _on_phase_changed(data: Dictionary):
+	var state_name = data.get("state_name", "ESTADO_DESCONHECIDO").to_upper()
+	var phase_name = data.get("phase_name", "FASE_DESCONHECIDA").to_upper()
+	
+	var output_text = "%s: %s: %s" % [actor_name, state_name, phase_name]
+	
+	label.text = output_text
+	#print(output_text)
 </file>
 
 <file path="scripts/listeners/audio_component.gd">
@@ -4335,128 +4333,6 @@ func _on_DecayTimer_timeout() -> void:
 		_is_decaying = true
 </file>
 
-<file path="scripts/components/player_feedback_component.gd">
-extends Node
-# PlayerFeedbackComponent.gd
-# Reage ao sinal ImpactResolver.impact_resolved(ContactResult)
-# e aplica trauma na Camera2D de acordo com o outcome.
-
-@onready var camera: Node = get_parent().get_node_or_null("Camera2D")
-
-@export_group("Hit Stop")
-@export var hitstop_on_hit: float = 0.06
-@export var hitstop_on_parry_or_break: float = 0.10
-@export var hitstop_slow_scale: float = 0.01
-
-@export_group("Defaults")
-@export var fallback_trauma: float = 0.25
-
-@export_group("Defender Outcomes (quando o Player DEFENDE)")
-@export var trauma_def_hit: float = 0.30
-@export var trauma_def_poise_broken: float = 0.55
-@export var trauma_def_parry_success: float = 0.85
-@export var trauma_def_blocked: float = 0.20
-@export var trauma_def_guard_broken: float = 0.60
-@export var trauma_def_dodged: float = 0.0
-@export var trauma_def_finisher_hit: float = 0.70
-@export var trauma_def_counter_success: float = 0.60
-
-@export_group("Attacker Outcomes (quando o Player ATACA)")
-@export var trauma_att_none: float = 0.20
-@export var trauma_att_parried: float = 0.35
-@export var trauma_att_deflected: float = 0.30
-@export var trauma_att_guard_break_success: float = 0.60
-@export var trauma_att_trade_lost: float = 0.25
-@export var trauma_att_finisher_success: float = 0.70
-@export var trauma_att_countered: float = 0.55
-
-func _ready() -> void:
-	if ImpactResolver:
-		ImpactResolver.impact_resolved.connect(_on_impact_resolved)
-
-func _on_impact_resolved(contact: ContactResult) -> void:
-	if camera == null:
-		camera = get_tree().get_first_node_in_group("MainCamera")
-
-	if camera == null or not camera.has_method("add_trauma"):
-		return
-	if contact == null:
-		return
-
-	var me := get_parent()
-	var i_am_defender := contact.defender_node == me
-	var i_am_attacker := contact.attacker_node == me
-	if not (i_am_defender or i_am_attacker):
-		return
-
-	var amount := fallback_trauma
-
-	if i_am_defender:
-		match contact.defender_outcome:
-			ContactResult.DefenderOutcome.HIT:
-				amount = trauma_def_hit
-			ContactResult.DefenderOutcome.POISE_BROKEN:
-				amount = trauma_def_poise_broken
-			ContactResult.DefenderOutcome.PARRY_SUCCESS:
-				amount = trauma_def_parry_success
-			ContactResult.DefenderOutcome.BLOCKED:
-				amount = trauma_def_blocked
-			ContactResult.DefenderOutcome.GUARD_BROKEN:
-				amount = trauma_def_guard_broken
-			ContactResult.DefenderOutcome.DODGED:
-				amount = trauma_def_dodged
-			ContactResult.DefenderOutcome.FINISHER_HIT:
-				amount = trauma_def_finisher_hit
-			_:
-				amount = fallback_trauma
-	elif i_am_attacker:
-		match contact.attacker_outcome:
-			ContactResult.AttackerOutcome.NONE:
-				amount = trauma_att_none
-			ContactResult.AttackerOutcome.PARRIED:
-				amount = trauma_att_parried
-			ContactResult.AttackerOutcome.DEFLECTED:
-				amount = trauma_att_deflected
-			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
-				amount = trauma_att_guard_break_success
-			ContactResult.AttackerOutcome.TRADE_LOST:
-				amount = trauma_att_trade_lost
-			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
-				amount = trauma_att_finisher_success
-			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
-				amount = trauma_att_guard_break_success
-			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
-				amount = trauma_att_guard_break_success
-			_:
-				amount = fallback_trauma
-
-	camera.call("add_trauma", amount)
-	
-	var duration := 0.0
-	if i_am_defender:
-		match contact.defender_outcome:
-			ContactResult.DefenderOutcome.GUARD_BROKEN:
-				duration = hitstop_on_parry_or_break
-			ContactResult.DefenderOutcome.BLOCKED:
-				duration = 0.1
-			_:
-				duration = hitstop_on_hit
-	elif i_am_attacker:
-		match contact.attacker_outcome:
-			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS, \
-			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
-				duration = hitstop_on_parry_or_break
-			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
-				duration = 0.04
-			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
-				duration = 0.08
-			_:
-				duration = hitstop_on_hit
-
-	if duration > 0.0:
-		HitStop.apply(duration, hitstop_slow_scale)
-</file>
-
 <file path="scripts/core/contact_result.gd">
 class_name ContactResult
 extends Resource
@@ -4793,6 +4669,128 @@ func allow_reentry() -> bool:
 	return true
 </file>
 
+<file path="scripts/components/player_feedback_component.gd">
+extends Node
+# PlayerFeedbackComponent.gd
+# Reage ao sinal ImpactResolver.impact_resolved(ContactResult)
+# e aplica trauma na Camera2D de acordo com o outcome.
+
+@onready var camera: Node = get_parent().get_node_or_null("Camera2D")
+
+@export_group("Hit Stop")
+@export var hitstop_on_hit: float = 0.06
+@export var hitstop_on_parry_or_break: float = 0.10
+@export var hitstop_slow_scale: float = 0.01
+
+@export_group("Defaults")
+@export var fallback_trauma: float = 0.25
+
+@export_group("Defender Outcomes (quando o Player DEFENDE)")
+@export var trauma_def_hit: float = 0.30
+@export var trauma_def_poise_broken: float = 0.55
+@export var trauma_def_parry_success: float = 0.85
+@export var trauma_def_blocked: float = 0.20
+@export var trauma_def_guard_broken: float = 0.60
+@export var trauma_def_dodged: float = 0.0
+@export var trauma_def_finisher_hit: float = 0.70
+@export var trauma_def_counter_success: float = 0.60
+
+@export_group("Attacker Outcomes (quando o Player ATACA)")
+@export var trauma_att_none: float = 0.20
+@export var trauma_att_parried: float = 0.35
+@export var trauma_att_deflected: float = 0.30
+@export var trauma_att_guard_break_success: float = 0.60
+@export var trauma_att_trade_lost: float = 0.25
+@export var trauma_att_finisher_success: float = 0.70
+@export var trauma_att_countered: float = 0.55
+
+func _ready() -> void:
+	if ImpactResolver:
+		ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+
+func _on_impact_resolved(contact: ContactResult) -> void:
+	if camera == null:
+		camera = get_tree().get_first_node_in_group("MainCamera")
+
+	if camera == null or not camera.has_method("add_trauma"):
+		return
+	if contact == null:
+		return
+
+	var me := get_parent()
+	var i_am_defender := contact.defender_node == me
+	var i_am_attacker := contact.attacker_node == me
+	if not (i_am_defender or i_am_attacker):
+		return
+
+	var amount := fallback_trauma
+
+	if i_am_defender:
+		match contact.defender_outcome:
+			ContactResult.DefenderOutcome.HIT:
+				amount = trauma_def_hit
+			ContactResult.DefenderOutcome.POISE_BROKEN:
+				amount = trauma_def_poise_broken
+			ContactResult.DefenderOutcome.PARRY_SUCCESS:
+				amount = trauma_def_parry_success
+			ContactResult.DefenderOutcome.BLOCKED:
+				amount = trauma_def_blocked
+			ContactResult.DefenderOutcome.GUARD_BROKEN:
+				amount = trauma_def_guard_broken
+			ContactResult.DefenderOutcome.DODGED:
+				amount = trauma_def_dodged
+			ContactResult.DefenderOutcome.FINISHER_HIT:
+				amount = trauma_def_finisher_hit
+			_:
+				amount = fallback_trauma
+	elif i_am_attacker:
+		match contact.attacker_outcome:
+			ContactResult.AttackerOutcome.NONE:
+				amount = trauma_att_none
+			ContactResult.AttackerOutcome.PARRIED:
+				amount = trauma_att_parried
+			ContactResult.AttackerOutcome.DEFLECTED:
+				amount = trauma_att_deflected
+			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
+				amount = trauma_att_guard_break_success
+			ContactResult.AttackerOutcome.TRADE_LOST:
+				amount = trauma_att_trade_lost
+			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
+				amount = trauma_att_finisher_success
+			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+				amount = trauma_att_guard_break_success
+			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
+				amount = trauma_att_guard_break_success
+			_:
+				amount = fallback_trauma
+
+	camera.call("add_trauma", amount)
+	
+	var duration := 0.0
+	if i_am_defender:
+		match contact.defender_outcome:
+			ContactResult.DefenderOutcome.GUARD_BROKEN:
+				duration = hitstop_on_parry_or_break
+			ContactResult.DefenderOutcome.BLOCKED:
+				duration = 0.1
+			_:
+				duration = hitstop_on_hit
+	elif i_am_attacker:
+		match contact.attacker_outcome:
+			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS, \
+			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
+				duration = hitstop_on_parry_or_break
+			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
+				duration = 0.04
+			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+				duration = 0.06
+			_:
+				duration = hitstop_on_hit
+
+	if duration > 0.0:
+		HitStop.apply(duration, hitstop_slow_scale)
+</file>
+
 <file path="scripts/listeners/animation_component.gd">
 class_name AnimationComponent
 extends Node
@@ -5057,6 +5055,130 @@ position = Vector2(0, -38)
 shape = SubResource("CircleShape2D_3xv3x")
 </file>
 
+<file path="scripts/states/locomotion_state.gd">
+class_name LocomotionState
+extends State
+
+var current_profile: LocomotionProfile
+
+enum Phases { IDLE, WALK, RUN }
+var current_phase: Phases = Phases.IDLE
+
+func enter(args: Dictionary = {}):
+	self.current_profile = args.get("profile")
+	if not current_profile:
+		push_warning("LocomotionState: Não recebeu um LocomotionProfile. A abortar.")
+		return	
+	_change_phase(Phases.IDLE)
+
+func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
+	if not owner_node.is_on_floor():
+		state_machine.transition_to("AirborneState")
+		return owner_node.velocity
+
+	var new_velocity = owner_node.velocity
+	new_velocity = physics_component.apply_gravity(new_velocity, delta)
+
+	if not current_profile:
+		return new_velocity
+
+	_update_facing_sign(walk_direction)
+	
+	var target_speed = current_profile.speed
+	if is_running:
+		target_speed = current_profile.run_speed
+	
+	
+	if walk_direction != 0:
+		var is_turning = sign(walk_direction) != sign(new_velocity.x) and abs(new_velocity.x) > 10.0
+		
+		if is_turning:
+			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.friction * 2.0 * delta)
+		else:
+			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.acceleration * delta)
+			
+	else:
+		new_velocity.x = move_toward(new_velocity.x, 0, current_profile.friction * delta)
+		
+	_update_and_emit_phase(walk_direction, is_running)
+	
+	return new_velocity
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
+func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	if owner_node.is_on_floor():
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+	
+func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
+func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
+	if owner_node.is_on_floor():
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
+	if owner_node.is_on_floor():
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func _update_facing_sign(direction: float):
+	if owner_node.facing_locked:
+		return
+		
+	if direction > 0:
+		owner_node.facing_sign = 1
+	elif direction < 0:
+		owner_node.facing_sign = -1
+
+func _update_and_emit_phase(walk_direction: float, is_running: bool):
+	var new_phase: Phases
+	
+	# Consideramos IDLE apenas se a velocidade for quase zero E não houver input
+	# Isso permite tocar animação de Walk/Run enquanto desacelera (slide curto)
+	if walk_direction == 0 and is_zero_approx(owner_node.velocity.x):
+		new_phase = Phases.IDLE
+	elif is_running:
+		new_phase = Phases.RUN
+	else:
+		new_phase = Phases.WALK
+		
+	if new_phase != current_phase:
+		_change_phase(new_phase)
+
+func _change_phase(new_phase: Phases):
+	current_phase = new_phase
+	
+	var anim_to_play: StringName
+	match current_phase:
+		Phases.IDLE:
+			anim_to_play = current_profile.idle_animation
+		Phases.WALK:
+			anim_to_play = current_profile.walk_animation
+		Phases.RUN:
+			anim_to_play = current_profile.run_animation
+	
+	var phase_data = {
+		"state_name": self.name,
+		"phase_name": Phases.keys()[current_phase],
+		"profile": current_profile,
+		"animation_to_play": anim_to_play
+	}
+	
+	state_machine.emit_phase_change(phase_data)
+</file>
+
 <file path="scripts/states/dodge_state.gd">
 class_name DodgeState
 extends State
@@ -5209,130 +5331,6 @@ func _change_phase(new_phase: Phases):
 		"animation_to_play": current_profile.animation_name,
 		"sfx_to_play": sfx_to_play
 	}
-	state_machine.emit_phase_change(phase_data)
-</file>
-
-<file path="scripts/states/locomotion_state.gd">
-class_name LocomotionState
-extends State
-
-var current_profile: LocomotionProfile
-
-enum Phases { IDLE, WALK, RUN }
-var current_phase: Phases = Phases.IDLE
-
-func enter(args: Dictionary = {}):
-	self.current_profile = args.get("profile")
-	if not current_profile:
-		push_warning("LocomotionState: Não recebeu um LocomotionProfile. A abortar.")
-		return	
-	_change_phase(Phases.IDLE)
-
-func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
-	if not owner_node.is_on_floor():
-		state_machine.transition_to("AirborneState")
-		return owner_node.velocity
-
-	var new_velocity = owner_node.velocity
-	new_velocity = physics_component.apply_gravity(new_velocity, delta)
-
-	if not current_profile:
-		return new_velocity
-
-	_update_facing_sign(walk_direction)
-	
-	var target_speed = current_profile.speed
-	if is_running:
-		target_speed = current_profile.run_speed
-	
-	
-	if walk_direction != 0:
-		var is_turning = sign(walk_direction) != sign(new_velocity.x) and abs(new_velocity.x) > 10.0
-		
-		if is_turning:
-			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.friction * 2.0 * delta)
-		else:
-			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.acceleration * delta)
-			
-	else:
-		new_velocity.x = move_toward(new_velocity.x, 0, current_profile.friction * delta)
-		
-	_update_and_emit_phase(walk_direction, is_running)
-	
-	return new_velocity
-
-func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
-func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
-func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
-	if owner_node.is_on_floor():
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-	
-func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
-func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
-	if owner_node.is_on_floor():
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
-	if owner_node.is_on_floor():
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func get_poise_shield_contribution() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.poise_shield_contribution
-
-func _update_facing_sign(direction: float):
-	if owner_node.facing_locked:
-		return
-		
-	if direction > 0:
-		owner_node.facing_sign = 1
-	elif direction < 0:
-		owner_node.facing_sign = -1
-
-func _update_and_emit_phase(walk_direction: float, is_running: bool):
-	var new_phase: Phases
-	
-	# Consideramos IDLE apenas se a velocidade for quase zero E não houver input
-	# Isso permite tocar animação de Walk/Run enquanto desacelera (slide curto)
-	if walk_direction == 0 and is_zero_approx(owner_node.velocity.x):
-		new_phase = Phases.IDLE
-	elif is_running:
-		new_phase = Phases.RUN
-	else:
-		new_phase = Phases.WALK
-		
-	if new_phase != current_phase:
-		_change_phase(new_phase)
-
-func _change_phase(new_phase: Phases):
-	current_phase = new_phase
-	
-	var anim_to_play: StringName
-	match current_phase:
-		Phases.IDLE:
-			anim_to_play = current_profile.idle_animation
-		Phases.WALK:
-			anim_to_play = current_profile.walk_animation
-		Phases.RUN:
-			anim_to_play = current_profile.run_animation
-	
-	var phase_data = {
-		"state_name": self.name,
-		"phase_name": Phases.keys()[current_phase],
-		"profile": current_profile,
-		"animation_to_play": anim_to_play
-	}
-	
 	state_machine.emit_phase_change(phase_data)
 </file>
 
@@ -6036,6 +6034,196 @@ func allow_reentry() -> bool:
 	return true
 </file>
 
+<file path="scripts/actors/enemy.gd">
+class_name Enemy
+extends CharacterBody2D
+
+@onready var state_machine: StateMachine = $StateMachine
+@onready var spine_sprite: SpineSprite = $SpineSprite
+@onready var animation_component: AnimationComponent = $AnimationComponent
+@onready var audio_component: AudioComponent = $AudioComponent
+@onready var ai_controller: AIController = $AIController
+@onready var health_component: HealthComponent = $HealthComponent
+@onready var stamina_component: StaminaComponent = $StaminaComponent
+@onready var status_ui: EnemyStatusUI = $EnemyStatusUI
+@onready var attack_executor: AttackExecutor = $AttackExecutor
+@onready var counter_executor_component: CounterExecutorComponent = $CounterExecutorComponent
+@onready var combo_component: ComboComponent = $ComboComponent
+@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
+@onready var detection_area: Area2D = $DetectionArea
+@onready var path_target: Node2D = get_parent().get_node("PathTarget")
+@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
+@onready var physics_component: PhysicsComponent = $PhysicsComponent
+@onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
+@onready var buffer_component: BufferComponent = $BufferComponent
+@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
+@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
+
+@export_group("Settings")
+@export var facing_sign: int = -1 
+
+@export_group("Equipped Skills")
+@export var skill_x: BaseSkill
+@export var skill_y: BaseSkill
+@export var skill_a: BaseSkill
+@export var skill_b: BaseSkill
+@export var skill_z: BaseSkill
+
+@export_group("Combat Data")
+@export var base_poise: float
+@export var jump_profile: JumpProfile
+@export var finisher_profile: FinisherProfile
+@export var parry_profile: ParryProfile
+@export var riposte_profile: AttackProfile
+@export var block_stun_profile: BlockStunProfile
+@export var stagger_profile: StaggerProfile
+@export var parried_profile: ParriedProfile
+@export var guard_broken_profile: GuardBrokenProfile
+@export var locomotion_profile: LocomotionProfile
+@export var death_profile: DeathProfile
+@export var dash_attack_profile: AttackProfile
+@export var wall_slide_profile: WallSlideProfile
+
+@export_group("Dodge Profiles")
+@export var neutral_dodge_profile: DodgeProfile
+@export var forward_dodge_profile: DodgeProfile
+@export var back_dodge_profile: DodgeProfile
+@export var up_dodge_profile: DodgeProfile
+@export var down_dodge_profile: DodgeProfile
+
+var _equipped_skills: Dictionary = {}
+var facing_locked: bool = false
+
+var air_jumps_left: int = 0
+var air_dash_used: bool = false
+var has_locked_air_pool: bool = false
+var last_left_ground_ms: int = -1
+var _target_detected: Node2D = null
+
+func _ready():
+	_build_skill_dictionary()
+	
+	_update_facing_direction()
+	
+	animation_component.setup(state_machine, spine_sprite)
+	spine_sprite.animation_event.connect(_on_spine_event)
+	
+	action_cost_validator.setup(stamina_component, null)
+	state_machine.setup(
+		self,
+		physics_component,
+		path_follower_component,
+		buffer_component,
+		action_cost_validator,
+		surface_contact_component,
+		wall_detector,
+		counter_executor_component
+	)
+	
+	attack_executor.setup(self)
+
+	health_component.health_changed.connect(status_ui.update_health)
+	stamina_component.stamina_changed.connect(status_ui.update_stamina)
+	
+	surface_contact_component.call_deferred("setup", self)
+	if detection_area:
+		detection_area.body_entered.connect(_on_detection_entered)
+		detection_area.body_exited.connect(_on_detection_exited)
+
+func _physics_process(delta: float):
+	var walk_direction = ai_controller.get_walk_direction()
+	var is_running = ai_controller.is_running()
+	
+	if not facing_locked and is_instance_valid(_target_detected) and not (state_machine.current_state is DeathState):
+		var direction_to_target = _target_detected.global_position.x - global_position.x
+		if abs(direction_to_target) > 10.0: 
+			facing_sign = sign(direction_to_target)
+	
+	_update_facing_direction()
+	
+	if is_instance_valid(path_target):
+		path_target.global_position = self.global_position
+	
+	velocity = state_machine.process_physics(delta, walk_direction, is_running)
+	move_and_slide()
+
+func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState, _track_entry: SpineTrackEntry, event: SpineEvent):
+	var event_name = event.get_data().get_event_name()
+	
+	match event_name:
+		"footstep":
+			if audio_component:
+				audio_component.play_footstep()
+
+func _on_detection_entered(body: Node2D):
+	if body is Player:
+		_target_detected = body
+
+func _on_detection_exited(body: Node2D):
+	if body == _target_detected:
+		_target_detected = null
+
+func _build_skill_dictionary():
+	if skill_x: _equipped_skills["skill_x"] = skill_x
+	if skill_y: _equipped_skills["skill_y"] = skill_y
+	if skill_a: _equipped_skills["skill_a"] = skill_a
+	if skill_b: _equipped_skills["skill_b"] = skill_b
+	if skill_z: _equipped_skills["skill_z"] = skill_z
+
+func get_skill(action_name: String) -> BaseSkill:
+	return _equipped_skills.get(action_name)
+
+func _update_facing_direction():
+	if is_instance_valid(spine_sprite):
+		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
+	if detection_area:
+		detection_area.scale.x = facing_sign
+
+func get_riposte_profile() -> AttackProfile:
+	return riposte_profile
+	
+func get_finisher_profile() -> FinisherProfile:
+	return finisher_profile
+
+func get_finisher_attack_profile() -> AttackProfile:
+	if not finisher_profile:
+		return null
+	return finisher_profile.attack_profile
+
+func get_parry_profile() -> ParryProfile:
+	return parry_profile
+	
+func get_block_stun_profile() -> BlockStunProfile:
+	return block_stun_profile
+	
+func get_stagger_profile() -> StaggerProfile:
+	return stagger_profile
+	
+func get_parried_profile() -> ParriedProfile:
+	return parried_profile
+	
+func get_guard_broken_profile() -> GuardBrokenProfile:
+	return guard_broken_profile
+
+func get_locomotion_profile() -> LocomotionProfile:
+	return locomotion_profile
+
+func get_death_profile() -> DeathProfile:
+	return death_profile
+
+func get_wall_slide_profile() -> WallSlideProfile:
+	return wall_slide_profile
+
+func get_jump_profile() -> JumpProfile:
+	return jump_profile
+	
+func reset_air_actions():
+	if jump_profile:
+		air_jumps_left = jump_profile.max_air_jumps
+	air_dash_used = false
+	has_locked_air_pool = true
+</file>
+
 <file path="scripts/profiles/attack_profile.gd">
 class_name AttackProfile
 extends Resource
@@ -6083,7 +6271,7 @@ enum MovementType {
 @export var poise_impact_contribution: float = 10.0
 @export var poise_momentum_gain: float = 0.0
 @export var poise_momentum_duration: float = 1.5
-@export var knockback_vector: Vector2 = Vector2(400, 0)
+@export var knockback_vector: Vector2 = Vector2(1000, 0)
 @export var defender_knockback_on_parry: float = 120.0
 @export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
 @export var unparryable_type: UnparryableType = UnparryableType.NONE
@@ -6437,196 +6625,6 @@ func _on_landed() -> void:
 	owner_node.last_left_ground_ms = -1
 </file>
 
-<file path="scripts/actors/enemy.gd">
-class_name Enemy
-extends CharacterBody2D
-
-@onready var state_machine: StateMachine = $StateMachine
-@onready var spine_sprite: SpineSprite = $SpineSprite
-@onready var animation_component: AnimationComponent = $AnimationComponent
-@onready var audio_component: AudioComponent = $AudioComponent
-@onready var ai_controller: AIController = $AIController
-@onready var health_component: HealthComponent = $HealthComponent
-@onready var stamina_component: StaminaComponent = $StaminaComponent
-@onready var status_ui: EnemyStatusUI = $EnemyStatusUI
-@onready var attack_executor: AttackExecutor = $AttackExecutor
-@onready var counter_executor_component: CounterExecutorComponent = $CounterExecutorComponent
-@onready var combo_component: ComboComponent = $ComboComponent
-@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
-@onready var detection_area: Area2D = $DetectionArea
-@onready var path_target: Node2D = get_parent().get_node("PathTarget")
-@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
-@onready var physics_component: PhysicsComponent = $PhysicsComponent
-@onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
-@onready var buffer_component: BufferComponent = $BufferComponent
-@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
-@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
-
-@export_group("Settings")
-@export var facing_sign: int = -1 
-
-@export_group("Equipped Skills")
-@export var skill_x: BaseSkill
-@export var skill_y: BaseSkill
-@export var skill_a: BaseSkill
-@export var skill_b: BaseSkill
-@export var skill_z: BaseSkill
-
-@export_group("Combat Data")
-@export var base_poise: float
-@export var jump_profile: JumpProfile
-@export var finisher_profile: FinisherProfile
-@export var parry_profile: ParryProfile
-@export var riposte_profile: AttackProfile
-@export var block_stun_profile: BlockStunProfile
-@export var stagger_profile: StaggerProfile
-@export var parried_profile: ParriedProfile
-@export var guard_broken_profile: GuardBrokenProfile
-@export var locomotion_profile: LocomotionProfile
-@export var death_profile: DeathProfile
-@export var dash_attack_profile: AttackProfile
-@export var wall_slide_profile: WallSlideProfile
-
-@export_group("Dodge Profiles")
-@export var neutral_dodge_profile: DodgeProfile
-@export var forward_dodge_profile: DodgeProfile
-@export var back_dodge_profile: DodgeProfile
-@export var up_dodge_profile: DodgeProfile
-@export var down_dodge_profile: DodgeProfile
-
-var _equipped_skills: Dictionary = {}
-var facing_locked: bool = false
-
-var air_jumps_left: int = 0
-var air_dash_used: bool = false
-var has_locked_air_pool: bool = false
-var last_left_ground_ms: int = -1
-var _target_detected: Node2D = null
-
-func _ready():
-	_build_skill_dictionary()
-	
-	_update_facing_direction()
-	
-	animation_component.setup(state_machine, spine_sprite)
-	spine_sprite.animation_event.connect(_on_spine_event)
-	
-	action_cost_validator.setup(stamina_component, null)
-	state_machine.setup(
-		self,
-		physics_component,
-		path_follower_component,
-		buffer_component,
-		action_cost_validator,
-		surface_contact_component,
-		wall_detector,
-		counter_executor_component
-	)
-	
-	attack_executor.setup(self)
-
-	health_component.health_changed.connect(status_ui.update_health)
-	stamina_component.stamina_changed.connect(status_ui.update_stamina)
-	
-	surface_contact_component.call_deferred("setup", self)
-	if detection_area:
-		detection_area.body_entered.connect(_on_detection_entered)
-		detection_area.body_exited.connect(_on_detection_exited)
-
-func _physics_process(delta: float):
-	var walk_direction = ai_controller.get_walk_direction()
-	var is_running = ai_controller.is_running()
-	
-	if not facing_locked and is_instance_valid(_target_detected) and not (state_machine.current_state is DeathState):
-		var direction_to_target = _target_detected.global_position.x - global_position.x
-		if abs(direction_to_target) > 10.0: 
-			facing_sign = sign(direction_to_target)
-	
-	_update_facing_direction()
-	
-	if is_instance_valid(path_target):
-		path_target.global_position = self.global_position
-	
-	velocity = state_machine.process_physics(delta, walk_direction, is_running)
-	move_and_slide()
-
-func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState, _track_entry: SpineTrackEntry, event: SpineEvent):
-	var event_name = event.get_data().get_event_name()
-	
-	match event_name:
-		"footstep":
-			if audio_component:
-				audio_component.play_footstep()
-
-func _on_detection_entered(body: Node2D):
-	if body is Player:
-		_target_detected = body
-
-func _on_detection_exited(body: Node2D):
-	if body == _target_detected:
-		_target_detected = null
-
-func _build_skill_dictionary():
-	if skill_x: _equipped_skills["skill_x"] = skill_x
-	if skill_y: _equipped_skills["skill_y"] = skill_y
-	if skill_a: _equipped_skills["skill_a"] = skill_a
-	if skill_b: _equipped_skills["skill_b"] = skill_b
-	if skill_z: _equipped_skills["skill_z"] = skill_z
-
-func get_skill(action_name: String) -> BaseSkill:
-	return _equipped_skills.get(action_name)
-
-func _update_facing_direction():
-	if is_instance_valid(spine_sprite):
-		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
-	if detection_area:
-		detection_area.scale.x = facing_sign
-
-func get_riposte_profile() -> AttackProfile:
-	return riposte_profile
-	
-func get_finisher_profile() -> FinisherProfile:
-	return finisher_profile
-
-func get_finisher_attack_profile() -> AttackProfile:
-	if not finisher_profile:
-		return null
-	return finisher_profile.attack_profile
-
-func get_parry_profile() -> ParryProfile:
-	return parry_profile
-	
-func get_block_stun_profile() -> BlockStunProfile:
-	return block_stun_profile
-	
-func get_stagger_profile() -> StaggerProfile:
-	return stagger_profile
-	
-func get_parried_profile() -> ParriedProfile:
-	return parried_profile
-	
-func get_guard_broken_profile() -> GuardBrokenProfile:
-	return guard_broken_profile
-
-func get_locomotion_profile() -> LocomotionProfile:
-	return locomotion_profile
-
-func get_death_profile() -> DeathProfile:
-	return death_profile
-
-func get_wall_slide_profile() -> WallSlideProfile:
-	return wall_slide_profile
-
-func get_jump_profile() -> JumpProfile:
-	return jump_profile
-	
-func reset_air_actions():
-	if jump_profile:
-		air_jumps_left = jump_profile.max_air_jumps
-	air_dash_used = false
-	has_locked_air_pool = true
-</file>
-
 <file path="scripts/core/state_machine.gd">
 class_name StateMachine
 extends Node
@@ -6762,16 +6760,17 @@ func on_dash_pressed(profile: DashProfile):
 func on_attack_pressed(profile: AttackProfile):
 	var result: InputHandlerResult = current_state.handle_attack_input(profile)
 	match result.status:
-		InputHandlerResult.Status.ACCEPTED:
+		InputHandlerResult.Status.ACCEPTED:			
 			var profile_to_use: AttackProfile = profile 
 
 			if result.context.has("override_profile"):
 				profile_to_use = result.context["override_profile"]
 
-			if action_cost_validator.try_pay_costs(profile):
+			if action_cost_validator.try_pay_costs(profile_to_use):
 				buffer_component.clear()
-				transition_to("AttackState", {"profile": profile})
-		InputHandlerResult.Status.REJECTED:
+				transition_to("AttackState", {"profile": profile_to_use})
+				
+		InputHandlerResult.Status.REJECTED:			
 			var profile_to_buffer: AttackProfile
 			if result.context.has("override_profile"):
 				profile_to_buffer = result.context["override_profile"]
@@ -6779,6 +6778,7 @@ func on_attack_pressed(profile: AttackProfile):
 				profile_to_buffer = profile
 			var context_to_buffer = {"profile": profile_to_buffer}
 			buffer_component.capture(BufferComponent.BufferedAction.ATTACK, context_to_buffer)
+			
 		InputHandlerResult.Status.CONSUMED:
 			pass
 
@@ -7032,6 +7032,26 @@ func _update_facing_direction():
 func _exit_tree():
 	if GameManager.player_node == self:
 		GameManager.unregister_player()
+		
+func _process(_delta):
+	# Usamos a tecla "T" para printar o relatório de debug quando ocorrer o bug
+	if Input.is_key_pressed(KEY_T):
+		print("\n=== DEBUG REPORT ===")
+		print("1. Time Scale (Deve ser 1.0): ", Engine.time_scale)
+		
+		# Tenta pegar o nome do estado atual. Ajuste o caminho se necessário.
+		if has_node("StateMachine"):
+			var sm = get_node("StateMachine")
+			# Verifica se a variável current_state existe e é válida
+			if sm.get("current_state"):
+				print("2. Estado Atual: ", sm.current_state.name)
+			else:
+				print("2. Estado Atual: NULO ou não acessível")
+		
+		print("3. Velocidade (Velocity): ", velocity)
+		print("4. Is On Floor: ", is_on_floor())
+		print("5. Input X: ", Input.get_axis("move_left", "move_right")) # Confirma se o input está chegando
+		print("====================\n")
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
@@ -7248,7 +7268,7 @@ enum BehaviorID {
 const ALL_BEHAVIORS = {
 	BehaviorID.ENEMY_JOKE: {
 		"phase_1": [
-			{ "defense": "parry" }, { "defense": "block" },
+			{ "defense": "parry" }, { "defense": "block" }, { "defense": "block" }, { "defense": "block" }, { "defense": "block" },
 		],
 		"phase_2": [
 			{ "defense": "block" },
@@ -7946,7 +7966,7 @@ player = NodePath("PlayerEntity/Player")
 hud = NodePath("CanvasLayer/PlayerHUD")
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(12500, 625)
+position = Vector2(13002, 682)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -7958,8 +7978,9 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-20.1406, -333.695)
-rotation = 0.406544
+position = Vector2(-14.2188, -334.498)
+rotation = 0.450504
+scale = Vector2(1, 1)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
 position = Vector2(-6267, 623)
@@ -8075,7 +8096,7 @@ position = Vector2(-14709, 1010)
 position = Vector2(-13794, 969)
 
 [node name="EnemyJoke3" parent="." instance=ExtResource("15_m2w8e")]
-position = Vector2(-10628, 965)
+position = Vector2(-12806, 965)
 
 [editable path="PlayerEntity"]
 </file>
@@ -8180,7 +8201,7 @@ stamina_damage = 60.0
 poise_impact_contribution = 10.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
-knockback_vector = Vector2(4000, 0)
+knockback_vector = Vector2(1000, 0)
 defender_knockback_on_parry = 1000.0
 parry_interaction = 1
 unparryable_type = 1
