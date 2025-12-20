@@ -59,6 +59,7 @@ scenes/enemy.tscn
 scenes/metal_sparks.tscn
 scenes/player_hud.tscn
 scenes/player.tscn
+scenes/projectile.tscn
 scenes/rain.tscn
 scenes/testing_dojo.tscn
 scenes/token.tscn
@@ -95,6 +96,7 @@ scripts/core/contact_context.gd
 scripts/core/contact_result.gd
 scripts/core/game_manager.gd
 scripts/core/impact_resolver.gd
+scripts/core/projectile.gd
 scripts/core/state_base.gd
 scripts/core/state_machine.gd
 scripts/core/surface_contact_component.gd
@@ -110,6 +112,7 @@ scripts/platform/flying_attack_state.gd
 scripts/platform/flying_chase_state.gd
 scripts/platform/flying_enemy.tscn
 scripts/platform/goomba_state_machine.gd
+scripts/platform/ranged_enemy.tscn
 scripts/platform/simple_attack_state.gd
 scripts/platform/simple_chase_state.gd
 scripts/platform/simple_death_state.gd
@@ -367,23 +370,6 @@ func heal(amount: float):
 
 func is_dead() -> bool:
 	return _is_dead
-</file>
-
-<file path="scripts/components/hitbox.gd">
-class_name Hitbox
-extends Area2D
-
-var owner_actor: Node
-var attack_profile: AttackProfile
-
-func _ready() -> void:
-	owner_actor = get_parent()
-	assert(owner_actor != null, "Hitbox deve ser filha de um nó de ator.")
-	area_entered.connect(_on_hitbox_area_entered)
-
-func _on_hitbox_area_entered(area: Area2D) -> void:
-	# Handler mantido para não alterar o fluxo; sem logs.
-	pass
 </file>
 
 <file path="scripts/components/hurtbox.gd">
@@ -792,6 +778,32 @@ vertical_alignment = 2
 script = ExtResource("1_8gnxb")
 </file>
 
+<file path="scenes/projectile.tscn">
+[gd_scene load_steps=5 format=3 uid="uid://d3hx8uvp1ayyb"]
+
+[ext_resource type="Script" uid="uid://bjlm3wm1lusb7" path="res://scripts/core/projectile.gd" id="1_q3m7n"]
+[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="2_softn"]
+[ext_resource type="Texture2D" uid="uid://dldp8qkalqpnr" path="res://icon.svg" id="3_softn"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6q2a6"]
+
+[node name="Projectile" type="Node2D"]
+script = ExtResource("1_q3m7n")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 32
+script = ExtResource("2_softn")
+metadata/_custom_type_script = "uid://qxnqp6qiqxw"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+shape = SubResource("RectangleShape2D_6q2a6")
+
+[node name="Sprite2D" type="Sprite2D" parent="Hitbox"]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("3_softn")
+</file>
+
 <file path="scenes/rain.tscn">
 [gd_scene load_steps=12 format=3 uid="uid://b7t7d0ncgdrv4"]
 
@@ -981,6 +993,40 @@ func clear():
 	_time_left = 0.0
 </file>
 
+<file path="scripts/components/hitbox.gd">
+class_name Hitbox
+extends Area2D
+
+## Referência ao ator "dono" do ataque (quem ganha Mana, XP, etc).
+## Pode ser injetado externamente (ex: por um Projétil) ou inferido do pai.
+var owner_actor: Node
+
+## A origem física do ataque (usada para calcular direção do knockback).
+## Se for um projétil, será o próprio nó do projétil.
+## Se for um ataque melee, geralmente é o mesmo que o owner_actor.
+var source_node: Node
+
+var attack_profile: AttackProfile
+
+func _ready() -> void:
+	# Se owner_actor não foi injetado externamente, tenta pegar o pai.
+	if owner_actor == null:
+		owner_actor = get_parent()
+	
+	assert(owner_actor != null, "Hitbox deve ser filha de um nó de ator ou ter owner injetado.")
+	
+	# Se source_node não foi definido externamente (ex: por setup() de um Projétil), 
+	# assume que a fonte física é o próprio dono (comportamento Melee padrão).
+	if source_node == null:
+		source_node = owner_actor
+
+	area_entered.connect(_on_hitbox_area_entered)
+
+func _on_hitbox_area_entered(area: Area2D) -> void:
+	# Handler mantido para não alterar o fluxo; sem logs.
+	pass
+</file>
+
 <file path="scripts/components/smart_targeting_component.gd">
 extends Node2D
 class_name SmartTargetingComponent
@@ -1126,32 +1172,6 @@ func can_see_target(target: Node2D) -> bool:
 		return true
 </file>
 
-<file path="scripts/core/contact_context.gd">
-class_name ContactContext
-extends Resource
-
-## Este objeto é um contêiner de dados temporário ("dossiê").
-## Ele é criado pelo ImpactResolver para agrupar todas as informações
-## relevantes de um impacto e passá-las para o State do defensor tomar uma decisão.
-
-# --- Referências aos Atores ---
-var attacker_node: Node
-var defender_node: Node
-
-# --- Referências aos Perfis de Ataque ---
-var attack_profile: AttackProfile
-var defender_attack_profile: AttackProfile = null
-
-# --- Referências aos Componentes do Defensor ---
-var defender_health_comp: HealthComponent
-var defender_stamina_comp: StaminaComponent
-var defender_poise_comp: PoiseComponent
-var defender_state_machine: Node
-
-# --- Dados Calculados pelo ImpactResolver ---
-var attacker_offensive_poise: float = 0.0
-</file>
-
 <file path="scripts/core/game_manager.gd">
 extends Node
 
@@ -1166,64 +1186,51 @@ func unregister_player() -> void:
 	player_node = null
 </file>
 
-<file path="scripts/core/impact_resolver.gd">
-extends Node
+<file path="scripts/core/projectile.gd">
+class_name Projectile
+extends Node2D
 
-signal impact_resolved(result: ContactResult)
+@export var speed: float = 600.0
+@export var lifetime: float = 3.0
 
-func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
-	var attacker: Node = hitbox.owner_actor
-	var defender: Node = hurtbox.owner_actor
+var direction: Vector2 = Vector2.RIGHT
+var has_impacted: bool = false
 
-	if not is_instance_valid(attacker) or not is_instance_valid(defender):
-		return
+func _ready() -> void:
+	# Autodestruição por tempo para evitar vazamento de memória
+	get_tree().create_timer(lifetime).timeout.connect(queue_free)
 
-	var context = ContactContext.new()
-	context.attacker_node = attacker
-	context.defender_node = defender
-	context.attack_profile = hitbox.attack_profile
+## Configura o projétil antes de lançá-lo.
+## Deve ser chamado imediatamente após instanciar a cena.
+func setup(real_shooter: Node, profile: AttackProfile, shoot_direction: Vector2) -> void:
+	direction = shoot_direction.normalized()
+	rotation = direction.angle() # Rotaciona o visual para a direção do tiro
 	
-	# Poise do atacante é opcional (SimpleEnemy não tem)
-	var attacker_poise_comp = attacker.find_child("PoiseComponent")
-	if attacker_poise_comp:
-		context.attacker_offensive_poise = attacker_poise_comp.get_effective_offensive_poise()
+	# Localiza e configura o Hitbox filho
+	var hitbox = find_child("Hitbox") as Hitbox
+	if hitbox:
+		# Lógica RPG: Quem ganha a mana/XP é o atirador original
+		hitbox.owner_actor = real_shooter
+		
+		# Lógica Física: O empurrão vem DESTA bala, não do atirador lá longe
+		hitbox.source_node = self 
+		
+		# Injeta os dados do ataque (dano, knockback force, etc)
+		hitbox.attack_profile = profile
+		
+		# Opcional: Conectar sinal para destruir o projétil ao acertar algo
+		# hitbox.area_entered.connect(_on_hitbox_contact)
 	else:
-		context.attacker_offensive_poise = 0.0
-	
-	# Busca componentes do defensor
-	context.defender_health_comp = defender.find_child("HealthComponent")
-	context.defender_stamina_comp = defender.find_child("StaminaComponent") # Agora opcional
-	context.defender_poise_comp = defender.find_child("PoiseComponent")     # Agora opcional
-	
-	# StateMachine continua sendo crucial para saber COMO resolver o impacto
-	# Mas agora aceitamos tanto "StateMachine" (Original) quanto "SimpleStateMachine" (Novo)
-	var defender_sm = defender.find_child("StateMachine")
-	if not defender_sm:
-		defender_sm = defender.find_child("SimpleStateMachine")
-	context.defender_state_machine = defender_sm
+		push_warning("Projectile: Nenhum nó 'Hitbox' encontrado como filho.")
 
-	# Validação mínima: Defensor precisa ter vida e algum cérebro (SM) para processar o hit
-	if not (context.defender_health_comp and context.defender_state_machine):
-		push_warning("ImpactResolver: Defensor inválido. Requer HealthComponent e StateMachine (ou SimpleStateMachine).")
-		return
+func _physics_process(delta: float) -> void:
+	if not has_impacted:
+		global_position += direction * speed * delta
 
-	# Notifica AI se existir
-	var defender_ai_controller = defender.find_child("AIController")
-	if defender_ai_controller:
-		defender_ai_controller.on_incoming_attack(attacker, hitbox)
-
-	# Obtém o estado atual para delegar a resolução
-	var defender_current_state = context.defender_state_machine.current_state
-	
-	# Se o defensor tiver um perfil de ataque ativo, anexa ao contexto (para trades/clashes)
-	if defender_current_state.has_method("get_attack_profile"):
-		context.defender_attack_profile = defender_current_state.get_attack_profile()
-
-	# O Estado decide o resultado (SimpleState vai ignorar stamina/poise e aplicar dano direto)
-	var result_for_attacker: ContactResult = defender_current_state.resolve_contact(context)
-
-	if result_for_attacker:
-		emit_signal("impact_resolved", result_for_attacker)
+# Função utilitária para ser chamada quando o Hitbox confirma um hit válido
+func on_impact_confirmed() -> void:
+	has_impacted = true
+	queue_free()
 </file>
 
 <file path="scripts/level/combat_zone.gd">
@@ -1330,33 +1337,6 @@ func _finish_combat():
 	_active = false
 	print("Zona de combate concluída!")
 	emit_signal("combat_finished")
-</file>
-
-<file path="scripts/platform/flying_aggressive_enemy.tscn">
-[gd_scene load_steps=3 format=3 uid="uid://by2iisxspfs2r"]
-
-[ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="1_sma00"]
-[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_5h7yv"]
-
-[node name="FlyingAggressiveEnemy" instance=ExtResource("1_sma00")]
-enemy_tint_color = Color(0.14902, 0.0980392, 1, 1)
-enemy_tint_intensity = 0.06
-
-[node name="SimpleStateMachine" parent="." index="2"]
-attack_range = 500.0
-chase_state_name = "FlyingChaseState"
-attack_state_name = "FlyingAttackState"
-initial_state_key = "SimplePatrolFlyState"
-groggy_state_name = "SimpleGroundedState"
-parries_required_for_groggy = 3
-
-[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="8"]
-script = ExtResource("2_5h7yv")
-fly_speed = 300.0
-metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
-
-[node name="HealthComponent" parent="." index="5"]
-max_health = 5.0
 </file>
 
 <file path="scripts/platform/flying_attack_state.gd">
@@ -1635,101 +1615,56 @@ func _decide_next_state(reason: Dictionary):
 		transition_to(initial_state_key)
 </file>
 
-<file path="scripts/platform/simple_attack_state.gd">
-class_name SimpleAttackState
-extends SimpleState
+<file path="scripts/platform/ranged_enemy.tscn">
+[gd_scene load_steps=6 format=3 uid="uid://bs1683iw0jpyk"]
 
-enum Phases { STARTUP, ACTIVE, RECOVERY }
-var _current_phase: Phases = Phases.STARTUP
-var _time_left: float = 0.0
-var _profile: AttackProfile
+[ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="1_u4pjs"]
+[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="2_uypep"]
+[ext_resource type="PackedScene" uid="uid://d3hx8uvp1ayyb" path="res://scenes/projectile.tscn" id="3_uk1qy"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="4_dwehw"]
 
-# Direção travada no início do ataque
-var _attack_direction: float = 1.0
+[sub_resource type="Resource" id="Resource_2u8hu"]
+script = ExtResource("4_dwehw")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.45
+link_duration = 0.6
+animation_name = &"jump"
+active_sfx = ExtResource("2_uypep")
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+projectile_scene = ExtResource("3_uk1qy")
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(1000, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
-func enter(_args: Dictionary = {}):
-	_profile = owner_node.get_attack_profile()
-	
-	if not _profile:
-		push_warning("SimpleAttackState: Inimigo sem AttackProfile configurado.")
-		state_machine.on_current_state_finished({"outcome": "ATTACK_FINISHED"})
-		return
-	
-	_attack_direction = owner_node.get_facing_direction()
-	
-	_change_phase(Phases.STARTUP)
+[node name="RangedEnemy" instance=ExtResource("1_u4pjs")]
+attack_profile = SubResource("Resource_2u8hu")
 
-func process_physics(delta: float) -> Vector2:
-	if not _profile:
-		return Vector2.ZERO
-		
-	_time_left -= delta
-	
-	if _time_left <= 0:
-		_advance_phase()
-	
-	# Calcula velocidade baseada na fase atual e nas configurações do profile
-	var move_velocity = Vector2.ZERO
-	
-	match _current_phase:
-		Phases.STARTUP:
-			move_velocity = _profile.startup_movement_velocity
-		Phases.ACTIVE:
-			move_velocity = _profile.active_movement_velocity
-		Phases.RECOVERY:
-			move_velocity = _profile.recovery_movement_velocity
-			
-	# Aplica a direção travada:
-	# Se attack_direction for -1 (esquerda) e velocity.x for 100 (frente), resultado = -100
-	var final_velocity_x = move_velocity.x * _attack_direction
-	
-	# Mantém a gravidade padrão do inimigo
-	var final_velocity_y = owner_node.velocity.y
-	if not owner_node.is_on_floor():
-		final_velocity_y += 980.0 * delta
-		
-	return Vector2(final_velocity_x, final_velocity_y)
+[node name="SimpleAttackState" parent="SimpleStateMachine" index="10" node_paths=PackedStringArray("projectile_spawn_point")]
+projectile_spawn_point = NodePath("../../ProjectileSpawnPoint")
 
-func _advance_phase():
-	match _current_phase:
-		Phases.STARTUP:
-			_change_phase(Phases.ACTIVE)
-		Phases.ACTIVE:
-			_change_phase(Phases.RECOVERY)
-		Phases.RECOVERY:
-			state_machine.on_current_state_finished({"outcome": "ATTACK_FINISHED"})
-
-func _change_phase(new_phase: Phases):
-	_current_phase = new_phase
-	
-	var duration = 0.0
-	var sfx: AudioStream
-	var anim_name: StringName = &""
-	
-	match _current_phase:
-		Phases.STARTUP:
-			duration = _profile.startup_duration
-			sfx = _profile.startup_sfx
-			anim_name = _profile.animation_name 
-			
-		Phases.ACTIVE:
-			duration = _profile.active_duration
-			sfx = _profile.active_sfx
-			
-		Phases.RECOVERY:
-			duration = _profile.recovery_duration
-			sfx = _profile.recovery_sfx
-			
-	_time_left = duration
-	
-	# Envia sinal para tocar som/animação assincronamente nos componentes
-	state_machine.emit_phase_change({
-		"state": "SimpleAttackState",
-		"phase": Phases.keys()[_current_phase],
-		"profile": _profile,
-		"animation_to_play": anim_name,
-		"sfx_to_play": sfx
-	})
+[node name="ProjectileSpawnPoint" type="Marker2D" parent="." index="11"]
+position = Vector2(73, -58)
 </file>
 
 <file path="scripts/platform/simple_chase_state.gd">
@@ -2689,6 +2624,97 @@ func _update_stamina(new_value: float):
 	emit_signal("stamina_changed", current_stamina, max_stamina)
 </file>
 
+<file path="scripts/core/contact_context.gd">
+class_name ContactContext
+extends Resource
+
+## Este objeto é um contêiner de dados temporário ("dossiê").
+## Ele é criado pelo ImpactResolver para agrupar todas as informações
+## relevantes de um impacto e passá-las para o State do defensor tomar uma decisão.
+
+# --- Referências aos Atores ---
+var attacker_node: Node
+var defender_node: Node
+
+## A origem física do impacto (ex: o Projétil, a Armadilha, ou o próprio Atacante em Melee).
+## Essencial para calcular a direção correta do Knockback.
+var source_node: Node
+
+# --- Referências aos Perfis de Ataque ---
+var attack_profile: AttackProfile
+var defender_attack_profile: AttackProfile = null
+
+# --- Referências aos Componentes do Defensor ---
+var defender_health_comp: HealthComponent
+var defender_stamina_comp: StaminaComponent
+var defender_poise_comp: PoiseComponent
+var defender_state_machine: Node
+
+# --- Dados Calculados pelo ImpactResolver ---
+var attacker_offensive_poise: float = 0.0
+</file>
+
+<file path="scripts/core/impact_resolver.gd">
+extends Node
+
+signal impact_resolved(result: ContactResult)
+
+func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
+	var attacker: Node = hitbox.owner_actor
+	var defender: Node = hurtbox.owner_actor
+
+	if not is_instance_valid(attacker) or not is_instance_valid(defender):
+		return
+
+	var context = ContactContext.new()
+	context.attacker_node = attacker
+	context.defender_node = defender
+	
+	# Usa o source_node do hitbox (projétil ou o próprio atacante).
+	if hitbox.source_node:
+		context.source_node = hitbox.source_node
+	else:
+		context.source_node = attacker
+		
+	context.attack_profile = hitbox.attack_profile
+	
+	var attacker_poise_comp = attacker.find_child("PoiseComponent")
+	if attacker_poise_comp:
+		context.attacker_offensive_poise = attacker_poise_comp.get_effective_offensive_poise()
+	else:
+		context.attacker_offensive_poise = 0.0
+	
+	context.defender_health_comp = defender.find_child("HealthComponent")
+	context.defender_stamina_comp = defender.find_child("StaminaComponent")
+	context.defender_poise_comp = defender.find_child("PoiseComponent")
+	
+	var defender_sm = defender.find_child("StateMachine")
+	if not defender_sm:
+		defender_sm = defender.find_child("SimpleStateMachine")
+	context.defender_state_machine = defender_sm
+
+	if not (context.defender_health_comp and context.defender_state_machine):
+		return
+
+	var defender_ai_controller = defender.find_child("AIController")
+	if defender_ai_controller:
+		defender_ai_controller.on_incoming_attack(attacker, hitbox)
+
+	var defender_current_state = context.defender_state_machine.current_state
+	
+	if defender_current_state.has_method("get_attack_profile"):
+		context.defender_attack_profile = defender_current_state.get_attack_profile()
+
+	# O Estado decide o resultado
+	var result_for_attacker: ContactResult = defender_current_state.resolve_contact(context)
+
+	if result_for_attacker:
+		if context.source_node and context.source_node.has_method("on_impact_confirmed"):
+			context.source_node.on_impact_confirmed()
+			
+		emit_signal("impact_resolved", result_for_attacker)
+</file>
+
 <file path="scripts/core/surface_contact_component.gd">
 class_name SurfaceContactComponent
 extends Node
@@ -2724,6 +2750,162 @@ func _physics_process(delta: float) -> void:
 		last_left_ground_ms = Time.get_ticks_msec()
 	is_grounded = grounded
 	_was_on_floor = grounded
+</file>
+
+<file path="scripts/platform/flying_aggressive_enemy.tscn">
+[gd_scene load_steps=3 format=3 uid="uid://by2iisxspfs2r"]
+
+[ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="1_sma00"]
+[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_5h7yv"]
+
+[node name="FlyingAggressiveEnemy" instance=ExtResource("1_sma00")]
+enemy_tint_color = Color(0.14902, 0.0980392, 1, 1)
+enemy_tint_intensity = 0.06
+
+[node name="SimpleStateMachine" parent="." index="2"]
+attack_range = 500.0
+chase_state_name = "FlyingChaseState"
+attack_state_name = "FlyingAttackState"
+initial_state_key = "SimplePatrolFlyState"
+groggy_state_name = "SimpleGroundedState"
+parries_required_for_groggy = 3
+
+[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="8"]
+script = ExtResource("2_5h7yv")
+fly_speed = 300.0
+metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 5.0
+</file>
+
+<file path="scripts/platform/simple_attack_state.gd">
+class_name SimpleAttackState
+extends SimpleState
+
+## Ponto opcional de onde o projétil será instanciado.
+## Se não definido, usa a posição global do inimigo.
+@export var projectile_spawn_point: Marker2D
+
+enum Phases { STARTUP, ACTIVE, RECOVERY }
+var _current_phase: Phases = Phases.STARTUP
+var _time_left: float = 0.0
+var _profile: AttackProfile
+
+# Direção travada no início do ataque
+var _attack_direction: float = 1.0
+
+func enter(_args: Dictionary = {}):
+	_profile = owner_node.get_attack_profile()
+	
+	if not _profile:
+		push_warning("SimpleAttackState: Inimigo sem AttackProfile configurado.")
+		state_machine.on_current_state_finished({"outcome": "ATTACK_FINISHED"})
+		return
+	
+	_attack_direction = owner_node.get_facing_direction()
+	
+	_change_phase(Phases.STARTUP)
+
+func process_physics(delta: float) -> Vector2:
+	if not _profile:
+		return Vector2.ZERO
+		
+	_time_left -= delta
+	
+	if _time_left <= 0:
+		_advance_phase()
+	
+	# Calcula velocidade baseada na fase atual e nas configurações do profile
+	var move_velocity = Vector2.ZERO
+	
+	match _current_phase:
+		Phases.STARTUP:
+			move_velocity = _profile.startup_movement_velocity
+		Phases.ACTIVE:
+			move_velocity = _profile.active_movement_velocity
+		Phases.RECOVERY:
+			move_velocity = _profile.recovery_movement_velocity
+			
+	# Aplica a direção travada:
+	# Se attack_direction for -1 (esquerda) e velocity.x for 100 (frente), resultado = -100
+	var final_velocity_x = move_velocity.x * _attack_direction
+	
+	# Mantém a gravidade padrão do inimigo
+	var final_velocity_y = owner_node.velocity.y
+	if not owner_node.is_on_floor():
+		final_velocity_y += 980.0 * delta
+		
+	return Vector2(final_velocity_x, final_velocity_y)
+
+func _advance_phase():
+	match _current_phase:
+		Phases.STARTUP:
+			_change_phase(Phases.ACTIVE)
+		Phases.ACTIVE:
+			_change_phase(Phases.RECOVERY)
+		Phases.RECOVERY:
+			state_machine.on_current_state_finished({"outcome": "ATTACK_FINISHED"})
+
+func _change_phase(new_phase: Phases):
+	_current_phase = new_phase
+	
+	var duration = 0.0
+	var sfx: AudioStream
+	var anim_name: StringName = &""
+	
+	match _current_phase:
+		Phases.STARTUP:
+			duration = _profile.startup_duration
+			sfx = _profile.startup_sfx
+			anim_name = _profile.animation_name 
+			
+		Phases.ACTIVE:
+			duration = _profile.active_duration
+			sfx = _profile.active_sfx
+			
+			# LÓGICA DE PROJÉTIL: Instancia se configurado no profile
+			if _profile.projectile_scene:
+				_spawn_projectile()
+			
+		Phases.RECOVERY:
+			duration = _profile.recovery_duration
+			sfx = _profile.recovery_sfx
+			
+	_time_left = duration
+	
+	# Envia sinal para tocar som/animação assincronamente nos componentes
+	state_machine.emit_phase_change({
+		"state": "SimpleAttackState",
+		"phase": Phases.keys()[_current_phase],
+		"profile": _profile,
+		"animation_to_play": anim_name,
+		"sfx_to_play": sfx
+	})
+
+func _spawn_projectile() -> void:
+	var scene = _profile.projectile_scene
+	var projectile = scene.instantiate() as Projectile
+	
+	if not projectile:
+		push_error("SimpleAttackState: Cena configurada não é um Projectile válido.")
+		return
+
+	# Calcula posição de spawn
+	var spawn_pos = owner_node.global_position
+	if projectile_spawn_point:
+		spawn_pos = projectile_spawn_point.global_position
+	
+	# Define direção do tiro (horizontal baseado no facing travado)
+	var shoot_dir = Vector2.RIGHT
+	shoot_dir.x = _attack_direction
+
+	# Adiciona na cena raiz para desacoplar movimento
+	get_tree().current_scene.add_child(projectile)
+	projectile.global_position = spawn_pos
+	
+	# Configura o projétil com o dono (inimigo) e direção
+	projectile.setup(owner_node, _profile, shoot_dir)
 </file>
 
 <file path="scripts/platform/simple_death_state.gd">
@@ -3257,27 +3439,6 @@ func _animate_flash() -> void:
 		tween.chain().tween_callback(func(): flash.visible = false)
 </file>
 
-<file path="scenes/enemy_intro.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://cmg87qv8bor8o"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_v5fsh"]
-
-[node name="EnemyEntity" instance=ExtResource("1_v5fsh")]
-
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.00856175, 0.207917, 0.00697496, 1)
-enemy_tint_intensity = 0.3
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 16.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 0
-</file>
-
 <file path="scripts/components/path_follower_component.gd">
 class_name PathFollowerComponent
 extends Node
@@ -3393,165 +3554,6 @@ func try_pay_costs(profile: Resource) -> bool:
 		focus_component.consume_focus(focus_cost)
 		
 	return true
-</file>
-
-<file path="scripts/core/attack_executor.gd">
-class_name AttackExecutor
-extends Node
-
-signal attack_phase_changed(phase_data: Dictionary)
-signal finished
-
-var _owner_node: Node
-var _hitbox: Area2D
-var _hitbox_shape: CollisionShape2D
-var _current_profile: AttackProfile
-var _path_follower_component: PathFollowerComponent
-var _path_target: Node2D
-
-enum Phases { STARTUP, ACTIVE, RECOVERY, NONE }
-var _current_phase: Phases = Phases.NONE
-var _time_left_in_phase: float = 0.0
-
-func _ready():
-	set_physics_process(false)
-
-func setup(owner: Node):
-	self._owner_node = owner
-	_hitbox = owner.find_child("AttackHitbox") as Area2D
-	if _hitbox:
-		_hitbox_shape = _hitbox.find_child("CollisionShape2D") as CollisionShape2D
-	
-	_path_follower_component = owner.find_child("PathFollowerComponent")
-	_path_target = owner.get_parent().get_node("PathTarget")
-	
-	assert(_hitbox != null, "AttackExecutor: Nó 'AttackHitbox' não encontrado.")
-	assert(_hitbox_shape != null, "AttackExecutor: Nó 'CollisionShape2D' não encontrado.")
-	assert(_path_follower_component != null, "AttackExecutor: Nó 'PathFollowerComponent' não encontrado.")
-	assert(_path_target != null, "AttackExecutor: Nó 'PathTarget' não encontrado como irmão do owner.")
-
-
-func _physics_process(delta: float):
-	if _current_phase == Phases.NONE:
-		return
-
-	_time_left_in_phase -= delta
-	
-	if _time_left_in_phase <= 0.0:
-		var time_exceeded: float = -_time_left_in_phase
-		match _current_phase:
-			Phases.STARTUP:
-				_change_phase(Phases.ACTIVE)
-				_time_left_in_phase -= time_exceeded
-			Phases.ACTIVE:
-				_change_phase(Phases.RECOVERY)
-				_time_left_in_phase -= time_exceeded
-			Phases.RECOVERY:
-				_stop_execution()
-				emit_signal("finished")
-				return
-
-func execute(profile: AttackProfile):
-	if not is_instance_valid(profile):
-		push_warning("AttackExecutor: Tentou executar um AttackProfile inválido.")
-		return
-	
-	self._current_profile = profile
-	
-	if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
-		_path_target.position = Vector2.ZERO
-		_path_follower_component.start_following(_path_target)
-		
-	set_physics_process(true)
-	_change_phase(Phases.STARTUP)
-
-func stop():
-	_stop_execution()
-
-func get_current_profile() -> AttackProfile:
-	return _current_profile
-
-func get_current_phase_name() -> String:
-	return Phases.keys()[_current_phase].to_upper()
-
-func get_physics_movement_velocity() -> Vector2:
-	if _current_phase == Phases.NONE or not _current_profile or _current_profile.movement_type != AttackProfile.MovementType.PHYSICS:
-		return Vector2.ZERO
-		
-	var move_vel = Vector2.ZERO
-	match _current_phase:
-		Phases.STARTUP:
-			move_vel = _current_profile.startup_movement_velocity
-		Phases.ACTIVE:
-			move_vel = _current_profile.active_movement_velocity
-		Phases.RECOVERY:
-			move_vel = _current_profile.recovery_movement_velocity
-	
-	var final_velocity = Vector2.ZERO
-	final_velocity.x = move_vel.x * _owner_node.facing_sign
-	final_velocity.y = move_vel.y
-	return final_velocity
-
-func _stop_execution():
-	if _current_profile and _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
-		if _path_follower_component:
-			_path_follower_component.stop_following()
-
-	set_physics_process(false)
-	_current_phase = Phases.NONE
-	_current_profile = null
-	if _hitbox_shape and is_instance_valid(_hitbox_shape):
-		_hitbox_shape.set_deferred("disabled", true)
-		_hitbox_shape.shape = null
-	
-	if is_instance_valid(_hitbox):
-		_hitbox.position = Vector2.ZERO
-		_hitbox.scale = Vector2.ONE
-
-func _change_phase(new_phase: Phases):
-	_current_phase = new_phase
-	
-	var sfx_to_play: AudioStream
-	match _current_phase:
-		Phases.STARTUP:
-			_time_left_in_phase = _current_profile.startup_duration
-			sfx_to_play = _current_profile.startup_sfx
-		Phases.ACTIVE:
-			_time_left_in_phase = _current_profile.active_duration
-			sfx_to_play = _current_profile.active_sfx
-			_update_and_enable_hitbox()
-		Phases.RECOVERY:
-			_time_left_in_phase = _current_profile.recovery_duration
-			sfx_to_play = _current_profile.recovery_sfx
-			if _hitbox_shape:
-				_hitbox_shape.set_deferred("disabled", true)
-				_hitbox_shape.shape = null
-	
-	var phase_data: Dictionary = {
-		"state_name": _owner_node.state_machine.current_state.name,
-		"phase_name": get_current_phase_name(),
-		"profile": _current_profile,
-		"sfx_to_play": sfx_to_play
-	}
-	
-	if _current_phase == Phases.STARTUP:
-		phase_data["animation_to_play"] = _current_profile.animation_name
-	
-	emit_signal("attack_phase_changed", phase_data)
-
-func _update_and_enable_hitbox():
-	_hitbox.attack_profile = _current_profile
-	
-	var shape: RectangleShape2D = RectangleShape2D.new()
-	shape.size = _current_profile.hitbox_size
-	
-	_hitbox_shape.shape = shape
-	
-	_hitbox.position = _current_profile.hitbox_position
-	_hitbox.position.x *= _owner_node.facing_sign
-	_hitbox.scale.x = _owner_node.facing_sign
-	
-	_hitbox_shape.set_deferred("disabled", false)
 </file>
 
 <file path="scripts/profiles/dodge_profile.gd">
@@ -4030,6 +4032,27 @@ visibility_rect = Rect2(-200, -200, 400, 400)
 process_material = SubResource("ParticleProcessMaterial_utuc1")
 </file>
 
+<file path="scenes/enemy_intro.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://cmg87qv8bor8o"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_v5fsh"]
+
+[node name="EnemyEntity" instance=ExtResource("1_v5fsh")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.00856175, 0.207917, 0.00697496, 1)
+enemy_tint_intensity = 0.3
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 16.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 0
+</file>
+
 <file path="scripts/components/counter_executor_component.gd">
 class_name CounterExecutorComponent
 extends Node
@@ -4227,6 +4250,215 @@ func spawn_vfx(vfx_name: String, spawn_position: Vector2, direction: Vector2, pa
 	vfx_instance.emitting = true
 	
 	vfx_instance.finished.connect(vfx_instance.queue_free.bind())
+</file>
+
+<file path="scripts/core/attack_executor.gd">
+class_name AttackExecutor
+extends Node
+
+signal attack_phase_changed(phase_data: Dictionary)
+signal finished
+
+var _owner_node: Node
+var _hitbox: Area2D
+var _hitbox_shape: CollisionShape2D
+var _projectile_spawn_point: Marker2D # Novo ponto de origem opcional
+var _current_profile: AttackProfile
+var _path_follower_component: PathFollowerComponent
+var _path_target: Node2D
+
+enum Phases { STARTUP, ACTIVE, RECOVERY, NONE }
+var _current_phase: Phases = Phases.NONE
+var _time_left_in_phase: float = 0.0
+
+func _ready():
+	set_physics_process(false)
+
+func setup(owner: Node):
+	self._owner_node = owner
+	_hitbox = owner.find_child("AttackHitbox") as Area2D
+	if _hitbox:
+		_hitbox_shape = _hitbox.find_child("CollisionShape2D") as CollisionShape2D
+	
+	# Busca opcional por um ponto de spawn de projéteis
+	_projectile_spawn_point = owner.find_child("ProjectileSpawnPoint") as Marker2D
+	
+	_path_follower_component = owner.find_child("PathFollowerComponent")
+	_path_target = owner.get_parent().get_node("PathTarget")
+	
+	assert(_hitbox != null, "AttackExecutor: Nó 'AttackHitbox' não encontrado.")
+	assert(_hitbox_shape != null, "AttackExecutor: Nó 'CollisionShape2D' não encontrado.")
+	assert(_path_follower_component != null, "AttackExecutor: Nó 'PathFollowerComponent' não encontrado.")
+	assert(_path_target != null, "AttackExecutor: Nó 'PathTarget' não encontrado como irmão do owner.")
+
+
+func _physics_process(delta: float):
+	if _current_phase == Phases.NONE:
+		return
+
+	_time_left_in_phase -= delta
+	
+	if _time_left_in_phase <= 0.0:
+		var time_exceeded: float = -_time_left_in_phase
+		match _current_phase:
+			Phases.STARTUP:
+				_change_phase(Phases.ACTIVE)
+				_time_left_in_phase -= time_exceeded
+			Phases.ACTIVE:
+				_change_phase(Phases.RECOVERY)
+				_time_left_in_phase -= time_exceeded
+			Phases.RECOVERY:
+				_stop_execution()
+				emit_signal("finished")
+				return
+
+func execute(profile: AttackProfile):
+	if not is_instance_valid(profile):
+		push_warning("AttackExecutor: Tentou executar um AttackProfile inválido.")
+		return
+	
+	self._current_profile = profile
+	
+	if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
+		_path_target.position = Vector2.ZERO
+		_path_follower_component.start_following(_path_target)
+		
+	set_physics_process(true)
+	_change_phase(Phases.STARTUP)
+
+func stop():
+	_stop_execution()
+
+func get_current_profile() -> AttackProfile:
+	return _current_profile
+
+func get_current_phase_name() -> String:
+	return Phases.keys()[_current_phase].to_upper()
+
+func get_physics_movement_velocity() -> Vector2:
+	if _current_phase == Phases.NONE or not _current_profile or _current_profile.movement_type != AttackProfile.MovementType.PHYSICS:
+		return Vector2.ZERO
+		
+	var move_vel = Vector2.ZERO
+	match _current_phase:
+		Phases.STARTUP:
+			move_vel = _current_profile.startup_movement_velocity
+		Phases.ACTIVE:
+			move_vel = _current_profile.active_movement_velocity
+		Phases.RECOVERY:
+			move_vel = _current_profile.recovery_movement_velocity
+	
+	var final_velocity = Vector2.ZERO
+	if "facing_sign" in _owner_node:
+		final_velocity.x = move_vel.x * _owner_node.facing_sign
+	else:
+		final_velocity.x = move_vel.x # Fallback seguro
+		
+	final_velocity.y = move_vel.y
+	return final_velocity
+
+func _stop_execution():
+	if _current_profile and _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
+		if _path_follower_component:
+			_path_follower_component.stop_following()
+
+	set_physics_process(false)
+	_current_phase = Phases.NONE
+	_current_profile = null
+	if _hitbox_shape and is_instance_valid(_hitbox_shape):
+		_hitbox_shape.set_deferred("disabled", true)
+		_hitbox_shape.shape = null
+	
+	if is_instance_valid(_hitbox):
+		_hitbox.position = Vector2.ZERO
+		_hitbox.scale = Vector2.ONE
+		_hitbox.source_node = null # Limpa a referência
+
+func _change_phase(new_phase: Phases):
+	_current_phase = new_phase
+	
+	var sfx_to_play: AudioStream
+	match _current_phase:
+		Phases.STARTUP:
+			_time_left_in_phase = _current_profile.startup_duration
+			sfx_to_play = _current_profile.startup_sfx
+		Phases.ACTIVE:
+			_time_left_in_phase = _current_profile.active_duration
+			sfx_to_play = _current_profile.active_sfx
+			
+			# LÓGICA DE DECISÃO: Ranged vs Melee
+			if _current_profile.projectile_scene:
+				_spawn_projectile()
+			else:
+				_update_and_enable_hitbox()
+				
+		Phases.RECOVERY:
+			_time_left_in_phase = _current_profile.recovery_duration
+			sfx_to_play = _current_profile.recovery_sfx
+			if _hitbox_shape:
+				_hitbox_shape.set_deferred("disabled", true)
+				_hitbox_shape.shape = null
+	
+	var phase_data: Dictionary = {
+		"state_name": _owner_node.state_machine.current_state.name if "state_machine" in _owner_node else "Unknown",
+		"phase_name": get_current_phase_name(),
+		"profile": _current_profile,
+		"sfx_to_play": sfx_to_play
+	}
+	
+	if _current_phase == Phases.STARTUP:
+		phase_data["animation_to_play"] = _current_profile.animation_name
+	
+	emit_signal("attack_phase_changed", phase_data)
+
+func _spawn_projectile() -> void:
+	var scene = _current_profile.projectile_scene
+	var projectile = scene.instantiate() as Projectile
+	
+	if not projectile:
+		push_error("AttackExecutor: Cena configurada não é um Projectile válido.")
+		return
+
+	# Calcula posição de spawn
+	var spawn_pos = _owner_node.global_position
+	if _projectile_spawn_point:
+		spawn_pos = _projectile_spawn_point.global_position
+	# Fallback: Se não tiver marker, usa o offset do AttackProfile (ajustado para o lado)
+	else:
+		var offset = _current_profile.hitbox_position
+		if "facing_sign" in _owner_node:
+			offset.x *= _owner_node.facing_sign
+		spawn_pos += offset
+
+	# Calcula direção baseada no facing do owner
+	var shoot_dir = Vector2.RIGHT
+	if "facing_sign" in _owner_node:
+		shoot_dir.x = _owner_node.facing_sign
+
+	# Adiciona na cena raiz para desacoplar movimento
+	get_tree().current_scene.add_child(projectile)
+	projectile.global_position = spawn_pos
+	
+	# Configura o projétil (Isso define o source_node interno dele como self)
+	projectile.setup(_owner_node, _current_profile, shoot_dir)
+
+func _update_and_enable_hitbox():
+	_hitbox.attack_profile = _current_profile
+	
+	# No Melee, a fonte física é o próprio Owner
+	_hitbox.source_node = _owner_node 
+	
+	var shape: RectangleShape2D = RectangleShape2D.new()
+	shape.size = _current_profile.hitbox_size
+	
+	_hitbox_shape.shape = shape
+	
+	_hitbox.position = _current_profile.hitbox_position
+	if "facing_sign" in _owner_node:
+		_hitbox.position.x *= _owner_node.facing_sign
+		_hitbox.scale.x = _owner_node.facing_sign
+	
+	_hitbox_shape.set_deferred("disabled", false)
 </file>
 
 <file path="scripts/debug/player_debug_hud.gd">
@@ -5292,290 +5524,6 @@ func _play_sound_instance(sound_stream: AudioStream):
 	player.play()
 </file>
 
-<file path="scripts/platform/aggressive_enemy.tscn">
-[gd_scene load_steps=12 format=3 uid="uid://b4uo35lo3wukl"]
-
-[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_6h87l"]
-[ext_resource type="Script" uid="uid://co6k05df3ffqv" path="res://scripts/platform/aggressive_state_machine.gd" id="2_6iwo7"]
-[ext_resource type="AudioStream" uid="uid://snkhhvuv11sl" path="res://audio/attack_1.wav" id="2_r2vcs"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_u6f6r"]
-[ext_resource type="Script" uid="uid://b300sb85dsb48" path="res://scripts/platform/simple_chase_state.gd" id="3_6iwo7"]
-[ext_resource type="Script" uid="uid://dsf43ffjw15we" path="res://scripts/platform/simple_attack_state.gd" id="4_5r6u3"]
-[ext_resource type="Script" uid="uid://c84mr4ehwdq1i" path="res://scripts/platform/simple_parried_state.gd" id="7_52h12"]
-
-[sub_resource type="Resource" id="Resource_r2vcs"]
-script = ExtResource("2_u6f6r")
-startup_duration = 0.3
-active_duration = 0.1
-block_recoil_duration = 0.55
-recovery_duration = 0.45
-link_duration = 0.6
-animation_name = &"jump"
-active_sfx = ExtResource("2_r2vcs")
-hitbox_size = Vector2(160, 140)
-hitbox_position = Vector2(100, -30)
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 0
-stamina_damage = 10.0
-poise_impact_contribution = 10.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(1000, 0)
-defender_knockback_on_parry = 500.0
-parry_interaction = 0
-unparryable_type = 0
-movement_type = 0
-startup_movement_velocity = Vector2(-100, 0)
-active_movement_velocity = Vector2(3600, 0)
-recovery_movement_velocity = Vector2(70, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_iml81"]
-radius = 72.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_r2vcs"]
-radius = 72.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_52h12"]
-radius = 72.0
-
-[node name="AggressiveEnemy" instance=ExtResource("1_6h87l")]
-attack_profile = SubResource("Resource_r2vcs")
-enemy_tint_color = Color(10, 0, 0, 1)
-enemy_tint_intensity = 0.04
-
-[node name="SpineSprite" parent="." index="0"]
-scale = Vector2(0.4, 0.4)
-
-[node name="CollisionShape2D" parent="." index="1"]
-position = Vector2(0, -72)
-shape = SubResource("CircleShape2D_iml81")
-
-[node name="SimpleStateMachine" parent="." index="2"]
-script = ExtResource("2_6iwo7")
-detection_range = 1000.0
-attack_range = 300.0
-attack_cooldown = 1.0
-chase_state_name = "SimpleChaseState"
-attack_state_name = "SimpleAttackState"
-recoil_state_name = "SimpleRecoilState"
-stagger_state_name = "SimpleStaggerState"
-immune_to_stagger = true
-initial_state_key = "SimplePatrolState"
-parries_required_for_groggy = 5
-
-[node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
-script = ExtResource("3_6iwo7")
-metadata/_custom_type_script = "uid://b300sb85dsb48"
-
-[node name="SimpleAttackState" type="Node" parent="SimpleStateMachine" index="5"]
-script = ExtResource("4_5r6u3")
-metadata/_custom_type_script = "uid://dsf43ffjw15we"
-
-[node name="SimpleParriedState" type="Node" parent="SimpleStateMachine" index="7"]
-script = ExtResource("7_52h12")
-metadata/_custom_type_script = "uid://c84mr4ehwdq1i"
-
-[node name="HealthComponent" parent="." index="5"]
-max_health = 10.0
-
-[node name="RayCast2D" parent="WallDetectorComponent" index="0"]
-target_position = Vector2(100, 0)
-
-[node name="FloorDetector" parent="WallDetectorComponent" index="1"]
-position = Vector2(100, 0)
-
-[node name="CollisionShape2D" parent="Hitbox" index="0"]
-position = Vector2(0, -72)
-shape = SubResource("CircleShape2D_r2vcs")
-
-[node name="CollisionShape2D" parent="Hurtbox" index="0"]
-position = Vector2(0, -72)
-shape = SubResource("CircleShape2D_52h12")
-</file>
-
-<file path="scripts/platform/base_simple_state_machine.gd">
-class_name BaseSimpleStateMachine
-extends Node
-
-signal phase_changed(phase_data: Dictionary)
-signal transitioned(from_state: SimpleState, to_state: SimpleState)
-
-@export_group("State Configuration")
-@export var initial_state_key: String = ""
-## Nome do nó na cena que representa o estado de Groggy (vulnerável).
-@export var groggy_state_name: String = "SimpleGroggyState"
-## Nome do nó na cena que representa o estado de Parried (interrupção leve).
-@export var parried_state_name: String = "SimpleParriedState"
-
-@export_group("Mechanics")
-@export var parries_required_for_groggy: int = 1
-
-var _current_parry_count: int = 0
-var states: Dictionary = {}
-var current_state: SimpleState
-var owner_node: Node
-var physics_component: Node
-var wall_detector: WallDetectorComponent
-var surface_contact_component: SurfaceContactComponent 
-
-var _groggy_timer: float = 0.0
-
-func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
-	owner_node = p_owner_node
-	physics_component = p_physics_comp
-	surface_contact_component = p_surface_contact_comp
-	wall_detector = p_wall_detector
-	
-	assert(owner_node != null, "BaseSimpleStateMachine: owner_node não pode ser nulo.")
-	assert(physics_component != null, "BaseSimpleStateMachine: physics_component não pode ser nulo.")
-
-	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
-
-	for child in get_children():
-		if child is SimpleState:
-			states[child.name] = child
-			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
-	
-	_current_parry_count = 0
-	_start_initial_state()
-
-func _start_initial_state():
-	if not initial_state_key.is_empty() and states.has(initial_state_key):
-		current_state = states[initial_state_key]
-		current_state.enter({})
-	elif not initial_state_key.is_empty():
-		push_error("BaseSimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
-
-func process_physics(delta: float) -> Vector2:
-	if _groggy_timer > 0:
-		_groggy_timer -= delta
-		if _groggy_timer <= 0 and current_state.name == groggy_state_name:
-			on_current_state_finished({"outcome": "GROGGY_FINISHED"})
-
-	if not current_state:
-		return Vector2.ZERO
-	return current_state.process_physics(delta)
-
-func trigger_groggy(duration: float):
-	_current_parry_count += 1
-	if _current_parry_count < parries_required_for_groggy:
-		var push_dir = Vector2.ZERO
-		if is_instance_valid(GameManager.player_node):
-			push_dir = (owner_node.global_position - GameManager.player_node.global_position).normalized()
-			push_dir.y = 0
-			if states.has(parried_state_name):
-				transition_to(parried_state_name, {"direction": push_dir})
-		return
-	_current_parry_count = 0
-	_groggy_timer = duration
-	
-	if current_state.name != groggy_state_name and states.has(groggy_state_name):
-		transition_to(groggy_state_name)
-
-func emit_phase_change(data: Dictionary):
-	emit_signal("phase_changed", data)
-	
-func get_current_state() -> SimpleState:
-	return current_state
-
-func _on_impact_resolved(result: ContactResult):
-	if result.attacker_node == owner_node:
-		if current_state:
-			current_state.handle_attack_outcome(result)
-
-func on_current_state_finished(reason: Dictionary = {}):
-	
-	if current_state.name == "SimpleDeathState":
-		return
-		
-	var outcome = reason.get("outcome")
-	if outcome == "HIT" or outcome == "ATTACK_CONNECTED":
-		_decide_next_state(reason)
-		return
-		
-	if _groggy_timer > 0:
-		if current_state.name != groggy_state_name:
-			if states.has(groggy_state_name):
-				transition_to(groggy_state_name)
-				return
-
-	_decide_next_state(reason)
-
-# Função abstrata para filhos implementarem
-func _decide_next_state(_reason: Dictionary):
-	pass
-
-func transition_to(new_state_key: String, args: Dictionary = {}):
-	if not states.has(new_state_key):
-		push_error("BaseSimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
-		return
-
-	var new_state = states[new_state_key]
-	var previous_state = current_state
-	
-	if previous_state:
-		previous_state.exit()
-
-	current_state = new_state
-	current_state.enter(args)
-	emit_signal("transitioned", previous_state, current_state)
-</file>
-
-<file path="scripts/platform/flying_enemy.tscn">
-[gd_scene load_steps=6 format=3 uid="uid://dhjvjsjvv2gir"]
-
-[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_rqvq3"]
-[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_f30pw"]
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_jkvbt"]
-radius = 50.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_rqvq3"]
-radius = 50.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_f30pw"]
-radius = 50.0
-
-[node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
-enemy_tint_color = Color(0.635062, 0.750033, 0.982451, 1)
-enemy_tint_intensity = 0.06
-
-[node name="SpineSprite" parent="." index="0"]
-scale = Vector2(0.3, 0.3)
-
-[node name="CollisionShape2D" parent="." index="1"]
-position = Vector2(0, -50)
-shape = SubResource("CircleShape2D_jkvbt")
-
-[node name="SimpleStateMachine" parent="." index="2"]
-initial_state_key = "SimplePatrolFlyState"
-
-[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="4"]
-script = ExtResource("2_f30pw")
-metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
-
-[node name="HealthComponent" parent="." index="5"]
-max_health = 2.0
-
-[node name="CollisionShape2D" parent="Hitbox" index="0"]
-position = Vector2(0, -50)
-shape = SubResource("CircleShape2D_rqvq3")
-
-[node name="Hurtbox" parent="." index="10"]
-visible = true
-
-[node name="CollisionShape2D" parent="Hurtbox" index="0"]
-position = Vector2(0, -50)
-shape = SubResource("CircleShape2D_f30pw")
-</file>
-
 <file path="scripts/states/block_stun_state.gd">
 extends State
 class_name BlockStunState
@@ -5945,6 +5893,297 @@ var defender_outcome: DefenderOutcome
 var attacker_outcome: AttackerOutcome = AttackerOutcome.NONE
 </file>
 
+<file path="scripts/platform/aggressive_enemy.tscn">
+[gd_scene load_steps=11 format=3 uid="uid://b4uo35lo3wukl"]
+
+[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_6h87l"]
+[ext_resource type="Script" uid="uid://co6k05df3ffqv" path="res://scripts/platform/aggressive_state_machine.gd" id="2_6iwo7"]
+[ext_resource type="AudioStream" uid="uid://snkhhvuv11sl" path="res://audio/attack_1.wav" id="2_r2vcs"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_u6f6r"]
+[ext_resource type="Script" uid="uid://b300sb85dsb48" path="res://scripts/platform/simple_chase_state.gd" id="3_6iwo7"]
+[ext_resource type="Script" uid="uid://c84mr4ehwdq1i" path="res://scripts/platform/simple_parried_state.gd" id="7_52h12"]
+
+[sub_resource type="Resource" id="Resource_r2vcs"]
+script = ExtResource("2_u6f6r")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.45
+link_duration = 0.6
+animation_name = &"jump"
+active_sfx = ExtResource("2_r2vcs")
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(1000, 0)
+defender_knockback_on_parry = 500.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(-100, 0)
+active_movement_velocity = Vector2(3600, 0)
+recovery_movement_velocity = Vector2(70, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_iml81"]
+radius = 72.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_r2vcs"]
+radius = 72.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_52h12"]
+radius = 72.0
+
+[node name="AggressiveEnemy" instance=ExtResource("1_6h87l")]
+attack_profile = SubResource("Resource_r2vcs")
+enemy_tint_color = Color(10, 0, 0, 1)
+enemy_tint_intensity = 0.04
+
+[node name="SpineSprite" parent="." index="0"]
+scale = Vector2(0.4, 0.4)
+
+[node name="CollisionShape2D" parent="." index="1"]
+position = Vector2(0, -72)
+shape = SubResource("CircleShape2D_iml81")
+
+[node name="SimpleStateMachine" parent="." index="2"]
+script = ExtResource("2_6iwo7")
+detection_range = 1000.0
+attack_range = 300.0
+attack_cooldown = 1.0
+chase_state_name = "SimpleChaseState"
+attack_state_name = "SimpleAttackState"
+recoil_state_name = "SimpleRecoilState"
+stagger_state_name = "SimpleStaggerState"
+immune_to_stagger = true
+parries_required_for_groggy = 5
+
+[node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
+script = ExtResource("3_6iwo7")
+metadata/_custom_type_script = "uid://b300sb85dsb48"
+
+[node name="SimpleParriedState" type="Node" parent="SimpleStateMachine" index="6"]
+script = ExtResource("7_52h12")
+metadata/_custom_type_script = "uid://c84mr4ehwdq1i"
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 10.0
+
+[node name="RayCast2D" parent="WallDetectorComponent" index="0"]
+target_position = Vector2(100, 0)
+
+[node name="FloorDetector" parent="WallDetectorComponent" index="1"]
+position = Vector2(100, 0)
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -72)
+shape = SubResource("CircleShape2D_r2vcs")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -72)
+shape = SubResource("CircleShape2D_52h12")
+</file>
+
+<file path="scripts/platform/base_simple_state_machine.gd">
+class_name BaseSimpleStateMachine
+extends Node
+
+signal phase_changed(phase_data: Dictionary)
+signal transitioned(from_state: SimpleState, to_state: SimpleState)
+
+@export_group("State Configuration")
+@export var initial_state_key: String = ""
+## Nome do nó na cena que representa o estado de Groggy (vulnerável).
+@export var groggy_state_name: String = "SimpleGroggyState"
+## Nome do nó na cena que representa o estado de Parried (interrupção leve).
+@export var parried_state_name: String = "SimpleParriedState"
+
+@export_group("Mechanics")
+@export var parries_required_for_groggy: int = 1
+
+var _current_parry_count: int = 0
+var states: Dictionary = {}
+var current_state: SimpleState
+var owner_node: Node
+var physics_component: Node
+var wall_detector: WallDetectorComponent
+var surface_contact_component: SurfaceContactComponent 
+
+var _groggy_timer: float = 0.0
+
+func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+	owner_node = p_owner_node
+	physics_component = p_physics_comp
+	surface_contact_component = p_surface_contact_comp
+	wall_detector = p_wall_detector
+	
+	assert(owner_node != null, "BaseSimpleStateMachine: owner_node não pode ser nulo.")
+	assert(physics_component != null, "BaseSimpleStateMachine: physics_component não pode ser nulo.")
+
+	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+
+	for child in get_children():
+		if child is SimpleState:
+			states[child.name] = child
+			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
+	
+	_current_parry_count = 0
+	_start_initial_state()
+
+func _start_initial_state():
+	if not initial_state_key.is_empty() and states.has(initial_state_key):
+		current_state = states[initial_state_key]
+		current_state.enter({})
+	elif not initial_state_key.is_empty():
+		push_error("BaseSimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
+
+func process_physics(delta: float) -> Vector2:
+	if _groggy_timer > 0:
+		_groggy_timer -= delta
+		if _groggy_timer <= 0 and current_state.name == groggy_state_name:
+			on_current_state_finished({"outcome": "GROGGY_FINISHED"})
+
+	if not current_state:
+		return Vector2.ZERO
+	return current_state.process_physics(delta)
+
+## Aciona o estado de atordoamento ou interrupção.
+## [param duration]: Tempo que o inimigo fica groggy.
+## [param hit_source]: (Opcional) A origem do impacto para calcular a direção do recuo.
+func trigger_groggy(duration: float, hit_source: Node = null):
+	_current_parry_count += 1
+	if _current_parry_count < parries_required_for_groggy:
+		var push_dir = Vector2.ZERO
+		
+		# Prioridade: Usar a fonte exata do hit (ex: quem deu o parry ou disparou o tiro)
+		if is_instance_valid(hit_source):
+			push_dir = (owner_node.global_position - hit_source.global_position).normalized()
+		# Fallback: Usar o Player global (comportamento legado para segurança)
+		elif is_instance_valid(GameManager.player_node):
+			push_dir = (owner_node.global_position - GameManager.player_node.global_position).normalized()
+			
+		push_dir.y = 0
+		
+		if states.has(parried_state_name):
+			transition_to(parried_state_name, {"direction": push_dir})
+		return
+		
+	_current_parry_count = 0
+	_groggy_timer = duration
+	
+	if current_state.name != groggy_state_name and states.has(groggy_state_name):
+		transition_to(groggy_state_name)
+
+func emit_phase_change(data: Dictionary):
+	emit_signal("phase_changed", data)
+	
+func get_current_state() -> SimpleState:
+	return current_state
+
+func _on_impact_resolved(result: ContactResult):
+	if result.attacker_node == owner_node:
+		if current_state:
+			# Nota: Se desejado, você pode atualizar handle_attack_outcome no SimpleState
+			# para passar result.defender_node ao chamar trigger_groggy.
+			current_state.handle_attack_outcome(result)
+
+func on_current_state_finished(reason: Dictionary = {}):
+	
+	if current_state.name == "SimpleDeathState":
+		return
+		
+	var outcome = reason.get("outcome")
+	if outcome == "HIT" or outcome == "ATTACK_CONNECTED":
+		_decide_next_state(reason)
+		return
+		
+	if _groggy_timer > 0:
+		if current_state.name != groggy_state_name:
+			if states.has(groggy_state_name):
+				transition_to(groggy_state_name)
+				return
+
+	_decide_next_state(reason)
+
+# Função abstrata para filhos implementarem
+func _decide_next_state(_reason: Dictionary):
+	pass
+
+func transition_to(new_state_key: String, args: Dictionary = {}):
+	if not states.has(new_state_key):
+		push_error("BaseSimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
+		return
+
+	var new_state = states[new_state_key]
+	var previous_state = current_state
+	
+	if previous_state:
+		previous_state.exit()
+
+	current_state = new_state
+	current_state.enter(args)
+	emit_signal("transitioned", previous_state, current_state)
+</file>
+
+<file path="scripts/platform/flying_enemy.tscn">
+[gd_scene load_steps=6 format=3 uid="uid://dhjvjsjvv2gir"]
+
+[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_rqvq3"]
+[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_f30pw"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_jkvbt"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_rqvq3"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_f30pw"]
+radius = 50.0
+
+[node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
+enemy_tint_color = Color(0.635062, 0.750033, 0.982451, 1)
+enemy_tint_intensity = 0.06
+
+[node name="SpineSprite" parent="." index="0"]
+scale = Vector2(0.3, 0.3)
+
+[node name="CollisionShape2D" parent="." index="1"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_jkvbt")
+
+[node name="SimpleStateMachine" parent="." index="2"]
+initial_state_key = "SimplePatrolFlyState"
+
+[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="4"]
+script = ExtResource("2_f30pw")
+metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 2.0
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_rqvq3")
+
+[node name="Hurtbox" parent="." index="10"]
+visible = true
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_f30pw")
+</file>
+
 <file path="scripts/states/dodge_state.gd">
 class_name DodgeState
 extends State
@@ -6226,86 +6465,6 @@ extends Resource
 @export var max_hold_time: float = 0.0
 @export var hold_accel: float = 0.0
 @export var release_cut_multiplier: float = 0.5
-</file>
-
-<file path="scripts/platform/simple_state.gd">
-class_name SimpleState
-extends Node
-
-var state_machine: BaseSimpleStateMachine
-var owner_node: Node
-var physics_component: Node
-var surface_contact_component: SurfaceContactComponent
-var wall_detector: WallDetectorComponent
-
-func initialize(sm: BaseSimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
-	self.state_machine = sm
-	self.owner_node = owner
-	self.physics_component = physics_comp
-	self.surface_contact_component = surface_contact_comp
-	self.wall_detector = p_wall_detector
-
-func enter(_args: Dictionary = {}):
-	pass
-
-func exit():
-	pass
-
-func process_physics(_delta: float) -> Vector2:
-	return Vector2.ZERO
-
-func handle_attack_outcome(result: ContactResult):
-	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT:
-		var target_pos = Vector2.ZERO
-		if is_instance_valid(result.defender_node):
-			target_pos = result.defender_node.global_position
-			
-		var reason = {
-			"outcome": "ATTACK_CONNECTED",
-			"target_position": target_pos
-		}
-		state_machine.on_current_state_finished(reason)
-		
-	elif result.attacker_outcome == ContactResult.AttackerOutcome.PARRIED:
-		state_machine.trigger_groggy(3.0)
-		
-		var knockback = result.knockback_vector
-		
-		var reason = {
-			"outcome": "HIT",
-			"knockback_vector": knockback
-		}
-		state_machine.on_current_state_finished(reason)
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	var result_for_attacker = ContactResult.new()
-	result_for_attacker.attacker_node = context.attacker_node
-	result_for_attacker.defender_node = context.defender_node
-	result_for_attacker.attack_profile = context.attack_profile
-
-	if context.defender_health_comp:
-		context.defender_health_comp.take_damage(context.attack_profile.damage)
-		
-		if not context.defender_health_comp.is_dead():
-			# Cálculo básico de knockback
-			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
-			var push_force = 350.0 
-			
-			# Se o AttackProfile tiver knockback definido, usamos ele
-			if context.attack_profile.knockback_vector != Vector2.ZERO:
-				# Ajusta a direção X baseada em quem bateu
-				push_force = context.attack_profile.knockback_vector.x
-			
-			var knockback = direction * push_force
-			knockback.y = -150.0 # Pulinho padrão ao tomar hit
-			
-			var reason = { "outcome": "HIT", "knockback_vector": knockback }
-			state_machine.on_current_state_finished(reason)
-
-	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
-	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY
-
-	return result_for_attacker
 </file>
 
 <file path="scripts/states/attack_state.gd">
@@ -6702,6 +6861,86 @@ func handle_attacker_parried(_result: ContactResult) -> bool:
 	return false
 </file>
 
+<file path="scripts/platform/simple_state.gd">
+class_name SimpleState
+extends Node
+
+var state_machine: BaseSimpleStateMachine
+var owner_node: Node
+var physics_component: Node
+var surface_contact_component: SurfaceContactComponent
+var wall_detector: WallDetectorComponent
+
+func initialize(sm: BaseSimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+	self.state_machine = sm
+	self.owner_node = owner
+	self.physics_component = physics_comp
+	self.surface_contact_component = surface_contact_comp
+	self.wall_detector = p_wall_detector
+
+func enter(_args: Dictionary = {}):
+	pass
+
+func exit():
+	pass
+
+func process_physics(_delta: float) -> Vector2:
+	return Vector2.ZERO
+
+func handle_attack_outcome(result: ContactResult):
+	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT:
+		var target_pos = Vector2.ZERO
+		if is_instance_valid(result.defender_node):
+			target_pos = result.defender_node.global_position
+			
+		var reason = {
+			"outcome": "ATTACK_CONNECTED",
+			"target_position": target_pos
+		}
+		state_machine.on_current_state_finished(reason)
+		
+	elif result.attacker_outcome == ContactResult.AttackerOutcome.PARRIED:
+		state_machine.trigger_groggy(3.0)
+		
+		var knockback = result.knockback_vector
+		
+		var reason = {
+			"outcome": "HIT",
+			"knockback_vector": knockback
+		}
+		state_machine.on_current_state_finished(reason)
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var result_for_attacker = ContactResult.new()
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
+
+	if context.defender_health_comp:
+		context.defender_health_comp.take_damage(context.attack_profile.damage)
+		
+		if not context.defender_health_comp.is_dead():
+			# Cálculo básico de knockback usando a fonte física (projétil ou atacante)
+			var direction = (context.defender_node.global_position - context.source_node.global_position).normalized()
+			var push_force = 350.0 
+			
+			# Se o AttackProfile tiver knockback definido, usamos ele
+			if context.attack_profile.knockback_vector != Vector2.ZERO:
+				# Ajusta a direção X baseada em quem bateu
+				push_force = context.attack_profile.knockback_vector.x
+			
+			var knockback = direction * push_force
+			knockback.y = -150.0 # Pulinho padrão ao tomar hit
+			
+			var reason = { "outcome": "HIT", "knockback_vector": knockback }
+			state_machine.on_current_state_finished(reason)
+
+	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
+	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY
+
+	return result_for_attacker
+</file>
+
 <file path="scripts/core/state_base.gd">
 class_name State
 extends Node
@@ -6813,219 +7052,6 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 	
 	return result_for_attacker
-</file>
-
-<file path="scripts/platform/simple_enemy.tscn">
-[gd_scene load_steps=35 format=3 uid="uid://def1lykxj4wss"]
-
-[ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
-[ext_resource type="Script" uid="uid://m6k761rpsw2b" path="res://scripts/profiles/locomotion_profile.gd" id="3_yyhko"]
-[ext_resource type="SpineAtlasResource" uid="uid://cyq1lt0qmhd5o" path="res://assets/enemy/platform/alien-pma.atlas" id="4_pm6ks"]
-[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
-[ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
-[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
-[ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
-[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="8_dct62"]
-[ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
-[ext_resource type="Script" uid="uid://bthf74x16lurg" path="res://scripts/platform/goomba_state_machine.gd" id="9_a8aot"]
-[ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="9_ir8sv"]
-[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
-[ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
-[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
-[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
-[ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
-[ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
-[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
-[ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
-[ext_resource type="Script" uid="uid://7cvdf53tkds2" path="res://scripts/platform/simple_recoil_state.gd" id="14_ir8sv"]
-[ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
-[ext_resource type="Script" uid="uid://ch6kcihci323o" path="res://scripts/platform/simple_groggy_state.gd" id="15_a8aot"]
-[ext_resource type="Script" uid="uid://ebh4v2paogrs" path="res://scripts/platform/flying_chase_state.gd" id="16_kttm4"]
-[ext_resource type="Script" uid="uid://vt6ench6q7cm" path="res://scripts/platform/flying_attack_state.gd" id="17_lh40x"]
-[ext_resource type="Script" uid="uid://dnreygx8olxx3" path="res://scripts/platform/simple_grounded_state.gd" id="18_r4g4d"]
-
-[sub_resource type="Resource" id="Resource_tvabn"]
-script = ExtResource("2_5vwvj")
-startup_duration = 0.3
-active_duration = 0.1
-block_recoil_duration = 0.55
-recovery_duration = 0.45
-link_duration = 0.6
-animation_name = &""
-hitbox_size = Vector2(160, 140)
-hitbox_position = Vector2(100, -30)
-damage = 10.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 0
-stamina_damage = 10.0
-poise_impact_contribution = 10.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, 0)
-defender_knockback_on_parry = 120.0
-parry_interaction = 0
-unparryable_type = 0
-movement_type = 0
-startup_movement_velocity = Vector2(0, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_omdno"]
-script = ExtResource("3_yyhko")
-speed = 300.0
-run_speed = 500.0
-acceleration = 2000.0
-friction = 1500.0
-poise_shield_contribution = 30.0
-idle_animation = &""
-walk_animation = &"run"
-run_animation = &""
-metadata/_custom_type_script = "uid://m6k761rpsw2b"
-
-[sub_resource type="Resource" id="Resource_2wo0y"]
-script = ExtResource("4_yyhko")
-animation_name = &"death"
-sfx = ExtResource("5_pm6ks")
-metadata/_custom_type_script = "uid://b761fppfyuqaa"
-
-[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_fik6p"]
-atlas_res = ExtResource("4_pm6ks")
-skeleton_file_res = ExtResource("5_2wo0y")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_wfdv6"]
-shader = ExtResource("8_dct62")
-shader_parameter/flash_color = Color(1, 1, 1, 1)
-shader_parameter/flash_modifier = 0.0
-shader_parameter/tint_color = Color(1, 0, 0, 1)
-shader_parameter/tint_intensity = 0.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
-radius = 38.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
-radius = 38.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
-radius = 38.0
-
-[node name="SimpleEnemy" type="CharacterBody2D"]
-collision_layer = 64
-script = ExtResource("1_m6jwr")
-attack_profile = SubResource("Resource_tvabn")
-locomotion_profile = SubResource("Resource_omdno")
-death_profile = SubResource("Resource_2wo0y")
-
-[node name="SpineSprite" type="SpineSprite" parent="."]
-skeleton_data_res = SubResource("SpineSkeletonDataResource_fik6p")
-normal_material = SubResource("ShaderMaterial_wfdv6")
-preview_skin = "Default"
-preview_animation = "run"
-preview_frame = false
-preview_time = 0.0
-scale = Vector2(0.2, 0.2)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_ikhq6")
-
-[node name="SimpleStateMachine" type="Node" parent="."]
-script = ExtResource("9_a8aot")
-initial_state_key = "SimplePatrolState"
-metadata/_custom_type_script = "uid://rl2jebk5cpgg"
-
-[node name="SimplePatrolState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("7_wfdv6")
-metadata/_custom_type_script = "uid://j6611u6es7ei"
-
-[node name="SimpleDeathState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("10_pm6ks")
-metadata/_custom_type_script = "uid://nkr7lri0t1dn"
-
-[node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("12_wfdv6")
-audio = ExtResource("13_skhkn")
-knockback_multiplier = 0.35
-metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
-
-[node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("14_ir8sv")
-metadata/_custom_type_script = "uid://7cvdf53tkds2"
-
-[node name="SimpleGroggyState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("15_a8aot")
-metadata/_custom_type_script = "uid://ch6kcihci323o"
-
-[node name="FlyingChaseState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("16_kttm4")
-metadata/_custom_type_script = "uid://ebh4v2paogrs"
-
-[node name="FlyingAttackState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("17_lh40x")
-metadata/_custom_type_script = "uid://vt6ench6q7cm"
-
-[node name="SimpleGroundedState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("18_r4g4d")
-metadata/_custom_type_script = "uid://dnreygx8olxx3"
-
-[node name="AnimationComponent" type="Node" parent="."]
-script = ExtResource("8_skhkn")
-metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
-
-[node name="AudioComponent" type="Node" parent="." node_paths=PackedStringArray("e_simple_state_machine")]
-script = ExtResource("12_2wo0y")
-e_simple_state_machine = NodePath("../SimpleStateMachine")
-metadata/_custom_type_script = "uid://nl1a7e12lrfa"
-
-[node name="HealthComponent" type="Node" parent="."]
-script = ExtResource("9_ir8sv")
-max_health = 1.0
-metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
-
-[node name="PhysicsComponent" type="Node" parent="."]
-script = ExtResource("10_a8aot")
-metadata/_custom_type_script = "uid://bjvp3kd6bmkho"
-
-[node name="SurfaceContactComponent" type="Node" parent="."]
-script = ExtResource("11_kttm4")
-metadata/_custom_type_script = "uid://dhdu4hixec0wa"
-
-[node name="WallDetectorComponent" type="Node2D" parent="."]
-script = ExtResource("12_lh40x")
-metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
-
-[node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
-position = Vector2(0, -38)
-target_position = Vector2(50, 0)
-
-[node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
-position = Vector2(40, 0)
-target_position = Vector2(0, 21)
-
-[node name="Hitbox" type="Area2D" parent="."]
-collision_layer = 16
-collision_mask = 32
-script = ExtResource("13_r4g4d")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_yo2nc")
-
-[node name="Hurtbox" type="Area2D" parent="."]
-visible = false
-collision_layer = 8
-collision_mask = 4
-script = ExtResource("14_yf6nf")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_3xv3x")
 </file>
 
 <file path="scripts/states/parry_state.gd">
@@ -7206,6 +7232,224 @@ func allow_reentry() -> bool:
 	return true
 </file>
 
+<file path="scripts/platform/simple_enemy.tscn">
+[gd_scene load_steps=36 format=3 uid="uid://def1lykxj4wss"]
+
+[ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
+[ext_resource type="Script" uid="uid://m6k761rpsw2b" path="res://scripts/profiles/locomotion_profile.gd" id="3_yyhko"]
+[ext_resource type="SpineAtlasResource" uid="uid://cyq1lt0qmhd5o" path="res://assets/enemy/platform/alien-pma.atlas" id="4_pm6ks"]
+[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
+[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
+[ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
+[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="8_dct62"]
+[ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
+[ext_resource type="Script" uid="uid://bthf74x16lurg" path="res://scripts/platform/goomba_state_machine.gd" id="9_a8aot"]
+[ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="9_ir8sv"]
+[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
+[ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
+[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
+[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
+[ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
+[ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
+[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
+[ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
+[ext_resource type="Script" uid="uid://7cvdf53tkds2" path="res://scripts/platform/simple_recoil_state.gd" id="14_ir8sv"]
+[ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
+[ext_resource type="Script" uid="uid://ch6kcihci323o" path="res://scripts/platform/simple_groggy_state.gd" id="15_a8aot"]
+[ext_resource type="Script" uid="uid://ebh4v2paogrs" path="res://scripts/platform/flying_chase_state.gd" id="16_kttm4"]
+[ext_resource type="Script" uid="uid://vt6ench6q7cm" path="res://scripts/platform/flying_attack_state.gd" id="17_lh40x"]
+[ext_resource type="Script" uid="uid://dnreygx8olxx3" path="res://scripts/platform/simple_grounded_state.gd" id="18_r4g4d"]
+[ext_resource type="Script" uid="uid://dsf43ffjw15we" path="res://scripts/platform/simple_attack_state.gd" id="19_yf6nf"]
+
+[sub_resource type="Resource" id="Resource_tvabn"]
+script = ExtResource("2_5vwvj")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.45
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 10.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(400, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_omdno"]
+script = ExtResource("3_yyhko")
+speed = 300.0
+run_speed = 500.0
+acceleration = 2000.0
+friction = 1500.0
+poise_shield_contribution = 30.0
+idle_animation = &""
+walk_animation = &"run"
+run_animation = &""
+metadata/_custom_type_script = "uid://m6k761rpsw2b"
+
+[sub_resource type="Resource" id="Resource_2wo0y"]
+script = ExtResource("4_yyhko")
+animation_name = &"death"
+sfx = ExtResource("5_pm6ks")
+metadata/_custom_type_script = "uid://b761fppfyuqaa"
+
+[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_fik6p"]
+atlas_res = ExtResource("4_pm6ks")
+skeleton_file_res = ExtResource("5_2wo0y")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wfdv6"]
+shader = ExtResource("8_dct62")
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_modifier = 0.0
+shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_intensity = 0.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
+radius = 38.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
+radius = 38.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
+radius = 38.0
+
+[node name="SimpleEnemy" type="CharacterBody2D"]
+collision_layer = 64
+script = ExtResource("1_m6jwr")
+attack_profile = SubResource("Resource_tvabn")
+locomotion_profile = SubResource("Resource_omdno")
+death_profile = SubResource("Resource_2wo0y")
+
+[node name="SpineSprite" type="SpineSprite" parent="."]
+skeleton_data_res = SubResource("SpineSkeletonDataResource_fik6p")
+normal_material = SubResource("ShaderMaterial_wfdv6")
+preview_skin = "Default"
+preview_animation = "run"
+preview_frame = false
+preview_time = 0.0
+scale = Vector2(0.2, 0.2)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_ikhq6")
+
+[node name="SimpleStateMachine" type="Node" parent="."]
+script = ExtResource("9_a8aot")
+initial_state_key = "SimplePatrolState"
+metadata/_custom_type_script = "uid://rl2jebk5cpgg"
+
+[node name="SimplePatrolState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("7_wfdv6")
+metadata/_custom_type_script = "uid://j6611u6es7ei"
+
+[node name="SimpleDeathState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("10_pm6ks")
+metadata/_custom_type_script = "uid://nkr7lri0t1dn"
+
+[node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("12_wfdv6")
+audio = ExtResource("13_skhkn")
+knockback_multiplier = 0.35
+metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
+
+[node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("14_ir8sv")
+metadata/_custom_type_script = "uid://7cvdf53tkds2"
+
+[node name="SimpleGroggyState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("15_a8aot")
+metadata/_custom_type_script = "uid://ch6kcihci323o"
+
+[node name="FlyingChaseState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("16_kttm4")
+metadata/_custom_type_script = "uid://ebh4v2paogrs"
+
+[node name="FlyingAttackState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("17_lh40x")
+metadata/_custom_type_script = "uid://vt6ench6q7cm"
+
+[node name="SimpleGroundedState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("18_r4g4d")
+metadata/_custom_type_script = "uid://dnreygx8olxx3"
+
+[node name="SimpleAttackState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("19_yf6nf")
+metadata/_custom_type_script = "uid://dsf43ffjw15we"
+
+[node name="AnimationComponent" type="Node" parent="."]
+script = ExtResource("8_skhkn")
+metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
+
+[node name="AudioComponent" type="Node" parent="." node_paths=PackedStringArray("e_simple_state_machine")]
+script = ExtResource("12_2wo0y")
+e_simple_state_machine = NodePath("../SimpleStateMachine")
+metadata/_custom_type_script = "uid://nl1a7e12lrfa"
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("9_ir8sv")
+max_health = 1.0
+metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
+
+[node name="PhysicsComponent" type="Node" parent="."]
+script = ExtResource("10_a8aot")
+metadata/_custom_type_script = "uid://bjvp3kd6bmkho"
+
+[node name="SurfaceContactComponent" type="Node" parent="."]
+script = ExtResource("11_kttm4")
+metadata/_custom_type_script = "uid://dhdu4hixec0wa"
+
+[node name="WallDetectorComponent" type="Node2D" parent="."]
+script = ExtResource("12_lh40x")
+metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
+
+[node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
+position = Vector2(0, -38)
+target_position = Vector2(50, 0)
+
+[node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
+position = Vector2(40, 0)
+target_position = Vector2(0, 21)
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 32
+script = ExtResource("13_r4g4d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_yo2nc")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+visible = false
+collision_layer = 8
+collision_mask = 4
+script = ExtResource("14_yf6nf")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_3xv3x")
+</file>
+
 <file path="scripts/profiles/attack_profile.gd">
 class_name AttackProfile
 extends Resource
@@ -7243,6 +7487,9 @@ enum MovementType {
 @export_group("Hitbox")
 @export var hitbox_size: Vector2 = Vector2(160, 140)
 @export var hitbox_position: Vector2 = Vector2(100, -30)
+
+@export_group("Projectile")
+@export var projectile_scene: PackedScene
 
 @export_group("Mechanics")
 @export var damage: float = 1.0
@@ -9615,7 +9862,7 @@ visible = false
 </file>
 
 <file path="scenes/testing_dojo.tscn">
-[gd_scene load_steps=23 format=4 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=25 format=4 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="2_7od0s"]
@@ -9636,6 +9883,7 @@ visible = false
 [ext_resource type="PackedScene" uid="uid://dhjvjsjvv2gir" path="res://scripts/platform/flying_enemy.tscn" id="17_eguil"]
 [ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="18_eguil"]
 [ext_resource type="PackedScene" uid="uid://by2iisxspfs2r" path="res://scripts/platform/flying_aggressive_enemy.tscn" id="19_lc6wr"]
+[ext_resource type="PackedScene" uid="uid://bs1683iw0jpyk" path="res://scripts/platform/ranged_enemy.tscn" id="21_wuj60"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_8esgq"]
 texture = ExtResource("13_8esgq")
@@ -9652,6 +9900,9 @@ sources/0 = SubResource("TileSetAtlasSource_8esgq")
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_m2w8e"]
 size = Vector2(5292, 1142)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_r2vcs"]
+radius = 72.0
+
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
@@ -9667,8 +9918,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-16.1016, -329.526)
-rotation = 0.464105
+position = Vector2(-19.3438, -327.643)
+rotation = 0.445953
 scale = Vector2(1, 1)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
@@ -9818,20 +10069,27 @@ position = Vector2(-25326, -1283)
 position = Vector2(-27555, -1335)
 
 [node name="AggressiveEnemy" parent="." instance=ExtResource("18_eguil")]
-position = Vector2(-22071, -759)
+position = Vector2(-24566, -831)
 
 [node name="FlyingAggressiveEnemy" parent="." instance=ExtResource("19_lc6wr")]
-position = Vector2(-24979, -1180)
+position = Vector2(-2971, -7899)
 
 [node name="SimplePatrolFlyState" parent="FlyingAggressiveEnemy/SimpleStateMachine" index="8"]
 point_a_node = NodePath("../../../Markers/AggressivePatrolPointA")
 point_b_node = NodePath("../../../Markers/AggressivePatrolPointB")
 
 [node name="RayCast2D" parent="FlyingAggressiveEnemy/WallDetectorComponent" index="0"]
+position = Vector2(0, -38)
 target_position = Vector2(50, 0)
 
 [node name="FloorDetector" parent="FlyingAggressiveEnemy/WallDetectorComponent" index="1"]
 position = Vector2(40, 0)
+
+[node name="CollisionShape2D" parent="FlyingAggressiveEnemy/Hitbox" index="0"]
+shape = SubResource("CircleShape2D_r2vcs")
+
+[node name="RangedEnemy" parent="." instance=ExtResource("21_wuj60")]
+position = Vector2(-25276, -721)
 
 [editable path="PlayerEntity"]
 [editable path="FlyingEnemy"]

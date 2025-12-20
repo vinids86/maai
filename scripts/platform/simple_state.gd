@@ -36,6 +36,8 @@ func handle_attack_outcome(result: ContactResult):
 		state_machine.on_current_state_finished(reason)
 		
 	elif result.attacker_outcome == ContactResult.AttackerOutcome.PARRIED:
+		if result.source_node != owner_node:
+			return
 		state_machine.trigger_groggy(3.0)
 		
 		var knockback = result.knockback_vector

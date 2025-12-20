@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=4 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=26 format=4 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="2_7od0s"]
@@ -19,6 +19,7 @@
 [ext_resource type="PackedScene" uid="uid://dhjvjsjvv2gir" path="res://scripts/platform/flying_enemy.tscn" id="17_eguil"]
 [ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="18_eguil"]
 [ext_resource type="PackedScene" uid="uid://by2iisxspfs2r" path="res://scripts/platform/flying_aggressive_enemy.tscn" id="19_lc6wr"]
+[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="20_qbyas"]
 [ext_resource type="PackedScene" uid="uid://bs1683iw0jpyk" path="res://scripts/platform/ranged_enemy.tscn" id="21_wuj60"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_8esgq"]
@@ -220,6 +221,12 @@ target_position = Vector2(50, 0)
 
 [node name="FloorDetector" parent="FlyingAggressiveEnemy/WallDetectorComponent" index="1"]
 position = Vector2(40, 0)
+
+[node name="Hitbox" parent="FlyingAggressiveEnemy" index="9"]
+visible = true
+collision_layer = 16
+collision_mask = 32
+script = ExtResource("20_qbyas")
 
 [node name="CollisionShape2D" parent="FlyingAggressiveEnemy/Hitbox" index="0"]
 shape = SubResource("CircleShape2D_r2vcs")

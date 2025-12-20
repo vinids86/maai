@@ -42,6 +42,9 @@ metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 [node name="RangedEnemy" instance=ExtResource("1_u4pjs")]
 attack_profile = SubResource("Resource_2u8hu")
 
+[node name="SimpleStateMachine" parent="." index="2"]
+attack_range = 1000.0
+
 [node name="SimpleAttackState" parent="SimpleStateMachine" index="10" node_paths=PackedStringArray("projectile_spawn_point")]
 projectile_spawn_point = NodePath("../../ProjectileSpawnPoint")
 

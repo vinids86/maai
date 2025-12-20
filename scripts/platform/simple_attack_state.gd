@@ -82,7 +82,6 @@ func _change_phase(new_phase: Phases):
 			duration = _profile.active_duration
 			sfx = _profile.active_sfx
 			
-			# LÓGICA DE PROJÉTIL: Instancia se configurado no profile
 			if _profile.projectile_scene:
 				_spawn_projectile()
 			
@@ -92,7 +91,6 @@ func _change_phase(new_phase: Phases):
 			
 	_time_left = duration
 	
-	# Envia sinal para tocar som/animação assincronamente nos componentes
 	state_machine.emit_phase_change({
 		"state": "SimpleAttackState",
 		"phase": Phases.keys()[_current_phase],
@@ -109,18 +107,22 @@ func _spawn_projectile() -> void:
 		push_error("SimpleAttackState: Cena configurada não é um Projectile válido.")
 		return
 
-	# Calcula posição de spawn
 	var spawn_pos = owner_node.global_position
-	if projectile_spawn_point:
-		spawn_pos = projectile_spawn_point.global_position
 	
-	# Define direção do tiro (horizontal baseado no facing travado)
+	if projectile_spawn_point:
+		var relative_pos = owner_node.to_local(projectile_spawn_point.global_position)
+		relative_pos.x = abs(relative_pos.x) * _attack_direction
+		spawn_pos = owner_node.to_global(relative_pos)
+	
+	elif _profile.hitbox_position != Vector2.ZERO:
+		var offset = _profile.hitbox_position
+		offset.x = abs(offset.x) * _attack_direction
+		spawn_pos = owner_node.to_global(offset)
+
 	var shoot_dir = Vector2.RIGHT
 	shoot_dir.x = _attack_direction
 
-	# Adiciona na cena raiz para desacoplar movimento
 	get_tree().current_scene.add_child(projectile)
 	projectile.global_position = spawn_pos
 	
-	# Configura o projétil com o dono (inimigo) e direção
 	projectile.setup(owner_node, _profile, shoot_dir)

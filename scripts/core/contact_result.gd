@@ -31,5 +31,6 @@ var attack_profile: AttackProfile
 var knockback_vector: Vector2
 var counter_profile: CounterExecutionProfile
 
+var source_node: Node
 var defender_outcome: DefenderOutcome
 var attacker_outcome: AttackerOutcome = AttackerOutcome.NONE
