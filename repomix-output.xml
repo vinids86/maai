@@ -112,6 +112,7 @@ scripts/platform/simple_chase_state.gd
 scripts/platform/simple_death_state.gd
 scripts/platform/simple_enemy.gd
 scripts/platform/simple_enemy.tscn
+scripts/platform/simple_groggy_state.gd
 scripts/platform/simple_patrol_fly_state.gd
 scripts/platform/simple_patrol_state.gd
 scripts/platform/simple_recoil_state.gd
@@ -1335,85 +1336,6 @@ func _decide_next_state(reason: Dictionary):
 		transition_to(initial_state_key)
 </file>
 
-<file path="scripts/platform/base_simple_state_machine.gd">
-class_name BaseSimpleStateMachine
-extends Node
-
-signal phase_changed(phase_data: Dictionary)
-signal transitioned(from_state: SimpleState, to_state: SimpleState)
-
-@export var initial_state_key: String = ""
-
-var states: Dictionary = {}
-var current_state: SimpleState
-var owner_node: Node
-var physics_component: Node
-var wall_detector: WallDetectorComponent
-var surface_contact_component: SurfaceContactComponent 
-
-func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
-	owner_node = p_owner_node
-	physics_component = p_physics_comp
-	surface_contact_component = p_surface_contact_comp
-	wall_detector = p_wall_detector
-	
-	assert(owner_node != null, "BaseSimpleStateMachine: owner_node não pode ser nulo.")
-	assert(physics_component != null, "BaseSimpleStateMachine: physics_component não pode ser nulo.")
-
-	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
-
-	for child in get_children():
-		if child is SimpleState:
-			states[child.name] = child
-			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
-	
-	_start_initial_state()
-
-func _start_initial_state():
-	if not initial_state_key.is_empty() and states.has(initial_state_key):
-		current_state = states[initial_state_key]
-		current_state.enter({})
-	elif not initial_state_key.is_empty():
-		push_error("BaseSimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
-
-func process_physics(delta: float) -> Vector2:
-	if not current_state:
-		return Vector2.ZERO
-	return current_state.process_physics(delta)
-
-func emit_phase_change(data: Dictionary):
-	emit_signal("phase_changed", data)
-	
-func get_current_state() -> SimpleState:
-	return current_state
-
-func _on_impact_resolved(result: ContactResult):
-	if result.attacker_node == owner_node:
-		if current_state:
-			current_state.handle_attack_outcome(result)
-
-func on_current_state_finished(reason: Dictionary = {}):
-	_decide_next_state(reason)
-
-func _decide_next_state(_reason: Dictionary):
-	pass
-
-func transition_to(new_state_key: String, args: Dictionary = {}):
-	if not states.has(new_state_key):
-		push_error("BaseSimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
-		return
-
-	var new_state = states[new_state_key]
-	var previous_state = current_state
-	
-	if previous_state:
-		previous_state.exit()
-
-	current_state = new_state
-	current_state.enter(args)
-	emit_signal("transitioned", previous_state, current_state)
-</file>
-
 <file path="scripts/platform/goomba_state_machine.gd">
 class_name GoombaStateMachine
 extends BaseSimpleStateMachine
@@ -1604,6 +1526,31 @@ func _flip_owner(dir_sign: float):
 		owner_node.set_facing_direction(dir_sign)
 </file>
 
+<file path="scripts/platform/simple_groggy_state.gd">
+class_name SimpleGroggyState
+extends SimpleState
+
+@export var animation_name: StringName = "hurt"
+
+func enter(_args: Dictionary = {}):
+	state_machine.emit_phase_change({
+		"state": "SimpleGroggyState",
+		"phase": "stunned",
+		"animation_to_play": animation_name
+	})
+	
+	owner_node.velocity.x = 0.0
+
+func process_physics(delta: float) -> Vector2:
+	var final_velocity = owner_node.velocity
+	if not owner_node.is_on_floor():
+		final_velocity.y += 980.0 * delta
+	
+	final_velocity.x = 0.0
+	
+	return final_velocity
+</file>
+
 <file path="scripts/platform/simple_patrol_fly_state.gd">
 class_name SimplePatrolFlyState
 extends SimpleState
@@ -1788,68 +1735,6 @@ func process_physics(delta: float) -> Vector2:
 	_current_velocity.x = move_toward(_current_velocity.x, 0.0, friction * delta)
 	
 	return _current_velocity
-</file>
-
-<file path="scripts/platform/simple_stagger_state.gd">
-class_name SimpleStaggerState
-extends SimpleState
-
-# Aumentei a fricção para um valor físico. 
-# 1000.0 significa que ele perde 1000 pixels de velocidade por segundo (bom para deslizar).
-@export var stagger_duration: float = 0.8
-@export var friction: float = 800.0
-@export var audio: AudioStream
-
-var _timer: float = 0.0
-# Usamos essa variável para calcular a velocidade desejada
-var _current_velocity: Vector2 = Vector2.ZERO
-# Flag para garantir que o impulso inicial seja aplicado
-var _is_first_frame: bool = false
-
-func enter(args: Dictionary = {}):
-	owner_node.set_hitbox_enabled(false)
-	
-	# Captura o vetor total (X e Y)
-	_current_velocity = args.get("knockback_vector", Vector2.ZERO)
-	_timer = stagger_duration
-	_is_first_frame = true # Marca que acabamos de entrar
-	
-	state_machine.emit_phase_change({
-		"state": "SimpleStaggerState",
-		"phase": "hurt",
-		"sfx_to_play": audio,
-		"animation_to_play": "hit" # Confirme se o nome é "hurt" ou "hit" no seu Spine
-	})
-
-func process_physics(delta: float) -> Vector2:
-	_timer -= delta
-	if _timer <= 0.0:
-		state_machine.on_current_state_finished()
-		return Vector2.ZERO
-
-	# LÓGICA DE SINCRONIA:
-	# Se NÃO for o primeiro frame, atualizamos nossa velocidade interna com a REALIDADE do ator.
-	# Isso garante que se ele bater numa parede ou chão, a velocidade zera corretamente.
-	if not _is_first_frame:
-		_current_velocity = owner_node.velocity
-	else:
-		# Se É o primeiro frame, não lemos o owner_node, pois ele tem a velocidade antiga (ex: andando).
-		# Mantemos o _current_velocity que configuramos no enter().
-		_is_first_frame = false
-
-	# 1. Aplica Gravidade no Y
-	if not owner_node.is_on_floor():
-		_current_velocity.y += 980.0 * delta
-	
-	# 2. Aplica Fricção no X (deslizar até parar)
-	# move_toward é melhor que lerp para atrito físico constante
-	_current_velocity.x = move_toward(_current_velocity.x, 0.0, friction * delta)
-	
-	# Retorna a velocidade calculada para o SimpleEnemy aplicar no move_and_slide()
-	return _current_velocity
-
-func exit():
-	owner_node.set_hitbox_enabled(true)
 </file>
 
 <file path="scripts/profiles/counter_execution_profile.gd">
@@ -2642,6 +2527,110 @@ script = ExtResource("4_5r6u3")
 metadata/_custom_type_script = "uid://dsf43ffjw15we"
 </file>
 
+<file path="scripts/platform/base_simple_state_machine.gd">
+class_name BaseSimpleStateMachine
+extends Node
+
+signal phase_changed(phase_data: Dictionary)
+signal transitioned(from_state: SimpleState, to_state: SimpleState)
+
+@export var initial_state_key: String = ""
+
+var states: Dictionary = {}
+var current_state: SimpleState
+var owner_node: Node
+var physics_component: Node
+var wall_detector: WallDetectorComponent
+var surface_contact_component: SurfaceContactComponent 
+
+var _groggy_timer: float = 0.0
+
+func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+	owner_node = p_owner_node
+	physics_component = p_physics_comp
+	surface_contact_component = p_surface_contact_comp
+	wall_detector = p_wall_detector
+	
+	assert(owner_node != null, "BaseSimpleStateMachine: owner_node não pode ser nulo.")
+	assert(physics_component != null, "BaseSimpleStateMachine: physics_component não pode ser nulo.")
+
+	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+
+	for child in get_children():
+		if child is SimpleState:
+			states[child.name] = child
+			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
+	
+	_start_initial_state()
+
+func _start_initial_state():
+	if not initial_state_key.is_empty() and states.has(initial_state_key):
+		current_state = states[initial_state_key]
+		current_state.enter({})
+	elif not initial_state_key.is_empty():
+		push_error("BaseSimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
+
+func process_physics(delta: float) -> Vector2:
+	if _groggy_timer > 0:
+		_groggy_timer -= delta
+		if _groggy_timer <= 0 and current_state.name == "SimpleGroggyState":
+			on_current_state_finished({"outcome": "GROGGY_FINISHED"})
+
+	if not current_state:
+		return Vector2.ZERO
+	return current_state.process_physics(delta)
+
+func trigger_groggy(duration: float):
+	_groggy_timer = duration
+
+func emit_phase_change(data: Dictionary):
+	emit_signal("phase_changed", data)
+	
+func get_current_state() -> SimpleState:
+	return current_state
+
+func _on_impact_resolved(result: ContactResult):
+	if result.attacker_node == owner_node:
+		if current_state:
+			current_state.handle_attack_outcome(result)
+
+func on_current_state_finished(reason: Dictionary = {}):
+	
+	if current_state.name == "SimpleDeathState":
+		return
+
+	var outcome = reason.get("outcome")
+	if outcome == "HIT" or outcome == "ATTACK_CONNECTED":
+		_decide_next_state(reason)
+		return
+
+	if _groggy_timer > 0:
+		if current_state.name != "SimpleGroggyState":
+			transition_to("SimpleGroggyState")
+			return
+
+	_decide_next_state(reason)
+
+# Função abstrata para filhos implementarem
+func _decide_next_state(_reason: Dictionary):
+	pass
+
+func transition_to(new_state_key: String, args: Dictionary = {}):
+	if not states.has(new_state_key):
+		push_error("BaseSimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
+		return
+
+	var new_state = states[new_state_key]
+	var previous_state = current_state
+	
+	if previous_state:
+		previous_state.exit()
+
+	current_state = new_state
+	current_state.enter(args)
+	emit_signal("transitioned", previous_state, current_state)
+</file>
+
 <file path="scripts/platform/simple_death_state.gd">
 class_name SimpleDeathState
 extends SimpleState
@@ -2672,6 +2661,63 @@ func enter(_args: Dictionary = {}):
 func process_physics(_delta: float) -> Vector2:
 	# Para o movimento completamente
 	return Vector2.ZERO
+</file>
+
+<file path="scripts/platform/simple_stagger_state.gd">
+class_name SimpleStaggerState
+extends SimpleState
+
+@export var stagger_duration: float = 0.6
+@export var audio: AudioStream
+
+@export var ground_friction: float = 2500.0 
+@export var air_friction: float = 400.0 
+
+@export_range(0.0, 1.0) var knockback_multiplier: float = 0.5 
+
+var _timer: float = 0.0
+var _current_velocity: Vector2 = Vector2.ZERO
+var _is_first_frame: bool = false
+
+func enter(args: Dictionary = {}):
+	owner_node.set_hitbox_enabled(false)
+	
+	var raw_knockback = args.get("knockback_vector", Vector2.ZERO)
+	
+	_current_velocity = raw_knockback * knockback_multiplier
+	
+	_timer = stagger_duration
+	_is_first_frame = true
+	
+	state_machine.emit_phase_change({
+		"state": "SimpleStaggerState",
+		"phase": "hurt",
+		"sfx_to_play": audio,
+		"animation_to_play": "hit"
+	})
+
+func process_physics(delta: float) -> Vector2:
+	_timer -= delta
+	if _timer <= 0.0:
+		state_machine.on_current_state_finished()
+		return Vector2.ZERO
+
+	if not _is_first_frame:
+		_current_velocity = owner_node.velocity
+	else:
+		_is_first_frame = false
+
+	if not owner_node.is_on_floor():
+		_current_velocity.y += 980.0 * delta
+		_current_velocity.x = move_toward(_current_velocity.x, 0.0, air_friction * delta)
+	else:
+		_current_velocity.x = move_toward(_current_velocity.x, 0.0, ground_friction * delta)
+	
+	return _current_velocity
+
+func exit():
+	owner_node.set_hitbox_enabled(true)
+	owner_node.velocity = Vector2.ZERO
 </file>
 
 <file path="scripts/states/countered_vulnerable_state.gd">
@@ -3530,6 +3576,67 @@ func _change_phase(new_phase: Phases):
 		phase_data["animation_to_play"] = current_profile.animation_name
 	
 	state_machine.emit_phase_change(phase_data)
+</file>
+
+<file path="scripts/states/stagger_state.gd">
+class_name StaggerState
+extends State
+
+var current_profile: StaggerProfile
+
+var time_left_in_phase: float = 0.0
+var _knockback_velocity: Vector2
+
+func enter(args: Dictionary = {}):
+	self.current_profile = args.get("profile")
+
+	if not current_profile:
+		state_machine.on_current_state_finished()
+		return
+
+	time_left_in_phase = current_profile.duration
+	
+	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
+	_knockback_velocity = knockback
+	if knockback.x != 0:
+		_knockback_velocity.x *= -owner_node.facing_sign
+
+	var sfx_to_play = args.get("override_sfx", current_profile.enter_sfx)
+
+	var phase_data := {
+		"state_name": self.name,
+		"phase_name": "STUN",
+		"profile": current_profile,
+		"sfx_to_play": sfx_to_play,
+		"animation_to_play": current_profile.animation_name
+	}
+	state_machine.emit_phase_change(phase_data)
+
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	if not current_profile:
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+
+	time_left_in_phase -= delta
+	if time_left_in_phase <= 0.0:
+		state_machine.on_current_state_finished()
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+	
+	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
+	
+	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
+	
+	return final_velocity
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	return _resolve_default_contact(context)
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func allow_reentry() -> bool:
+	return true
 </file>
 
 <file path="scripts/states/wall_slide_state.gd">
@@ -4399,67 +4506,6 @@ func _emit_phase_signal():
 		"sfx_to_play": current_profile.sfx
 	}
 	state_machine.emit_phase_change(phase_data)
-</file>
-
-<file path="scripts/states/stagger_state.gd">
-class_name StaggerState
-extends State
-
-var current_profile: StaggerProfile
-
-var time_left_in_phase: float = 0.0
-var _knockback_velocity: Vector2
-
-func enter(args: Dictionary = {}):
-	self.current_profile = args.get("profile")
-
-	if not current_profile:
-		state_machine.on_current_state_finished()
-		return
-
-	time_left_in_phase = current_profile.duration
-	
-	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
-	_knockback_velocity = knockback
-	if knockback.x != 0:
-		_knockback_velocity.x *= -owner_node.facing_sign
-
-	var sfx_to_play = args.get("override_sfx", current_profile.enter_sfx)
-
-	var phase_data := {
-		"state_name": self.name,
-		"phase_name": "STUN",
-		"profile": current_profile,
-		"sfx_to_play": sfx_to_play,
-		"animation_to_play": current_profile.animation_name
-	}
-	state_machine.emit_phase_change(phase_data)
-
-func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
-	if not current_profile:
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-
-	time_left_in_phase -= delta
-	if time_left_in_phase <= 0.0:
-		state_machine.on_current_state_finished()
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-	
-	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
-	
-	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
-	
-	return final_velocity
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	return _resolve_default_contact(context)
-
-func get_poise_shield_contribution() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.poise_shield_contribution
-
-func allow_reentry() -> bool:
-	return true
 </file>
 
 <file path="README.md">
@@ -5675,6 +5721,17 @@ func handle_attack_outcome(result: ContactResult):
 			"target_position": target_pos
 		}
 		state_machine.on_current_state_finished(reason)
+		
+	elif result.attacker_outcome == ContactResult.AttackerOutcome.PARRIED:
+		state_machine.trigger_groggy(4.0)
+		
+		var knockback = result.knockback_vector
+		
+		var reason = {
+			"outcome": "HIT",
+			"knockback_vector": knockback
+		}
+		state_machine.on_current_state_finished(reason)
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
@@ -5686,14 +5743,17 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
 		
 		if not context.defender_health_comp.is_dead():
+			# Cálculo básico de knockback
 			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
-			var push_force = 350.0 # Valor base, idealmente viria do AttackProfile mas mantemos simples aqui
+			var push_force = 350.0 
 			
-			# Se o AttackProfile tiver dados de knockback, podemos usar (opcional)
-			# if context.attack_profile.knockback_vector != Vector2.ZERO: ...
+			# Se o AttackProfile tiver knockback definido, usamos ele
+			if context.attack_profile.knockback_vector != Vector2.ZERO:
+				# Ajusta a direção X baseada em quem bateu
+				push_force = context.attack_profile.knockback_vector.x
 			
 			var knockback = direction * push_force
-			knockback.y = -100.0 # Um leve pulinho para tirar do chão
+			knockback.y = -150.0 # Pulinho padrão ao tomar hit
 			
 			var reason = { "outcome": "HIT", "knockback_vector": knockback }
 			state_machine.on_current_state_finished(reason)
@@ -6128,200 +6188,6 @@ func handle_attacker_parried(_result: ContactResult) -> bool:
 	return false
 </file>
 
-<file path="scripts/platform/simple_enemy.tscn">
-[gd_scene load_steps=31 format=3 uid="uid://def1lykxj4wss"]
-
-[ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
-[ext_resource type="Script" uid="uid://m6k761rpsw2b" path="res://scripts/profiles/locomotion_profile.gd" id="3_yyhko"]
-[ext_resource type="SpineAtlasResource" uid="uid://cyq1lt0qmhd5o" path="res://assets/enemy/platform/alien-pma.atlas" id="4_pm6ks"]
-[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
-[ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
-[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
-[ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
-[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="8_dct62"]
-[ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
-[ext_resource type="Script" uid="uid://bthf74x16lurg" path="res://scripts/platform/goomba_state_machine.gd" id="9_a8aot"]
-[ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="9_ir8sv"]
-[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
-[ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
-[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
-[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
-[ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
-[ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
-[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
-[ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
-[ext_resource type="Script" uid="uid://7cvdf53tkds2" path="res://scripts/platform/simple_recoil_state.gd" id="14_ir8sv"]
-[ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
-
-[sub_resource type="Resource" id="Resource_tvabn"]
-script = ExtResource("2_5vwvj")
-startup_duration = 0.3
-active_duration = 0.1
-block_recoil_duration = 0.55
-recovery_duration = 0.45
-link_duration = 0.6
-animation_name = &""
-hitbox_size = Vector2(160, 140)
-hitbox_position = Vector2(100, -30)
-damage = 10.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 0
-stamina_damage = 10.0
-poise_impact_contribution = 10.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, 0)
-defender_knockback_on_parry = 120.0
-parry_interaction = 0
-unparryable_type = 0
-movement_type = 0
-startup_movement_velocity = Vector2(0, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="Resource" id="Resource_omdno"]
-script = ExtResource("3_yyhko")
-speed = 300.0
-run_speed = 500.0
-acceleration = 2000.0
-friction = 1500.0
-poise_shield_contribution = 30.0
-idle_animation = &""
-walk_animation = &"run"
-run_animation = &""
-metadata/_custom_type_script = "uid://m6k761rpsw2b"
-
-[sub_resource type="Resource" id="Resource_2wo0y"]
-script = ExtResource("4_yyhko")
-animation_name = &"death"
-sfx = ExtResource("5_pm6ks")
-metadata/_custom_type_script = "uid://b761fppfyuqaa"
-
-[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_fik6p"]
-atlas_res = ExtResource("4_pm6ks")
-skeleton_file_res = ExtResource("5_2wo0y")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_wfdv6"]
-shader = ExtResource("8_dct62")
-shader_parameter/flash_color = Color(1, 1, 1, 1)
-shader_parameter/flash_modifier = 0.0
-shader_parameter/tint_color = Color(1, 0, 0, 1)
-shader_parameter/tint_intensity = 0.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
-radius = 38.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
-radius = 38.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
-radius = 38.0
-
-[node name="SimpleEnemy" type="CharacterBody2D"]
-collision_layer = 64
-script = ExtResource("1_m6jwr")
-attack_profile = SubResource("Resource_tvabn")
-locomotion_profile = SubResource("Resource_omdno")
-death_profile = SubResource("Resource_2wo0y")
-
-[node name="SpineSprite" type="SpineSprite" parent="."]
-skeleton_data_res = SubResource("SpineSkeletonDataResource_fik6p")
-normal_material = SubResource("ShaderMaterial_wfdv6")
-preview_skin = "Default"
-preview_animation = "run"
-preview_frame = false
-preview_time = 0.0
-scale = Vector2(0.2, 0.2)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-visible = false
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_ikhq6")
-
-[node name="SimpleStateMachine" type="Node" parent="."]
-script = ExtResource("9_a8aot")
-initial_state_key = "SimplePatrolState"
-metadata/_custom_type_script = "uid://rl2jebk5cpgg"
-
-[node name="SimplePatrolState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("7_wfdv6")
-metadata/_custom_type_script = "uid://j6611u6es7ei"
-
-[node name="SimpleDeathState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("10_pm6ks")
-metadata/_custom_type_script = "uid://nkr7lri0t1dn"
-
-[node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("12_wfdv6")
-audio = ExtResource("13_skhkn")
-metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
-
-[node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("14_ir8sv")
-metadata/_custom_type_script = "uid://7cvdf53tkds2"
-
-[node name="AnimationComponent" type="Node" parent="."]
-script = ExtResource("8_skhkn")
-metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
-
-[node name="AudioComponent" type="Node" parent="." node_paths=PackedStringArray("e_simple_state_machine")]
-script = ExtResource("12_2wo0y")
-e_simple_state_machine = NodePath("../SimpleStateMachine")
-metadata/_custom_type_script = "uid://nl1a7e12lrfa"
-
-[node name="HealthComponent" type="Node" parent="."]
-script = ExtResource("9_ir8sv")
-max_health = 5.0
-metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
-
-[node name="PhysicsComponent" type="Node" parent="."]
-script = ExtResource("10_a8aot")
-metadata/_custom_type_script = "uid://bjvp3kd6bmkho"
-
-[node name="SurfaceContactComponent" type="Node" parent="."]
-script = ExtResource("11_kttm4")
-metadata/_custom_type_script = "uid://dhdu4hixec0wa"
-
-[node name="WallDetectorComponent" type="Node2D" parent="."]
-script = ExtResource("12_lh40x")
-metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
-
-[node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
-position = Vector2(0, -38)
-target_position = Vector2(50, 0)
-
-[node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
-position = Vector2(40, 0)
-target_position = Vector2(0, 21)
-
-[node name="Hitbox" type="Area2D" parent="."]
-visible = false
-collision_layer = 16
-collision_mask = 32
-script = ExtResource("13_r4g4d")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_yo2nc")
-
-[node name="Hurtbox" type="Area2D" parent="."]
-visible = false
-collision_layer = 8
-collision_mask = 4
-script = ExtResource("14_yf6nf")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_3xv3x")
-</file>
-
 <file path="scripts/core/state_base.gd">
 class_name State
 extends Node
@@ -6433,6 +6299,206 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 	
 	return result_for_attacker
+</file>
+
+<file path="scripts/platform/simple_enemy.tscn">
+[gd_scene load_steps=32 format=3 uid="uid://def1lykxj4wss"]
+
+[ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
+[ext_resource type="Script" uid="uid://m6k761rpsw2b" path="res://scripts/profiles/locomotion_profile.gd" id="3_yyhko"]
+[ext_resource type="SpineAtlasResource" uid="uid://cyq1lt0qmhd5o" path="res://assets/enemy/platform/alien-pma.atlas" id="4_pm6ks"]
+[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
+[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
+[ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
+[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="8_dct62"]
+[ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
+[ext_resource type="Script" uid="uid://bthf74x16lurg" path="res://scripts/platform/goomba_state_machine.gd" id="9_a8aot"]
+[ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="9_ir8sv"]
+[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
+[ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
+[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
+[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
+[ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
+[ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
+[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
+[ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
+[ext_resource type="Script" uid="uid://7cvdf53tkds2" path="res://scripts/platform/simple_recoil_state.gd" id="14_ir8sv"]
+[ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
+[ext_resource type="Script" uid="uid://ch6kcihci323o" path="res://scripts/platform/simple_groggy_state.gd" id="15_a8aot"]
+
+[sub_resource type="Resource" id="Resource_tvabn"]
+script = ExtResource("2_5vwvj")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.45
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 10.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(400, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_omdno"]
+script = ExtResource("3_yyhko")
+speed = 300.0
+run_speed = 500.0
+acceleration = 2000.0
+friction = 1500.0
+poise_shield_contribution = 30.0
+idle_animation = &""
+walk_animation = &"run"
+run_animation = &""
+metadata/_custom_type_script = "uid://m6k761rpsw2b"
+
+[sub_resource type="Resource" id="Resource_2wo0y"]
+script = ExtResource("4_yyhko")
+animation_name = &"death"
+sfx = ExtResource("5_pm6ks")
+metadata/_custom_type_script = "uid://b761fppfyuqaa"
+
+[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_fik6p"]
+atlas_res = ExtResource("4_pm6ks")
+skeleton_file_res = ExtResource("5_2wo0y")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wfdv6"]
+shader = ExtResource("8_dct62")
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_modifier = 0.0
+shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_intensity = 0.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
+radius = 38.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
+radius = 38.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
+radius = 38.0
+
+[node name="SimpleEnemy" type="CharacterBody2D"]
+collision_layer = 64
+script = ExtResource("1_m6jwr")
+attack_profile = SubResource("Resource_tvabn")
+locomotion_profile = SubResource("Resource_omdno")
+death_profile = SubResource("Resource_2wo0y")
+
+[node name="SpineSprite" type="SpineSprite" parent="."]
+skeleton_data_res = SubResource("SpineSkeletonDataResource_fik6p")
+normal_material = SubResource("ShaderMaterial_wfdv6")
+preview_skin = "Default"
+preview_animation = "run"
+preview_frame = false
+preview_time = 0.0
+scale = Vector2(0.2, 0.2)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+visible = false
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_ikhq6")
+
+[node name="SimpleStateMachine" type="Node" parent="."]
+script = ExtResource("9_a8aot")
+initial_state_key = "SimplePatrolState"
+metadata/_custom_type_script = "uid://rl2jebk5cpgg"
+
+[node name="SimplePatrolState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("7_wfdv6")
+metadata/_custom_type_script = "uid://j6611u6es7ei"
+
+[node name="SimpleDeathState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("10_pm6ks")
+metadata/_custom_type_script = "uid://nkr7lri0t1dn"
+
+[node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("12_wfdv6")
+audio = ExtResource("13_skhkn")
+knockback_multiplier = 0.35
+metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
+
+[node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("14_ir8sv")
+metadata/_custom_type_script = "uid://7cvdf53tkds2"
+
+[node name="SimpleGroggyState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("15_a8aot")
+metadata/_custom_type_script = "uid://ch6kcihci323o"
+
+[node name="AnimationComponent" type="Node" parent="."]
+script = ExtResource("8_skhkn")
+metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
+
+[node name="AudioComponent" type="Node" parent="." node_paths=PackedStringArray("e_simple_state_machine")]
+script = ExtResource("12_2wo0y")
+e_simple_state_machine = NodePath("../SimpleStateMachine")
+metadata/_custom_type_script = "uid://nl1a7e12lrfa"
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("9_ir8sv")
+max_health = 5.0
+metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
+
+[node name="PhysicsComponent" type="Node" parent="."]
+script = ExtResource("10_a8aot")
+metadata/_custom_type_script = "uid://bjvp3kd6bmkho"
+
+[node name="SurfaceContactComponent" type="Node" parent="."]
+script = ExtResource("11_kttm4")
+metadata/_custom_type_script = "uid://dhdu4hixec0wa"
+
+[node name="WallDetectorComponent" type="Node2D" parent="."]
+script = ExtResource("12_lh40x")
+metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
+
+[node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
+position = Vector2(0, -38)
+target_position = Vector2(50, 0)
+
+[node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
+position = Vector2(40, 0)
+target_position = Vector2(0, 21)
+
+[node name="Hitbox" type="Area2D" parent="."]
+visible = false
+collision_layer = 16
+collision_mask = 32
+script = ExtResource("13_r4g4d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_yo2nc")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+visible = false
+collision_layer = 8
+collision_mask = 4
+script = ExtResource("14_yf6nf")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_3xv3x")
 </file>
 
 <file path="scripts/states/parry_state.gd">
@@ -6671,6 +6737,210 @@ enum MovementType {
 @export var startup_poise_shield: float = 10.0
 @export var active_poise_shield: float = 10.0
 @export var recovery_poise_shield: float = 300.0
+</file>
+
+<file path="scripts/actors/enemy.gd">
+class_name Enemy
+extends CharacterBody2D
+
+@onready var state_machine: StateMachine = $StateMachine
+@onready var spine_sprite: SpineSprite = $SpineSprite
+@onready var animation_component: AnimationComponent = $AnimationComponent
+@onready var audio_component: AudioComponent = $AudioComponent
+@onready var ai_controller: AIController = $AIController
+@onready var health_component: HealthComponent = $HealthComponent
+@onready var stamina_component: StaminaComponent = $StaminaComponent
+@onready var status_ui: EnemyStatusUI = $EnemyStatusUI
+@onready var attack_executor: AttackExecutor = $AttackExecutor
+@onready var counter_executor_component: CounterExecutorComponent = $CounterExecutorComponent
+@onready var combo_component: ComboComponent = $ComboComponent
+@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
+@onready var detection_area: Area2D = $DetectionArea
+@onready var path_target: Node2D = get_parent().get_node("PathTarget")
+@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
+@onready var physics_component: PhysicsComponent = $PhysicsComponent
+@onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
+@onready var buffer_component: BufferComponent = $BufferComponent
+@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
+@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
+
+@export_group("Settings")
+@export var facing_sign: int = -1 
+
+@export_group("Equipped Skills")
+@export var skill_x: BaseSkill
+@export var skill_y: BaseSkill
+@export var skill_a: BaseSkill
+@export var skill_b: BaseSkill
+@export var skill_z: BaseSkill
+
+@export_group("Combat Data")
+@export var base_poise: float
+@export var jump_profile: JumpProfile
+@export var finisher_profile: FinisherProfile
+@export var parry_profile: ParryProfile
+@export var riposte_profile: AttackProfile
+@export var block_stun_profile: BlockStunProfile
+@export var stagger_profile: StaggerProfile
+@export var parried_profile: ParriedProfile
+@export var guard_broken_profile: GuardBrokenProfile
+@export var locomotion_profile: LocomotionProfile
+@export var death_profile: DeathProfile
+@export var dash_attack_profile: AttackProfile
+@export var wall_slide_profile: WallSlideProfile
+
+@export_group("Dodge Profiles")
+@export var neutral_dodge_profile: DodgeProfile
+@export var forward_dodge_profile: DodgeProfile
+@export var back_dodge_profile: DodgeProfile
+@export var up_dodge_profile: DodgeProfile
+@export var down_dodge_profile: DodgeProfile
+
+@export_group("Visual Identity")
+@export var enemy_tint_color: Color = Color.WHITE
+@export_range(0.0, 1.0) var enemy_tint_intensity: float = 0.0
+
+var _equipped_skills: Dictionary = {}
+var facing_locked: bool = false
+
+var air_jumps_left: int = 0
+var air_dash_used: bool = false
+var has_locked_air_pool: bool = false
+var last_left_ground_ms: int = -1
+var _target_detected: Node2D = null
+
+func _ready():
+	_build_skill_dictionary()
+	
+	_update_facing_direction()
+	
+	animation_component.setup(state_machine, spine_sprite)
+	
+	_apply_visual_tint()
+	
+	spine_sprite.animation_event.connect(_on_spine_event)
+	
+	action_cost_validator.setup(stamina_component, null)
+	state_machine.setup(
+		self,
+		physics_component,
+		path_follower_component,
+		buffer_component,
+		action_cost_validator,
+		surface_contact_component,
+		wall_detector,
+		counter_executor_component
+	)
+	
+	attack_executor.setup(self)
+
+	health_component.health_changed.connect(status_ui.update_health)
+	stamina_component.stamina_changed.connect(status_ui.update_stamina)
+	
+	surface_contact_component.call_deferred("setup", self)
+	if detection_area:
+		detection_area.body_entered.connect(_on_detection_entered)
+		detection_area.body_exited.connect(_on_detection_exited)
+
+func _physics_process(delta: float):
+	var walk_direction = ai_controller.get_walk_direction()
+	var is_running = ai_controller.is_running()
+	
+	if not facing_locked and is_instance_valid(_target_detected) and not (state_machine.current_state is DeathState):
+		var direction_to_target = _target_detected.global_position.x - global_position.x
+		if abs(direction_to_target) > 10.0: 
+			facing_sign = sign(direction_to_target)
+	
+	_update_facing_direction()
+	
+	if is_instance_valid(path_target):
+		path_target.global_position = self.global_position
+	
+	velocity = state_machine.process_physics(delta, walk_direction, is_running)
+	move_and_slide()
+
+func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState, _track_entry: SpineTrackEntry, event: SpineEvent):
+	var event_name = event.get_data().get_event_name()
+	
+	match event_name:
+		"footstep":
+			if audio_component:
+				audio_component.play_footstep()
+
+func _on_detection_entered(body: Node2D):
+	if body is Player:
+		_target_detected = body
+
+func _on_detection_exited(body: Node2D):
+	if body == _target_detected:
+		_target_detected = null
+
+func _build_skill_dictionary():
+	if skill_x: _equipped_skills["skill_x"] = skill_x
+	if skill_y: _equipped_skills["skill_y"] = skill_y
+	if skill_a: _equipped_skills["skill_a"] = skill_a
+	if skill_b: _equipped_skills["skill_b"] = skill_b
+	if skill_z: _equipped_skills["skill_z"] = skill_z
+
+func get_skill(action_name: String) -> BaseSkill:
+	return _equipped_skills.get(action_name)
+
+func _update_facing_direction():
+	if is_instance_valid(spine_sprite):
+		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
+	if detection_area:
+		detection_area.scale.x = facing_sign
+
+func get_riposte_profile() -> AttackProfile:
+	return riposte_profile
+	
+func get_finisher_profile() -> FinisherProfile:
+	return finisher_profile
+
+func get_finisher_attack_profile() -> AttackProfile:
+	if not finisher_profile:
+		return null
+	return finisher_profile.attack_profile
+
+func get_parry_profile() -> ParryProfile:
+	return parry_profile
+	
+func get_block_stun_profile() -> BlockStunProfile:
+	return block_stun_profile
+	
+func get_stagger_profile() -> StaggerProfile:
+	return stagger_profile
+	
+func get_parried_profile() -> ParriedProfile:
+	return parried_profile
+	
+func get_guard_broken_profile() -> GuardBrokenProfile:
+	return guard_broken_profile
+
+func get_locomotion_profile() -> LocomotionProfile:
+	return locomotion_profile
+
+func get_death_profile() -> DeathProfile:
+	return death_profile
+
+func get_wall_slide_profile() -> WallSlideProfile:
+	return wall_slide_profile
+
+func get_jump_profile() -> JumpProfile:
+	return jump_profile
+	
+func reset_air_actions():
+	if jump_profile:
+		air_jumps_left = jump_profile.max_air_jumps
+	air_dash_used = false
+	has_locked_air_pool = true
+
+func _apply_visual_tint():
+	if is_instance_valid(spine_sprite) and spine_sprite.normal_material:
+		var mat = spine_sprite.normal_material as ShaderMaterial
+		if mat:
+			mat.set_shader_parameter("tint_color", enemy_tint_color)
+			mat.set_shader_parameter("tint_intensity", enemy_tint_intensity)
 </file>
 
 <file path="scripts/states/airborne_state.gd">
@@ -7009,210 +7279,6 @@ func _on_landed() -> void:
 	owner_node.last_left_ground_ms = -1
 </file>
 
-<file path="scripts/actors/enemy.gd">
-class_name Enemy
-extends CharacterBody2D
-
-@onready var state_machine: StateMachine = $StateMachine
-@onready var spine_sprite: SpineSprite = $SpineSprite
-@onready var animation_component: AnimationComponent = $AnimationComponent
-@onready var audio_component: AudioComponent = $AudioComponent
-@onready var ai_controller: AIController = $AIController
-@onready var health_component: HealthComponent = $HealthComponent
-@onready var stamina_component: StaminaComponent = $StaminaComponent
-@onready var status_ui: EnemyStatusUI = $EnemyStatusUI
-@onready var attack_executor: AttackExecutor = $AttackExecutor
-@onready var counter_executor_component: CounterExecutorComponent = $CounterExecutorComponent
-@onready var combo_component: ComboComponent = $ComboComponent
-@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
-@onready var detection_area: Area2D = $DetectionArea
-@onready var path_target: Node2D = get_parent().get_node("PathTarget")
-@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
-@onready var physics_component: PhysicsComponent = $PhysicsComponent
-@onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
-@onready var buffer_component: BufferComponent = $BufferComponent
-@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
-@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
-
-@export_group("Settings")
-@export var facing_sign: int = -1 
-
-@export_group("Equipped Skills")
-@export var skill_x: BaseSkill
-@export var skill_y: BaseSkill
-@export var skill_a: BaseSkill
-@export var skill_b: BaseSkill
-@export var skill_z: BaseSkill
-
-@export_group("Combat Data")
-@export var base_poise: float
-@export var jump_profile: JumpProfile
-@export var finisher_profile: FinisherProfile
-@export var parry_profile: ParryProfile
-@export var riposte_profile: AttackProfile
-@export var block_stun_profile: BlockStunProfile
-@export var stagger_profile: StaggerProfile
-@export var parried_profile: ParriedProfile
-@export var guard_broken_profile: GuardBrokenProfile
-@export var locomotion_profile: LocomotionProfile
-@export var death_profile: DeathProfile
-@export var dash_attack_profile: AttackProfile
-@export var wall_slide_profile: WallSlideProfile
-
-@export_group("Dodge Profiles")
-@export var neutral_dodge_profile: DodgeProfile
-@export var forward_dodge_profile: DodgeProfile
-@export var back_dodge_profile: DodgeProfile
-@export var up_dodge_profile: DodgeProfile
-@export var down_dodge_profile: DodgeProfile
-
-@export_group("Visual Identity")
-@export var enemy_tint_color: Color = Color.WHITE
-@export_range(0.0, 1.0) var enemy_tint_intensity: float = 0.0
-
-var _equipped_skills: Dictionary = {}
-var facing_locked: bool = false
-
-var air_jumps_left: int = 0
-var air_dash_used: bool = false
-var has_locked_air_pool: bool = false
-var last_left_ground_ms: int = -1
-var _target_detected: Node2D = null
-
-func _ready():
-	_build_skill_dictionary()
-	
-	_update_facing_direction()
-	
-	animation_component.setup(state_machine, spine_sprite)
-	
-	_apply_visual_tint()
-	
-	spine_sprite.animation_event.connect(_on_spine_event)
-	
-	action_cost_validator.setup(stamina_component, null)
-	state_machine.setup(
-		self,
-		physics_component,
-		path_follower_component,
-		buffer_component,
-		action_cost_validator,
-		surface_contact_component,
-		wall_detector,
-		counter_executor_component
-	)
-	
-	attack_executor.setup(self)
-
-	health_component.health_changed.connect(status_ui.update_health)
-	stamina_component.stamina_changed.connect(status_ui.update_stamina)
-	
-	surface_contact_component.call_deferred("setup", self)
-	if detection_area:
-		detection_area.body_entered.connect(_on_detection_entered)
-		detection_area.body_exited.connect(_on_detection_exited)
-
-func _physics_process(delta: float):
-	var walk_direction = ai_controller.get_walk_direction()
-	var is_running = ai_controller.is_running()
-	
-	if not facing_locked and is_instance_valid(_target_detected) and not (state_machine.current_state is DeathState):
-		var direction_to_target = _target_detected.global_position.x - global_position.x
-		if abs(direction_to_target) > 10.0: 
-			facing_sign = sign(direction_to_target)
-	
-	_update_facing_direction()
-	
-	if is_instance_valid(path_target):
-		path_target.global_position = self.global_position
-	
-	velocity = state_machine.process_physics(delta, walk_direction, is_running)
-	move_and_slide()
-
-func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState, _track_entry: SpineTrackEntry, event: SpineEvent):
-	var event_name = event.get_data().get_event_name()
-	
-	match event_name:
-		"footstep":
-			if audio_component:
-				audio_component.play_footstep()
-
-func _on_detection_entered(body: Node2D):
-	if body is Player:
-		_target_detected = body
-
-func _on_detection_exited(body: Node2D):
-	if body == _target_detected:
-		_target_detected = null
-
-func _build_skill_dictionary():
-	if skill_x: _equipped_skills["skill_x"] = skill_x
-	if skill_y: _equipped_skills["skill_y"] = skill_y
-	if skill_a: _equipped_skills["skill_a"] = skill_a
-	if skill_b: _equipped_skills["skill_b"] = skill_b
-	if skill_z: _equipped_skills["skill_z"] = skill_z
-
-func get_skill(action_name: String) -> BaseSkill:
-	return _equipped_skills.get(action_name)
-
-func _update_facing_direction():
-	if is_instance_valid(spine_sprite):
-		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
-	if detection_area:
-		detection_area.scale.x = facing_sign
-
-func get_riposte_profile() -> AttackProfile:
-	return riposte_profile
-	
-func get_finisher_profile() -> FinisherProfile:
-	return finisher_profile
-
-func get_finisher_attack_profile() -> AttackProfile:
-	if not finisher_profile:
-		return null
-	return finisher_profile.attack_profile
-
-func get_parry_profile() -> ParryProfile:
-	return parry_profile
-	
-func get_block_stun_profile() -> BlockStunProfile:
-	return block_stun_profile
-	
-func get_stagger_profile() -> StaggerProfile:
-	return stagger_profile
-	
-func get_parried_profile() -> ParriedProfile:
-	return parried_profile
-	
-func get_guard_broken_profile() -> GuardBrokenProfile:
-	return guard_broken_profile
-
-func get_locomotion_profile() -> LocomotionProfile:
-	return locomotion_profile
-
-func get_death_profile() -> DeathProfile:
-	return death_profile
-
-func get_wall_slide_profile() -> WallSlideProfile:
-	return wall_slide_profile
-
-func get_jump_profile() -> JumpProfile:
-	return jump_profile
-	
-func reset_air_actions():
-	if jump_profile:
-		air_jumps_left = jump_profile.max_air_jumps
-	air_dash_used = false
-	has_locked_air_pool = true
-
-func _apply_visual_tint():
-	if is_instance_valid(spine_sprite) and spine_sprite.normal_material:
-		var mat = spine_sprite.normal_material as ShaderMaterial
-		if mat:
-			mat.set_shader_parameter("tint_color", enemy_tint_color)
-			mat.set_shader_parameter("tint_intensity", enemy_tint_intensity)
-</file>
-
 <file path="scripts/core/state_machine.gd">
 class_name StateMachine
 extends Node
@@ -7512,6 +7578,322 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 	current_state = new_state
 	current_state.enter(args)
 	emit_signal("transitioned", previous_state, current_state)
+</file>
+
+<file path="scripts/actors/player.gd">
+class_name Player
+extends CharacterBody2D
+
+@onready var state_machine: StateMachine = $StateMachine
+@onready var spine_sprite: SpineSprite = $SpineSprite
+@onready var animation_component: AnimationComponent = $AnimationComponent
+@onready var vfx_component: VFXComponent = $VFXComponent
+@onready var audio_component: AudioComponent = $AudioComponent
+@onready var health_component: HealthComponent = $HealthComponent
+@onready var stamina_component: StaminaComponent = $StaminaComponent
+@onready var focus_component: FocusComponent = $FocusComponent
+@onready var physics_component: PhysicsComponent = $PhysicsComponent
+@onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
+@onready var buffer_component: BufferComponent = $BufferComponent
+@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
+@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
+@onready var hold_input_timer: Timer = $HoldInputTimer
+@onready var run_cancel_timer: Timer = $RunCancelTimer
+@onready var attack_executor: AttackExecutor = $AttackExecutor
+@onready var counter_executor_component: CounterExecutorComponent = $CounterExecutorComponent
+@onready var combo_component: ComboComponent = $ComboComponent
+@onready var air_combo_component: AirComboComponent = $AirComboComponent
+@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
+@onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
+@onready var path_target: Node2D = get_parent().get_node("PathTarget")
+@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
+
+@export_group("Combat Data")
+@export var base_poise: float
+
+@export_group("Equipped Skills")
+@export var skill_x: BaseSkill
+@export var skill_y: BaseSkill
+@export var skill_a: BaseSkill
+@export var skill_b: BaseSkill
+
+var _equipped_skills: Dictionary = {}
+
+@export_group("Profiles")
+@export var jump_profile: JumpProfile
+@export var running_jump_profile: JumpProfile
+@export var finisher_profile: FinisherProfile
+@export var parry_profile: ParryProfile
+@export var riposte_profile: AttackProfile
+@export var block_stun_profile: BlockStunProfile
+@export var stagger_profile: StaggerProfile
+@export var parried_profile: ParriedProfile
+@export var guard_broken_profile: GuardBrokenProfile
+@export var locomotion_profile: LocomotionProfile
+@export var death_profile: DeathProfile
+@export var dash_profile: DashProfile
+@export var dash_attack_profile: AttackProfile
+@export var wall_slide_profile: WallSlideProfile
+
+@export_group("Dodge Profiles")
+@export var neutral_dodge_profile: DodgeProfile
+@export var forward_dodge_profile: DodgeProfile
+@export var back_dodge_profile: DodgeProfile
+@export var up_dodge_profile: DodgeProfile
+@export var down_dodge_profile: DodgeProfile
+
+var is_running: bool = false
+var facing_sign: int = 1
+var facing_locked: bool = false
+
+var air_jumps_left: int = 0
+var air_dash_used: bool = false
+var has_locked_air_pool: bool = false
+var last_left_ground_ms: int = -1
+
+func _ready():
+	GameManager.player_node = self
+	
+	animation_component.setup(state_machine, spine_sprite)
+	spine_sprite.animation_event.connect(_on_spine_event)
+	action_cost_validator.setup(stamina_component, focus_component)
+	state_machine.setup(
+		self,
+		physics_component,
+		path_follower_component,
+		buffer_component,
+		action_cost_validator,
+		surface_contact_component,
+		wall_detector,
+		counter_executor_component
+	)
+
+	surface_contact_component.call_deferred("setup", self)
+
+	if hud:
+		await hud.ready
+		hud.initialize_hud(self)
+	attack_executor.setup(self)
+	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
+	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
+	surface_contact_component.landed.connect(_on_landed)
+	_build_skill_dictionary()
+
+func _update_facing_direction():
+	if is_instance_valid(spine_sprite):
+		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
+
+func _exit_tree():
+	if GameManager.player_node == self:
+		GameManager.unregister_player()
+		
+func _process(_delta):
+	# Usamos a tecla "T" para printar o relatório de debug quando ocorrer o bug
+	if Input.is_key_pressed(KEY_T):
+		print("\n=== DEBUG REPORT ===")
+		print("1. Time Scale (Deve ser 1.0): ", Engine.time_scale)
+		
+		# Tenta pegar o nome do estado atual. Ajuste o caminho se necessário.
+		if has_node("StateMachine"):
+			var sm = get_node("StateMachine")
+			# Verifica se a variável current_state existe e é válida
+			if sm.get("current_state"):
+				print("2. Estado Atual: ", sm.current_state.name)
+			else:
+				print("2. Estado Atual: NULO ou não acessível")
+		
+		print("3. Velocidade (Velocity): ", velocity)
+		print("4. Is On Floor: ", is_on_floor())
+		print("5. Input X: ", Input.get_axis("move_left", "move_right")) # Confirma se o input está chegando
+		print("====================\n")
+
+func _physics_process(delta: float):
+	var walk_direction = Input.get_axis("move_left", "move_right")
+	_update_facing_direction()
+	
+	velocity = state_machine.process_physics(delta, walk_direction, is_running)
+
+	move_and_slide()
+	
+func _on_spine_event(sprite: SpineSprite, animation_state: SpineAnimationState, track_entry: SpineTrackEntry, event: SpineEvent):
+	var event_name = event.get_data().get_event_name()
+	
+	match event_name:
+		"footstep":
+			audio_component.play_footstep()
+
+func _build_skill_dictionary():
+	if skill_x: _equipped_skills["skill_x"] = skill_x
+	if skill_y: _equipped_skills["skill_y"] = skill_y
+	if skill_a: _equipped_skills["skill_a"] = skill_a
+	if skill_b: _equipped_skills["skill_b"] = skill_b
+
+func _unhandled_input(event: InputEvent):
+	
+	if event.is_action_pressed("debug_vfx"):
+		if vfx_component:
+			var spawn_pos = global_position + Vector2(30 * facing_sign, -15)
+			var direction = Vector2.RIGHT * facing_sign
+			vfx_component.spawn_vfx("blood_splatter", spawn_pos, direction)
+
+		get_viewport().set_input_as_handled()
+		return
+	
+	if event.is_action_pressed("jump"):
+		var profile = running_jump_profile if is_running else jump_profile
+		if profile:
+			state_machine.on_jump_pressed(profile)
+		get_viewport().set_input_as_handled()
+		return
+		
+	if event.is_action_released("jump"):
+		state_machine.on_jump_released()
+		get_viewport().set_input_as_handled()
+		return
+		
+	if event.is_action_pressed("dash_run"):
+		_send_dash_intention()
+		get_viewport().set_input_as_handled()
+		return
+
+	if event.is_action_pressed("dodge"):
+		if not is_on_floor():
+			_send_dodge_intention()
+		else:
+			if not run_cancel_timer.is_stopped():
+				run_cancel_timer.stop()
+				_send_dodge_intention()
+			else:
+				hold_input_timer.start()
+		get_viewport().set_input_as_handled()
+		return
+
+	if event.is_action_released("dodge"):
+		if not is_running:
+			if not hold_input_timer.is_stopped():
+				hold_input_timer.stop()
+				_send_dodge_intention()
+		else:
+			run_cancel_timer.start()
+		get_viewport().set_input_as_handled()
+		return
+	
+	if event.is_action_pressed("attack"):
+		var profile_to_use: AttackProfile
+		if is_on_floor():
+			profile_to_use = combo_component.get_next_attack_profile()
+		else:
+			profile_to_use = air_combo_component.get_next_attack_profile()
+		
+		if profile_to_use:
+			state_machine.on_attack_pressed(profile_to_use)
+			
+		get_viewport().set_input_as_handled()
+		return
+
+	if Input.is_action_pressed("skill_modifier"):
+		for action_name in _equipped_skills.keys():
+			if event.is_action_pressed(action_name):
+				var skill: BaseSkill = _equipped_skills.get(action_name)
+				if skill:
+					skill.execute(self, state_machine)
+				get_viewport().set_input_as_handled()
+				return
+
+	if event.is_action_pressed("parry"):
+		var profile = get_parry_profile()
+		if profile:
+			state_machine.on_parry_pressed(profile)
+		get_viewport().set_input_as_handled()
+		return
+
+	state_machine.process_input(event)
+
+func reset_air_actions():
+	if jump_profile:
+		air_jumps_left = jump_profile.max_air_jumps
+	air_dash_used = false
+	has_locked_air_pool = true
+
+func _on_hold_input_timer_timeout():
+	if Input.is_action_pressed("dodge"):
+		is_running = true
+
+func _on_run_cancel_timer_timeout():
+	is_running = false
+
+func _on_landed():
+	reset_air_actions()
+	if Input.is_action_pressed("dodge"):
+		if hold_input_timer.is_stopped():
+			hold_input_timer.start()
+
+func _send_dash_intention():
+	var profile = get_dash_profile()
+	if profile:
+		state_machine.on_dash_pressed(profile)
+
+func _send_dodge_intention():
+	var direction = _get_dodge_direction_from_input()
+	var profile = _get_dodge_profile_for_direction(direction)
+	if profile:
+		state_machine.on_dodge_pressed(direction, profile)
+
+func get_jump_profile() -> JumpProfile:
+	return jump_profile
+
+func get_dash_profile() -> DashProfile:
+	return dash_profile
+
+func get_riposte_profile() -> AttackProfile:
+	return riposte_profile
+
+func get_finisher_profile() -> FinisherProfile:
+	return finisher_profile
+
+func get_finisher_attack_profile() -> AttackProfile:
+	if not finisher_profile: return null
+	return finisher_profile.attack_profile
+
+func get_parry_profile() -> ParryProfile:
+	return parry_profile
+	
+func get_block_stun_profile() -> BlockStunProfile:
+	return block_stun_profile
+	
+func get_stagger_profile() -> StaggerProfile:
+	return stagger_profile
+	
+func get_parried_profile() -> ParriedProfile:
+	return parried_profile
+	
+func get_guard_broken_profile() -> GuardBrokenProfile:
+	return guard_broken_profile
+
+func get_locomotion_profile() -> LocomotionProfile:
+	return locomotion_profile
+	
+func get_death_profile() -> DeathProfile:
+	return death_profile
+	
+func get_wall_slide_profile() -> WallSlideProfile:
+	return wall_slide_profile
+
+func _get_dodge_direction_from_input() -> Vector2:
+	var direction = Vector2.ZERO
+	if Input.is_action_pressed("move_up"): direction.y = -1
+	elif Input.is_action_pressed("move_down"): direction.y = 1
+	if Input.is_action_pressed("move_left"): direction.x = -1
+	elif Input.is_action_pressed("move_right"): direction.x = 1
+	return direction
+
+func _get_dodge_profile_for_direction(direction: Vector2) -> DodgeProfile:
+	if direction.y < 0: return up_dodge_profile
+	elif direction.y > 0: return down_dodge_profile
+	elif direction.x != 0:
+		if direction.x * facing_sign > 0: return forward_dodge_profile
+		else: return back_dodge_profile
+	else: return neutral_dodge_profile
 </file>
 
 <file path="scripts/components/ai_controller.gd">
@@ -8196,322 +8578,6 @@ func _unhandled_input(event: InputEvent):
 		reset_behavior_sequence()
 </file>
 
-<file path="scripts/actors/player.gd">
-class_name Player
-extends CharacterBody2D
-
-@onready var state_machine: StateMachine = $StateMachine
-@onready var spine_sprite: SpineSprite = $SpineSprite
-@onready var animation_component: AnimationComponent = $AnimationComponent
-@onready var vfx_component: VFXComponent = $VFXComponent
-@onready var audio_component: AudioComponent = $AudioComponent
-@onready var health_component: HealthComponent = $HealthComponent
-@onready var stamina_component: StaminaComponent = $StaminaComponent
-@onready var focus_component: FocusComponent = $FocusComponent
-@onready var physics_component: PhysicsComponent = $PhysicsComponent
-@onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
-@onready var buffer_component: BufferComponent = $BufferComponent
-@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
-@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
-@onready var hold_input_timer: Timer = $HoldInputTimer
-@onready var run_cancel_timer: Timer = $RunCancelTimer
-@onready var attack_executor: AttackExecutor = $AttackExecutor
-@onready var counter_executor_component: CounterExecutorComponent = $CounterExecutorComponent
-@onready var combo_component: ComboComponent = $ComboComponent
-@onready var air_combo_component: AirComboComponent = $AirComboComponent
-@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
-@onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
-@onready var path_target: Node2D = get_parent().get_node("PathTarget")
-@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
-
-@export_group("Combat Data")
-@export var base_poise: float
-
-@export_group("Equipped Skills")
-@export var skill_x: BaseSkill
-@export var skill_y: BaseSkill
-@export var skill_a: BaseSkill
-@export var skill_b: BaseSkill
-
-var _equipped_skills: Dictionary = {}
-
-@export_group("Profiles")
-@export var jump_profile: JumpProfile
-@export var running_jump_profile: JumpProfile
-@export var finisher_profile: FinisherProfile
-@export var parry_profile: ParryProfile
-@export var riposte_profile: AttackProfile
-@export var block_stun_profile: BlockStunProfile
-@export var stagger_profile: StaggerProfile
-@export var parried_profile: ParriedProfile
-@export var guard_broken_profile: GuardBrokenProfile
-@export var locomotion_profile: LocomotionProfile
-@export var death_profile: DeathProfile
-@export var dash_profile: DashProfile
-@export var dash_attack_profile: AttackProfile
-@export var wall_slide_profile: WallSlideProfile
-
-@export_group("Dodge Profiles")
-@export var neutral_dodge_profile: DodgeProfile
-@export var forward_dodge_profile: DodgeProfile
-@export var back_dodge_profile: DodgeProfile
-@export var up_dodge_profile: DodgeProfile
-@export var down_dodge_profile: DodgeProfile
-
-var is_running: bool = false
-var facing_sign: int = 1
-var facing_locked: bool = false
-
-var air_jumps_left: int = 0
-var air_dash_used: bool = false
-var has_locked_air_pool: bool = false
-var last_left_ground_ms: int = -1
-
-func _ready():
-	GameManager.player_node = self
-	
-	animation_component.setup(state_machine, spine_sprite)
-	spine_sprite.animation_event.connect(_on_spine_event)
-	action_cost_validator.setup(stamina_component, focus_component)
-	state_machine.setup(
-		self,
-		physics_component,
-		path_follower_component,
-		buffer_component,
-		action_cost_validator,
-		surface_contact_component,
-		wall_detector,
-		counter_executor_component
-	)
-
-	surface_contact_component.call_deferred("setup", self)
-
-	if hud:
-		await hud.ready
-		hud.initialize_hud(self)
-	attack_executor.setup(self)
-	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
-	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
-	surface_contact_component.landed.connect(_on_landed)
-	_build_skill_dictionary()
-
-func _update_facing_direction():
-	if is_instance_valid(spine_sprite):
-		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
-
-func _exit_tree():
-	if GameManager.player_node == self:
-		GameManager.unregister_player()
-		
-func _process(_delta):
-	# Usamos a tecla "T" para printar o relatório de debug quando ocorrer o bug
-	if Input.is_key_pressed(KEY_T):
-		print("\n=== DEBUG REPORT ===")
-		print("1. Time Scale (Deve ser 1.0): ", Engine.time_scale)
-		
-		# Tenta pegar o nome do estado atual. Ajuste o caminho se necessário.
-		if has_node("StateMachine"):
-			var sm = get_node("StateMachine")
-			# Verifica se a variável current_state existe e é válida
-			if sm.get("current_state"):
-				print("2. Estado Atual: ", sm.current_state.name)
-			else:
-				print("2. Estado Atual: NULO ou não acessível")
-		
-		print("3. Velocidade (Velocity): ", velocity)
-		print("4. Is On Floor: ", is_on_floor())
-		print("5. Input X: ", Input.get_axis("move_left", "move_right")) # Confirma se o input está chegando
-		print("====================\n")
-
-func _physics_process(delta: float):
-	var walk_direction = Input.get_axis("move_left", "move_right")
-	_update_facing_direction()
-	
-	velocity = state_machine.process_physics(delta, walk_direction, is_running)
-
-	move_and_slide()
-	
-func _on_spine_event(sprite: SpineSprite, animation_state: SpineAnimationState, track_entry: SpineTrackEntry, event: SpineEvent):
-	var event_name = event.get_data().get_event_name()
-	
-	match event_name:
-		"footstep":
-			audio_component.play_footstep()
-
-func _build_skill_dictionary():
-	if skill_x: _equipped_skills["skill_x"] = skill_x
-	if skill_y: _equipped_skills["skill_y"] = skill_y
-	if skill_a: _equipped_skills["skill_a"] = skill_a
-	if skill_b: _equipped_skills["skill_b"] = skill_b
-
-func _unhandled_input(event: InputEvent):
-	
-	if event.is_action_pressed("debug_vfx"):
-		if vfx_component:
-			var spawn_pos = global_position + Vector2(30 * facing_sign, -15)
-			var direction = Vector2.RIGHT * facing_sign
-			vfx_component.spawn_vfx("blood_splatter", spawn_pos, direction)
-
-		get_viewport().set_input_as_handled()
-		return
-	
-	if event.is_action_pressed("jump"):
-		var profile = running_jump_profile if is_running else jump_profile
-		if profile:
-			state_machine.on_jump_pressed(profile)
-		get_viewport().set_input_as_handled()
-		return
-		
-	if event.is_action_released("jump"):
-		state_machine.on_jump_released()
-		get_viewport().set_input_as_handled()
-		return
-		
-	if event.is_action_pressed("dash_run"):
-		_send_dash_intention()
-		get_viewport().set_input_as_handled()
-		return
-
-	if event.is_action_pressed("dodge"):
-		if not is_on_floor():
-			_send_dodge_intention()
-		else:
-			if not run_cancel_timer.is_stopped():
-				run_cancel_timer.stop()
-				_send_dodge_intention()
-			else:
-				hold_input_timer.start()
-		get_viewport().set_input_as_handled()
-		return
-
-	if event.is_action_released("dodge"):
-		if not is_running:
-			if not hold_input_timer.is_stopped():
-				hold_input_timer.stop()
-				_send_dodge_intention()
-		else:
-			run_cancel_timer.start()
-		get_viewport().set_input_as_handled()
-		return
-	
-	if event.is_action_pressed("attack"):
-		var profile_to_use: AttackProfile
-		if is_on_floor():
-			profile_to_use = combo_component.get_next_attack_profile()
-		else:
-			profile_to_use = air_combo_component.get_next_attack_profile()
-		
-		if profile_to_use:
-			state_machine.on_attack_pressed(profile_to_use)
-			
-		get_viewport().set_input_as_handled()
-		return
-
-	if Input.is_action_pressed("skill_modifier"):
-		for action_name in _equipped_skills.keys():
-			if event.is_action_pressed(action_name):
-				var skill: BaseSkill = _equipped_skills.get(action_name)
-				if skill:
-					skill.execute(self, state_machine)
-				get_viewport().set_input_as_handled()
-				return
-
-	if event.is_action_pressed("parry"):
-		var profile = get_parry_profile()
-		if profile:
-			state_machine.on_parry_pressed(profile)
-		get_viewport().set_input_as_handled()
-		return
-
-	state_machine.process_input(event)
-
-func reset_air_actions():
-	if jump_profile:
-		air_jumps_left = jump_profile.max_air_jumps
-	air_dash_used = false
-	has_locked_air_pool = true
-
-func _on_hold_input_timer_timeout():
-	if Input.is_action_pressed("dodge"):
-		is_running = true
-
-func _on_run_cancel_timer_timeout():
-	is_running = false
-
-func _on_landed():
-	reset_air_actions()
-	if Input.is_action_pressed("dodge"):
-		if hold_input_timer.is_stopped():
-			hold_input_timer.start()
-
-func _send_dash_intention():
-	var profile = get_dash_profile()
-	if profile:
-		state_machine.on_dash_pressed(profile)
-
-func _send_dodge_intention():
-	var direction = _get_dodge_direction_from_input()
-	var profile = _get_dodge_profile_for_direction(direction)
-	if profile:
-		state_machine.on_dodge_pressed(direction, profile)
-
-func get_jump_profile() -> JumpProfile:
-	return jump_profile
-
-func get_dash_profile() -> DashProfile:
-	return dash_profile
-
-func get_riposte_profile() -> AttackProfile:
-	return riposte_profile
-
-func get_finisher_profile() -> FinisherProfile:
-	return finisher_profile
-
-func get_finisher_attack_profile() -> AttackProfile:
-	if not finisher_profile: return null
-	return finisher_profile.attack_profile
-
-func get_parry_profile() -> ParryProfile:
-	return parry_profile
-	
-func get_block_stun_profile() -> BlockStunProfile:
-	return block_stun_profile
-	
-func get_stagger_profile() -> StaggerProfile:
-	return stagger_profile
-	
-func get_parried_profile() -> ParriedProfile:
-	return parried_profile
-	
-func get_guard_broken_profile() -> GuardBrokenProfile:
-	return guard_broken_profile
-
-func get_locomotion_profile() -> LocomotionProfile:
-	return locomotion_profile
-	
-func get_death_profile() -> DeathProfile:
-	return death_profile
-	
-func get_wall_slide_profile() -> WallSlideProfile:
-	return wall_slide_profile
-
-func _get_dodge_direction_from_input() -> Vector2:
-	var direction = Vector2.ZERO
-	if Input.is_action_pressed("move_up"): direction.y = -1
-	elif Input.is_action_pressed("move_down"): direction.y = 1
-	if Input.is_action_pressed("move_left"): direction.x = -1
-	elif Input.is_action_pressed("move_right"): direction.x = 1
-	return direction
-
-func _get_dodge_profile_for_direction(direction: Vector2) -> DodgeProfile:
-	if direction.y < 0: return up_dodge_profile
-	elif direction.y > 0: return down_dodge_profile
-	elif direction.x != 0:
-		if direction.x * facing_sign > 0: return forward_dodge_profile
-		else: return back_dodge_profile
-	else: return neutral_dodge_profile
-</file>
-
 <file path="scenes/testing_dojo.tscn">
 [gd_scene load_steps=22 format=4 uid="uid://gso5pxfd31n5"]
 
@@ -8552,7 +8618,7 @@ size = Vector2(5292, 1142)
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(1436, -1141)
+position = Vector2(17294, 802)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -8564,8 +8630,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-16.9063, -334.915)
-rotation = 0.432626
+position = Vector2(-19.7578, -327.476)
+rotation = 0.441803
 scale = Vector2(1, 1)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
@@ -8686,6 +8752,9 @@ position = Vector2(-12806, 965)
 
 [node name="FlyingEnemy" parent="." instance=ExtResource("17_eguil")]
 position = Vector2(-12010, 591)
+
+[node name="SimpleStaggerState" parent="FlyingEnemy/SimpleStateMachine" index="2"]
+knockback_multiplier = 0.5
 
 [node name="SimplePatrolFlyState" parent="FlyingEnemy/SimpleStateMachine" index="4"]
 point_a_node = NodePath("../../../Markers/PatrolPointA")

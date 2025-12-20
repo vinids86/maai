@@ -1,11 +1,28 @@
-[gd_scene load_steps=3 format=3 uid="uid://dhjvjsjvv2gir"]
+[gd_scene load_steps=6 format=3 uid="uid://dhjvjsjvv2gir"]
 
 [ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_rqvq3"]
 [ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_f30pw"]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_jkvbt"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_rqvq3"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_f30pw"]
+radius = 50.0
+
 [node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
 enemy_tint_color = Color(0, 0, 100, 1)
 enemy_tint_intensity = 0.4
+
+[node name="SpineSprite" parent="." index="0"]
+scale = Vector2(0.3, 0.3)
+
+[node name="CollisionShape2D" parent="." index="1"]
+visible = true
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_jkvbt")
 
 [node name="SimpleStateMachine" parent="." index="2"]
 initial_state_key = "SimplePatrolFlyState"
@@ -16,3 +33,14 @@ metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
 
 [node name="HealthComponent" parent="." index="5"]
 max_health = 2.0
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_rqvq3")
+
+[node name="Hurtbox" parent="." index="10"]
+visible = true
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_f30pw")

@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://b4uo35lo3wukl"]
+[gd_scene load_steps=11 format=3 uid="uid://b4uo35lo3wukl"]
 
 [ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_6h87l"]
 [ext_resource type="Script" uid="uid://co6k05df3ffqv" path="res://scripts/platform/aggressive_state_machine.gd" id="2_6iwo7"]
@@ -27,7 +27,7 @@ poise_impact_contribution = 10.0
 poise_momentum_gain = 0.0
 poise_momentum_duration = 1.5
 knockback_vector = Vector2(1000, 0)
-defender_knockback_on_parry = 120.0
+defender_knockback_on_parry = 500.0
 parry_interaction = 0
 unparryable_type = 0
 movement_type = 0
@@ -40,16 +40,34 @@ active_poise_shield = 10.0
 recovery_poise_shield = 300.0
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_iml81"]
+radius = 72.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_r2vcs"]
+radius = 72.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_52h12"]
+radius = 72.0
+
 [node name="AggressiveEnemy" instance=ExtResource("1_6h87l")]
 attack_profile = SubResource("Resource_r2vcs")
 enemy_tint_color = Color(10, 0, 0, 1)
 enemy_tint_intensity = 0.04
+
+[node name="SpineSprite" parent="." index="0"]
+scale = Vector2(0.4, 0.4)
+
+[node name="CollisionShape2D" parent="." index="1"]
+visible = true
+position = Vector2(0, -72)
+shape = SubResource("CircleShape2D_iml81")
 
 [node name="SimpleStateMachine" parent="." index="2"]
 script = ExtResource("2_6iwo7")
 detection_range = 1000.0
 attack_range = 300.0
 attack_cooldown = 1.0
+immune_to_stagger = true
 
 [node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
 script = ExtResource("3_6iwo7")
@@ -58,3 +76,14 @@ metadata/_custom_type_script = "uid://b300sb85dsb48"
 [node name="SimpleAttackState" type="Node" parent="SimpleStateMachine" index="5"]
 script = ExtResource("4_5r6u3")
 metadata/_custom_type_script = "uid://dsf43ffjw15we"
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 10.0
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -72)
+shape = SubResource("CircleShape2D_r2vcs")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -72)
+shape = SubResource("CircleShape2D_52h12")

@@ -142,7 +142,12 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			
 			var force_magnitude = context.attack_profile.defender_knockback_on_parry
 			if force_magnitude > 0.0:
-				var direction = (owner_node.global_position - context.attacker_node.global_position).normalized()
+				#var direction = (owner_node.global_position - context.attacker_node.global_position).normalized()
+				var diff = owner_node.global_position - context.attacker_node.global_position
+				diff.y = 0
+				var direction = diff.normalized()
+				if direction == Vector2.ZERO:
+					direction = Vector2(-owner_node.facing_sign, 0)
 				_knockback_velocity = direction * force_magnitude
 			
 			result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED

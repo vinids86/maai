@@ -68,12 +68,12 @@ func on_current_state_finished(reason: Dictionary = {}):
 	
 	if current_state.name == "SimpleDeathState":
 		return
-
+		
 	var outcome = reason.get("outcome")
 	if outcome == "HIT" or outcome == "ATTACK_CONNECTED":
 		_decide_next_state(reason)
 		return
-
+		
 	if _groggy_timer > 0:
 		if current_state.name != "SimpleGroggyState":
 			transition_to("SimpleGroggyState")
