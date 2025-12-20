@@ -42,9 +42,8 @@ metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
 [node name="AggressiveEnemy" instance=ExtResource("1_6h87l")]
 attack_profile = SubResource("Resource_r2vcs")
-
-[node name="SpineSprite" parent="." index="0"]
-preview_animation = "hit"
+enemy_tint_color = Color(10, 0, 0, 1)
+enemy_tint_intensity = 0.04
 
 [node name="SimpleStateMachine" parent="." index="2"]
 script = ExtResource("2_6iwo7")

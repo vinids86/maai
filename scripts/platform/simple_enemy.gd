@@ -14,10 +14,14 @@ extends CharacterBody2D
 @export var locomotion_profile: LocomotionProfile
 @export var death_profile: DeathProfile
 
+@export_group("Visual Identity")
+@export var enemy_tint_color: Color = Color.WHITE
+@export_range(0.0, 1.0) var enemy_tint_intensity: float = 0.0
+
 func _ready() -> void:
 	# Passamos null no primeiro parametro (StateMachine) e a nossa simple state machine no terceiro
 	animation_component.setup(null, spine_sprite, state_machine)
-	
+	_apply_visual_tint()
 	state_machine.setup(
 		self,
 		physics_component,
@@ -80,3 +84,11 @@ func set_hitbox_enabled(is_enabled: bool) -> void:
 	
 	hitbox.set_deferred("monitorable", is_enabled)
 	hitbox.set_deferred("monitoring", is_enabled)
+
+func _apply_visual_tint():
+	if is_instance_valid(spine_sprite) and spine_sprite.normal_material:
+		var mat = spine_sprite.normal_material as ShaderMaterial
+		if mat:
+			mat.set_shader_parameter("tint_color", enemy_tint_color)
+			mat.set_shader_parameter("tint_intensity", enemy_tint_intensity)
+			

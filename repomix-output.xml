@@ -102,9 +102,13 @@ scripts/debug/player_debug_hud.gd
 scripts/level/combat_zone.gd
 scripts/listeners/animation_component.gd
 scripts/listeners/audio_component.gd
+scripts/platform/aggressive_enemy.tscn
+scripts/platform/aggressive_state_machine.gd
 scripts/platform/base_simple_state_machine.gd
 scripts/platform/flying_enemy.tscn
 scripts/platform/goomba_state_machine.gd
+scripts/platform/simple_attack_state.gd
+scripts/platform/simple_chase_state.gd
 scripts/platform/simple_death_state.gd
 scripts/platform/simple_enemy.gd
 scripts/platform/simple_enemy.tscn
@@ -538,118 +542,6 @@ func _is_in_combo_state() -> bool:
 	return _state_machine.get_current_state() == _sequence_state
 </file>
 
-<file path="scripts/platform/flying_enemy.tscn">
-[gd_scene load_steps=3 format=3 uid="uid://dhjvjsjvv2gir"]
-
-[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_rqvq3"]
-[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_f30pw"]
-
-[node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
-
-[node name="SimpleStateMachine" parent="." index="2"]
-initial_state_key = "SimplePatrolFlyState"
-
-[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="4"]
-script = ExtResource("2_f30pw")
-metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
-
-[node name="HealthComponent" parent="." index="5"]
-max_health = 2.0
-</file>
-
-<file path="scripts/platform/simple_patrol_fly_state.gd">
-class_name SimplePatrolFlyState
-extends SimpleState
-
-@export_group("Patrol Points")
-## Caminho para o nó Marker2D que representa o Ponto A.
-@export var point_a_node: NodePath
-## Caminho para o nó Marker2D que representa o Ponto B.
-@export var point_b_node: NodePath
-## Distância mínima para considerar que chegou no ponto e trocar o alvo.
-@export var arrival_threshold: float = 10.0
-
-@export_group("Flight Physics")
-## Velocidade de deslocamento entre os pontos.
-@export var fly_speed: float = 150.0
-## Frequência da onda (velocidade da oscilação).
-@export var wave_frequency: float = 5.0
-## Amplitude da onda (largura da oscilação).
-@export var wave_amplitude: float = 150.0
-
-var _target_pos: Vector2
-var _pos_a: Vector2
-var _pos_b: Vector2
-var _going_to_a: bool = false
-var _time_accum: float = 0.0
-
-func enter(_args: Dictionary = {}):
-	_time_accum = 0.0
-	
-	# Captura as posições globais dos Markers.
-	# CORREÇÃO: Usamos get_node_or_null() diretamente (no self), pois o NodePath 
-	# salvo no Inspetor é relativo a este nó de Estado, e não ao Inimigo (owner_node).
-	var node_a = get_node_or_null(point_a_node)
-	var node_b = get_node_or_null(point_b_node)
-	
-	if node_a and node_b:
-		_pos_a = node_a.global_position
-		_pos_b = node_b.global_position
-	else:
-		push_warning("SimplePatrolFlyState: Pontos A ou B não encontrados! Verifique os caminhos no Inspetor. Usando fallback.")
-		_pos_a = owner_node.global_position
-		_pos_b = owner_node.global_position + Vector2(200, 0) # Fallback padrão
-	
-	# Define o alvo inicial como o mais próximo ou sempre o B
-	_target_pos = _pos_b
-	_going_to_a = false
-
-func process_physics(delta: float) -> Vector2:
-	_time_accum += delta
-	
-	var current_pos = owner_node.global_position
-	var distance = current_pos.distance_to(_target_pos)
-	
-	# 1. Verifica se chegou ao destino
-	if distance < arrival_threshold:
-		_switch_target()
-	
-	# 2. Calcula vetor de direção normalizado (Para onde ir)
-	var direction = (current_pos.direction_to(_target_pos)).normalized()
-	
-	# 3. Calcula velocidade linear base
-	var linear_velocity = direction * fly_speed
-	
-	# 4. Calcula a Onda (Senoide)
-	# Precisamos de um vetor perpendicular à direção do movimento para aplicar a onda "de lado"
-	# Se a direção é (x, y), a perpendicular é (-y, x)
-	var perpendicular = Vector2(-direction.y, direction.x)
-	
-	# Usamos cosseno aqui para afetar a velocidade e gerar uma senoide na posição
-	var wave_velocity = perpendicular * cos(_time_accum * wave_frequency) * wave_amplitude
-	
-	# 5. Soma as velocidades
-	var final_velocity = linear_velocity + wave_velocity
-	
-	# 6. Orientação do Sprite (Facing)
-	# Só vira se houver movimento horizontal significativo
-	if abs(direction.x) > 0.1:
-		_flip_owner(sign(direction.x))
-		
-	return final_velocity
-
-func _switch_target():
-	_going_to_a = !_going_to_a
-	if _going_to_a:
-		_target_pos = _pos_a
-	else:
-		_target_pos = _pos_b
-
-func _flip_owner(dir_sign: float):
-	if owner_node.has_method("set_facing_direction"):
-		owner_node.set_facing_direction(dir_sign)
-</file>
-
 <file path="scripts/profiles/attack_set.gd">
 class_name AttackSet
 extends Resource
@@ -839,26 +731,6 @@ offset_top = 202.0
 offset_right = 646.0
 offset_bottom = 225.0
 vertical_alignment = 2
-</file>
-
-<file path="scenes/enemy_intro.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://cmg87qv8bor8o"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_v5fsh"]
-
-[node name="EnemyEntity" instance=ExtResource("1_v5fsh")]
-
-[node name="AnimationComponent" parent="Enemy" index="3"]
-flash_duration = 0.3
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 16.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 0
 </file>
 
 <file path="scenes/metal_sparks.tscn">
@@ -1386,6 +1258,147 @@ func _finish_combat():
 	emit_signal("combat_finished")
 </file>
 
+<file path="scripts/platform/aggressive_enemy.tscn">
+[gd_scene load_steps=8 format=3 uid="uid://b4uo35lo3wukl"]
+
+[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_6h87l"]
+[ext_resource type="Script" uid="uid://co6k05df3ffqv" path="res://scripts/platform/aggressive_state_machine.gd" id="2_6iwo7"]
+[ext_resource type="AudioStream" uid="uid://snkhhvuv11sl" path="res://audio/attack_1.wav" id="2_r2vcs"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_u6f6r"]
+[ext_resource type="Script" uid="uid://b300sb85dsb48" path="res://scripts/platform/simple_chase_state.gd" id="3_6iwo7"]
+[ext_resource type="Script" uid="uid://dsf43ffjw15we" path="res://scripts/platform/simple_attack_state.gd" id="4_5r6u3"]
+
+[sub_resource type="Resource" id="Resource_r2vcs"]
+script = ExtResource("2_u6f6r")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.45
+link_duration = 0.6
+animation_name = &"jump"
+active_sfx = ExtResource("2_r2vcs")
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(1000, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(-100, 0)
+active_movement_velocity = Vector2(3600, 0)
+recovery_movement_velocity = Vector2(70, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[node name="AggressiveEnemy" instance=ExtResource("1_6h87l")]
+attack_profile = SubResource("Resource_r2vcs")
+
+[node name="SimpleStateMachine" parent="." index="2"]
+script = ExtResource("2_6iwo7")
+detection_range = 1000.0
+attack_range = 300.0
+attack_cooldown = 1.0
+
+[node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
+script = ExtResource("3_6iwo7")
+metadata/_custom_type_script = "uid://b300sb85dsb48"
+
+[node name="SimpleAttackState" type="Node" parent="SimpleStateMachine" index="5"]
+script = ExtResource("4_5r6u3")
+metadata/_custom_type_script = "uid://dsf43ffjw15we"
+
+[node name="Hitbox" parent="." index="9"]
+visible = false
+</file>
+
+<file path="scripts/platform/aggressive_state_machine.gd">
+class_name AggressiveStateMachine
+extends BaseSimpleStateMachine
+
+@export_group("Aggro Settings")
+@export var detection_range: float = 300.0
+@export var attack_range: float = 60.0
+@export var attack_cooldown: float = 1.0
+
+var _cooldown_timer: float = 0.0
+
+func process_physics(delta: float) -> Vector2:
+	if _cooldown_timer > 0:
+		_cooldown_timer -= delta
+
+	# Lógica de detecção automática se estiver patrulhando
+	if current_state and current_state.name == initial_state_key:
+		_check_for_player()
+
+	return super.process_physics(delta)
+
+func _check_for_player() -> void:
+	var player = GameManager.player_node
+	if is_instance_valid(player):
+		var dist = owner_node.global_position.distance_to(player.global_position)
+		if dist <= detection_range:
+			transition_to("SimpleChaseState")
+
+func _decide_next_state(reason: Dictionary):
+	var outcome = reason.get("outcome")
+	
+	# 1. Prioridade: Reação a Dano (Recoil/Stagger)
+	if outcome == "ATTACK_CONNECTED":
+		transition_to("SimpleRecoilState", reason)
+		return
+	
+	if outcome == "HIT":
+		var knockback = reason.get("knockback_vector", Vector2.ZERO)
+		transition_to("SimpleStaggerState", {"knockback_vector": knockback})
+		return
+
+	# 2. Prioridade: Ciclo de Combate
+	if outcome == "CHASE_FINISHED":
+		# Chegou no range. Pode atacar?
+		if _cooldown_timer <= 0:
+			transition_to("SimpleAttackState")
+		else:
+			# Se estiver em cooldown, continua perseguindo (ou poderia esperar)
+			# Reiniciamos o ChaseState para ele continuar grudado no player
+			transition_to("SimpleChaseState")
+		return
+		
+	if outcome == "ATTACK_FINISHED":
+		_cooldown_timer = attack_cooldown
+		# Volta a perseguir imediatamente para manter pressão
+		transition_to("SimpleChaseState")
+		return
+
+	# 3. Fallback: Perdeu o alvo ou terminou reação
+	if outcome == "LOST_TARGET":
+		if states.has(initial_state_key):
+			transition_to(initial_state_key)
+		return
+
+	# Se terminou um Stagger/Recoil, voltamos a perseguir se o player estiver perto
+	# senão voltamos para patrulha
+	var player = GameManager.player_node
+	if is_instance_valid(player):
+		var dist = owner_node.global_position.distance_to(player.global_position)
+		if dist <= detection_range:
+			transition_to("SimpleChaseState")
+			return
+
+	if states.has(initial_state_key):
+		transition_to(initial_state_key)
+</file>
+
 <file path="scripts/platform/base_simple_state_machine.gd">
 class_name BaseSimpleStateMachine
 extends Node
@@ -1488,6 +1501,264 @@ func _decide_next_state(reason: Dictionary):
 	# 3. Fallback: Volta para o estado inicial (Patrulha)
 	if states.has(initial_state_key):
 		transition_to(initial_state_key)
+</file>
+
+<file path="scripts/platform/simple_attack_state.gd">
+class_name SimpleAttackState
+extends SimpleState
+
+enum Phases { STARTUP, ACTIVE, RECOVERY }
+var _current_phase: Phases = Phases.STARTUP
+var _time_left: float = 0.0
+var _profile: AttackProfile
+
+# Direção travada no início do ataque
+var _attack_direction: float = 1.0
+
+func enter(_args: Dictionary = {}):
+	_profile = owner_node.get_attack_profile()
+	
+	if not _profile:
+		push_warning("SimpleAttackState: Inimigo sem AttackProfile configurado.")
+		state_machine.on_current_state_finished({"outcome": "ATTACK_FINISHED"})
+		return
+	
+	_attack_direction = owner_node.get_facing_direction()
+	
+	_change_phase(Phases.STARTUP)
+
+func process_physics(delta: float) -> Vector2:
+	if not _profile:
+		return Vector2.ZERO
+		
+	_time_left -= delta
+	
+	if _time_left <= 0:
+		_advance_phase()
+	
+	# Calcula velocidade baseada na fase atual e nas configurações do profile
+	var move_velocity = Vector2.ZERO
+	
+	match _current_phase:
+		Phases.STARTUP:
+			move_velocity = _profile.startup_movement_velocity
+		Phases.ACTIVE:
+			move_velocity = _profile.active_movement_velocity
+		Phases.RECOVERY:
+			move_velocity = _profile.recovery_movement_velocity
+			
+	# Aplica a direção travada:
+	# Se attack_direction for -1 (esquerda) e velocity.x for 100 (frente), resultado = -100
+	var final_velocity_x = move_velocity.x * _attack_direction
+	
+	# Mantém a gravidade padrão do inimigo
+	var final_velocity_y = owner_node.velocity.y
+	if not owner_node.is_on_floor():
+		final_velocity_y += 980.0 * delta
+		
+	return Vector2(final_velocity_x, final_velocity_y)
+
+func _advance_phase():
+	match _current_phase:
+		Phases.STARTUP:
+			_change_phase(Phases.ACTIVE)
+		Phases.ACTIVE:
+			_change_phase(Phases.RECOVERY)
+		Phases.RECOVERY:
+			state_machine.on_current_state_finished({"outcome": "ATTACK_FINISHED"})
+
+func _change_phase(new_phase: Phases):
+	_current_phase = new_phase
+	
+	var duration = 0.0
+	var sfx: AudioStream
+	var anim_name: StringName = &""
+	
+	match _current_phase:
+		Phases.STARTUP:
+			duration = _profile.startup_duration
+			sfx = _profile.startup_sfx
+			anim_name = _profile.animation_name 
+			
+		Phases.ACTIVE:
+			duration = _profile.active_duration
+			sfx = _profile.active_sfx
+			
+		Phases.RECOVERY:
+			duration = _profile.recovery_duration
+			sfx = _profile.recovery_sfx
+			
+	_time_left = duration
+	
+	# Envia sinal para tocar som/animação assincronamente nos componentes
+	state_machine.emit_phase_change({
+		"state": "SimpleAttackState",
+		"phase": Phases.keys()[_current_phase],
+		"profile": _profile,
+		"animation_to_play": anim_name,
+		"sfx_to_play": sfx
+	})
+</file>
+
+<file path="scripts/platform/simple_chase_state.gd">
+class_name SimpleChaseState
+extends SimpleState
+
+# Referência para ler configurações de range
+var _aggressive_sm: AggressiveStateMachine
+
+func enter(_args: Dictionary = {}):
+	_aggressive_sm = state_machine as AggressiveStateMachine
+	
+	# Envia sinal para feedback visual (animação de corrida)
+	state_machine.emit_phase_change({
+		"state": "SimpleChaseState",
+		"phase": "chase",
+		"animation_to_play": "run"
+	})
+
+func process_physics(delta: float) -> Vector2:
+	var player = GameManager.player_node
+	
+	# Validação de segurança: se não há SM ou Player, desiste
+	if not is_instance_valid(player) or not _aggressive_sm:
+		state_machine.on_current_state_finished({"outcome": "LOST_TARGET"})
+		return Vector2.ZERO
+		
+	var to_player = player.global_position - owner_node.global_position
+	var dist = to_player.length()
+	
+	# Condição de Saída 1: Chegou no range de ataque
+	if dist <= _aggressive_sm.attack_range:
+		state_machine.on_current_state_finished({"outcome": "CHASE_FINISHED"})
+		return Vector2.ZERO
+		
+	# Condição de Saída 2: Jogador se afastou demais (Histerese de 1.5x o range de detecção)
+	if dist > _aggressive_sm.detection_range * 1.5:
+		state_machine.on_current_state_finished({"outcome": "LOST_TARGET"})
+		return Vector2.ZERO
+	
+	# Lógica de Movimento
+	var direction = sign(to_player.x)
+	if direction != 0:
+		_flip_owner(direction)
+		
+	var speed = 0.0
+	# Tenta obter velocidade de corrida do perfil de locomoção, se existir
+	if owner_node.has_method("get_locomotion_profile"):
+		var profile = owner_node.get_locomotion_profile()
+		if profile:
+			speed = profile.run_speed
+	
+	# Fallback simples se não houver profile (opcional, baseado na implementação do SimpleEnemy)
+	if speed == 0.0:
+		speed = 100.0 
+			
+	var velocity_x = direction * speed
+	var velocity_y = owner_node.velocity.y
+	
+	# Aplica gravidade se estiver no ar
+	if not owner_node.is_on_floor():
+		velocity_y += 980.0 * delta
+		
+	return Vector2(velocity_x, velocity_y)
+
+func _flip_owner(dir_sign: float):
+	if owner_node.has_method("set_facing_direction"):
+		owner_node.set_facing_direction(dir_sign)
+</file>
+
+<file path="scripts/platform/simple_patrol_fly_state.gd">
+class_name SimplePatrolFlyState
+extends SimpleState
+
+@export_group("Patrol Points")
+## Caminho para o nó Marker2D que representa o Ponto A.
+@export var point_a_node: NodePath
+## Caminho para o nó Marker2D que representa o Ponto B.
+@export var point_b_node: NodePath
+## Distância mínima para considerar que chegou no ponto e trocar o alvo.
+@export var arrival_threshold: float = 10.0
+
+@export_group("Flight Physics")
+## Velocidade de deslocamento entre os pontos.
+@export var fly_speed: float = 150.0
+## Frequência da onda (velocidade da oscilação).
+@export var wave_frequency: float = 5.0
+## Amplitude da onda (largura da oscilação).
+@export var wave_amplitude: float = 150.0
+
+var _target_pos: Vector2
+var _pos_a: Vector2
+var _pos_b: Vector2
+var _going_to_a: bool = false
+var _time_accum: float = 0.0
+
+func enter(_args: Dictionary = {}):
+	_time_accum = 0.0
+	
+	# Captura as posições globais dos Markers.
+	# CORREÇÃO: Usamos get_node_or_null() diretamente (no self), pois o NodePath 
+	# salvo no Inspetor é relativo a este nó de Estado, e não ao Inimigo (owner_node).
+	var node_a = get_node_or_null(point_a_node)
+	var node_b = get_node_or_null(point_b_node)
+	
+	if node_a and node_b:
+		_pos_a = node_a.global_position
+		_pos_b = node_b.global_position
+	else:
+		push_warning("SimplePatrolFlyState: Pontos A ou B não encontrados! Verifique os caminhos no Inspetor. Usando fallback.")
+		_pos_a = owner_node.global_position
+		_pos_b = owner_node.global_position + Vector2(200, 0) # Fallback padrão
+	
+	# Define o alvo inicial como o mais próximo ou sempre o B
+	_target_pos = _pos_b
+	_going_to_a = false
+
+func process_physics(delta: float) -> Vector2:
+	_time_accum += delta
+	
+	var current_pos = owner_node.global_position
+	var distance = current_pos.distance_to(_target_pos)
+	
+	# 1. Verifica se chegou ao destino
+	if distance < arrival_threshold:
+		_switch_target()
+	
+	# 2. Calcula vetor de direção normalizado (Para onde ir)
+	var direction = (current_pos.direction_to(_target_pos)).normalized()
+	
+	# 3. Calcula velocidade linear base
+	var linear_velocity = direction * fly_speed
+	
+	# 4. Calcula a Onda (Senoide)
+	# Precisamos de um vetor perpendicular à direção do movimento para aplicar a onda "de lado"
+	# Se a direção é (x, y), a perpendicular é (-y, x)
+	var perpendicular = Vector2(-direction.y, direction.x)
+	
+	# Usamos cosseno aqui para afetar a velocidade e gerar uma senoide na posição
+	var wave_velocity = perpendicular * cos(_time_accum * wave_frequency) * wave_amplitude
+	
+	# 5. Soma as velocidades
+	var final_velocity = linear_velocity + wave_velocity
+	
+	# 6. Orientação do Sprite (Facing)
+	# Só vira se houver movimento horizontal significativo
+	if abs(direction.x) > 0.1:
+		_flip_owner(sign(direction.x))
+		
+	return final_velocity
+
+func _switch_target():
+	_going_to_a = !_going_to_a
+	if _going_to_a:
+		_target_pos = _pos_a
+	else:
+		_target_pos = _pos_b
+
+func _flip_owner(dir_sign: float):
+	if owner_node.has_method("set_facing_direction"):
+		owner_node.set_facing_direction(dir_sign)
 </file>
 
 <file path="scripts/platform/simple_patrol_state.gd">
@@ -2071,6 +2342,88 @@ randomness = 0.75
 process_material = SubResource("ParticleProcessMaterial_jhjh3")
 </file>
 
+<file path="scenes/enemy_intro.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://cmg87qv8bor8o"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_v5fsh"]
+
+[node name="EnemyEntity" instance=ExtResource("1_v5fsh")]
+
+[node name="AnimationComponent" parent="Enemy" index="3"]
+flash_duration = 0.3
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 16.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 0
+</file>
+
+<file path="scenes/player_hud.tscn">
+[gd_scene load_steps=6 format=3 uid="uid://cpt4x4lssyjav"]
+
+[ext_resource type="Script" uid="uid://3ardk5ddx5yn" path="res://scripts/ui/hud_controller.gd" id="1_mlvnn"]
+[ext_resource type="Texture2D" uid="uid://dnd5if5ok4tck" path="res://assets/under.png" id="2_er5qu"]
+[ext_resource type="Texture2D" uid="uid://by5iff8a6w436" path="res://assets/progress_stamina.png" id="3_or0tx"]
+[ext_resource type="Texture2D" uid="uid://b6in2fan4sl6f" path="res://assets/progress_health.png" id="3_qcjqi"]
+[ext_resource type="Texture2D" uid="uid://do2y2oc4b30g2" path="res://assets/progress_focus.png" id="5_qcjqi"]
+
+[node name="PlayerHUD" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 19.0
+offset_top = 20.0
+offset_right = 59.0
+offset_bottom = 24.0
+rotation = -0.0037477
+script = ExtResource("1_mlvnn")
+
+[node name="HealthBar" type="TextureProgressBar" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 3.0
+texture_under = ExtResource("2_er5qu")
+texture_progress = ExtResource("3_qcjqi")
+
+[node name="StaminaBar" type="TextureProgressBar" parent="."]
+layout_mode = 0
+offset_left = -1.0
+offset_top = 11.0
+offset_right = 403.0
+offset_bottom = 43.0
+texture_under = ExtResource("2_er5qu")
+texture_progress = ExtResource("3_or0tx")
+
+[node name="FocusBar" type="TextureProgressBar" parent="."]
+layout_mode = 0
+offset_left = -1.08244
+offset_top = 21.9961
+offset_right = 401.918
+offset_bottom = 61.9961
+max_value = 300.0
+texture_under = ExtResource("2_er5qu")
+texture_progress = ExtResource("5_qcjqi")
+
+[node name="FocusSegmentsContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = -699.079
+offset_top = -1047.63
+offset_right = -659.079
+offset_bottom = -1007.63
+
+[node name="ColorRect" type="ColorRect" parent="FocusSegmentsContainer"]
+layout_mode = 2
+
+[node name="ColorRect2" type="ColorRect" parent="FocusSegmentsContainer"]
+layout_mode = 2
+
+[node name="ColorRect3" type="ColorRect" parent="FocusSegmentsContainer"]
+layout_mode = 2
+</file>
+
 <file path="scripts/components/hit_stop.gd">
 extends Node
 
@@ -2234,6 +2587,34 @@ func _physics_process(delta: float) -> void:
 	_was_on_floor = grounded
 </file>
 
+<file path="scripts/platform/flying_enemy.tscn">
+[gd_scene load_steps=3 format=3 uid="uid://dhjvjsjvv2gir"]
+
+[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_rqvq3"]
+[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_f30pw"]
+
+[node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
+
+[node name="SimpleStateMachine" parent="." index="2"]
+initial_state_key = "SimplePatrolFlyState"
+
+[node name="SimpleStaggerState" parent="SimpleStateMachine" index="2"]
+stagger_duration = 0.8
+friction = 800.0
+
+[node name="SimpleRecoilState" parent="SimpleStateMachine" index="3"]
+recoil_duration = 0.4
+recoil_speed = 300.0
+friction = 1000.0
+
+[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="4"]
+script = ExtResource("2_f30pw")
+metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 2.0
+</file>
+
 <file path="scripts/platform/simple_death_state.gd">
 class_name SimpleDeathState
 extends SimpleState
@@ -2264,77 +2645,6 @@ func enter(_args: Dictionary = {}):
 func process_physics(_delta: float) -> Vector2:
 	# Para o movimento completamente
 	return Vector2.ZERO
-</file>
-
-<file path="scripts/platform/simple_enemy.gd">
-class_name SimpleEnemy
-extends CharacterBody2D
-
-@onready var state_machine = $SimpleStateMachine
-@onready var spine_sprite: SpineSprite = $SpineSprite
-@onready var animation_component: AnimationComponent = $AnimationComponent
-@onready var health_component: HealthComponent = $HealthComponent
-@onready var physics_component: PhysicsComponent = $PhysicsComponent
-@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
-@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
-@onready var hitbox: Hitbox = $Hitbox
-
-@export var attack_profile: AttackProfile
-@export var locomotion_profile: LocomotionProfile
-@export var death_profile: DeathProfile
-
-func _ready() -> void:
-	# Passamos null no primeiro parametro (StateMachine) e a nossa simple state machine no terceiro
-	animation_component.setup(null, spine_sprite, state_machine)
-	
-	state_machine.setup(
-		self,
-		physics_component,
-		surface_contact_component,
-		wall_detector
-	)
-	
-	if hitbox and attack_profile:
-		hitbox.attack_profile = attack_profile
-	
-	# Conexão vital para a morte
-	health_component.died.connect(_on_health_component_died)
-	
-	surface_contact_component.call_deferred("setup", self)
-
-func _physics_process(delta: float) -> void:
-	velocity = state_machine.process_physics(delta)
-	move_and_slide()
-
-func get_locomotion_profile() -> LocomotionProfile:
-	return locomotion_profile
-
-func get_death_profile() -> DeathProfile:
-	return death_profile
-
-func set_facing_direction(direction: float) -> void:
-	var facing_sign = sign(direction)
-	if facing_sign == 0:
-		return
-
-	if is_instance_valid(spine_sprite):
-		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
-	
-	if is_instance_valid(wall_detector):
-		wall_detector.scale.x = abs(wall_detector.scale.x) * facing_sign
-		
-	if is_instance_valid(hitbox):
-		hitbox.scale.x = abs(hitbox.scale.x) * facing_sign
-
-func _on_health_component_died():
-	state_machine.transition_to("SimpleDeathState")
-
-func set_hitbox_enabled(is_enabled: bool) -> void:
-	if not is_instance_valid(hitbox):
-		return
-	
-	hitbox.set_deferred("monitorable", is_enabled)
-	hitbox.set_deferred("monitoring", is_enabled)
 </file>
 
 <file path="scripts/profiles/parried_profile.gd">
@@ -2674,127 +2984,6 @@ func _animate_flash() -> void:
 		tween.chain().tween_callback(func(): flash.visible = false)
 </file>
 
-<file path="scenes/enemy_adv.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://dyl8nbamfbxsl"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_8dky6"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_8dky6")]
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 5
-</file>
-
-<file path="scenes/enemy_boss.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://lm36r7o518ao"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_5xr4n"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_5xr4n")]
-</file>
-
-<file path="scenes/enemy_elt.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://dojo2btvv2tj0"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_o8g13"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_o8g13")]
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 7
-</file>
-
-<file path="scenes/enemy_mid.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://chqlqywn2ey2v"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_owgr6"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_owgr6")]
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 3
-</file>
-
-<file path="scenes/player_hud.tscn">
-[gd_scene load_steps=6 format=3 uid="uid://cpt4x4lssyjav"]
-
-[ext_resource type="Script" uid="uid://3ardk5ddx5yn" path="res://scripts/ui/hud_controller.gd" id="1_mlvnn"]
-[ext_resource type="Texture2D" uid="uid://dnd5if5ok4tck" path="res://assets/under.png" id="2_er5qu"]
-[ext_resource type="Texture2D" uid="uid://by5iff8a6w436" path="res://assets/progress_stamina.png" id="3_or0tx"]
-[ext_resource type="Texture2D" uid="uid://b6in2fan4sl6f" path="res://assets/progress_health.png" id="3_qcjqi"]
-[ext_resource type="Texture2D" uid="uid://do2y2oc4b30g2" path="res://assets/progress_focus.png" id="5_qcjqi"]
-
-[node name="PlayerHUD" type="Control"]
-layout_mode = 3
-anchors_preset = 0
-offset_left = 19.0
-offset_top = 20.0
-offset_right = 59.0
-offset_bottom = 24.0
-rotation = -0.0037477
-script = ExtResource("1_mlvnn")
-
-[node name="HealthBar" type="TextureProgressBar" parent="."]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 3.0
-texture_under = ExtResource("2_er5qu")
-texture_progress = ExtResource("3_qcjqi")
-
-[node name="StaminaBar" type="TextureProgressBar" parent="."]
-layout_mode = 0
-offset_left = -1.0
-offset_top = 11.0
-offset_right = 403.0
-offset_bottom = 43.0
-texture_under = ExtResource("2_er5qu")
-texture_progress = ExtResource("3_or0tx")
-
-[node name="FocusBar" type="TextureProgressBar" parent="."]
-layout_mode = 0
-offset_left = -1.08244
-offset_top = 21.9961
-offset_right = 401.918
-offset_bottom = 61.9961
-max_value = 300.0
-texture_under = ExtResource("2_er5qu")
-texture_progress = ExtResource("5_qcjqi")
-
-[node name="FocusSegmentsContainer" type="HBoxContainer" parent="."]
-layout_mode = 0
-offset_left = -699.079
-offset_top = -1047.63
-offset_right = -659.079
-offset_bottom = -1007.63
-
-[node name="ColorRect" type="ColorRect" parent="FocusSegmentsContainer"]
-layout_mode = 2
-
-[node name="ColorRect2" type="ColorRect" parent="FocusSegmentsContainer"]
-layout_mode = 2
-
-[node name="ColorRect3" type="ColorRect" parent="FocusSegmentsContainer"]
-layout_mode = 2
-</file>
-
 <file path="scripts/components/path_follower_component.gd">
 class_name PathFollowerComponent
 extends Node
@@ -3131,6 +3320,91 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 		emit_signal("impact_resolved", result_for_attacker)
 </file>
 
+<file path="scripts/platform/simple_enemy.gd">
+class_name SimpleEnemy
+extends CharacterBody2D
+
+@onready var state_machine = $SimpleStateMachine
+@onready var spine_sprite: SpineSprite = $SpineSprite
+@onready var animation_component: AnimationComponent = $AnimationComponent
+@onready var health_component: HealthComponent = $HealthComponent
+@onready var physics_component: PhysicsComponent = $PhysicsComponent
+@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
+@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
+@onready var hitbox: Hitbox = $Hitbox
+
+@export var attack_profile: AttackProfile
+@export var locomotion_profile: LocomotionProfile
+@export var death_profile: DeathProfile
+
+func _ready() -> void:
+	# Passamos null no primeiro parametro (StateMachine) e a nossa simple state machine no terceiro
+	animation_component.setup(null, spine_sprite, state_machine)
+	
+	state_machine.setup(
+		self,
+		physics_component,
+		surface_contact_component,
+		wall_detector
+	)
+	
+	if hitbox and attack_profile:
+		hitbox.attack_profile = attack_profile
+	
+	# Conexão vital para a morte
+	health_component.died.connect(_on_health_component_died)
+	
+	surface_contact_component.call_deferred("setup", self)
+
+func _physics_process(delta: float) -> void:
+	velocity = state_machine.process_physics(delta)
+	move_and_slide()
+
+func get_locomotion_profile() -> LocomotionProfile:
+	return locomotion_profile
+
+func get_death_profile() -> DeathProfile:
+	return death_profile
+	
+func get_attack_profile() -> AttackProfile:
+	return attack_profile
+
+func set_facing_direction(direction: float) -> void:
+	var facing_sign = sign(direction)
+	if facing_sign == 0:
+		return
+
+	if is_instance_valid(spine_sprite):
+		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
+	
+	if is_instance_valid(wall_detector):
+		wall_detector.scale.x = abs(wall_detector.scale.x) * facing_sign
+		
+	if is_instance_valid(hitbox):
+		hitbox.scale.x = abs(hitbox.scale.x) * facing_sign
+		
+func get_facing_direction() -> float:
+	if is_instance_valid(spine_sprite):
+		if is_zero_approx(spine_sprite.scale.x):
+			return 1.0
+		return sign(spine_sprite.scale.x)
+	
+	# Fallback original
+	if is_zero_approx(scale.x):
+		return 1.0
+	return sign(scale.x)
+
+func _on_health_component_died():
+	state_machine.transition_to("SimpleDeathState")
+
+func set_hitbox_enabled(is_enabled: bool) -> void:
+	if not is_instance_valid(hitbox):
+		return
+	
+	hitbox.set_deferred("monitorable", is_enabled)
+	hitbox.set_deferred("monitoring", is_enabled)
+</file>
+
 <file path="scripts/profiles/dodge_profile.gd">
 class_name DodgeProfile
 extends Resource
@@ -3429,6 +3703,65 @@ one_shot = true
 explosiveness = 0.2
 visibility_rect = Rect2(-200, -200, 400, 400)
 process_material = SubResource("ParticleProcessMaterial_utuc1")
+</file>
+
+<file path="scenes/enemy_adv.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://dyl8nbamfbxsl"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_8dky6"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_8dky6")]
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 50.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 5
+</file>
+
+<file path="scenes/enemy_boss.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://lm36r7o518ao"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_5xr4n"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_5xr4n")]
+</file>
+
+<file path="scenes/enemy_elt.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://dojo2btvv2tj0"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_o8g13"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_o8g13")]
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 50.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 7
+</file>
+
+<file path="scenes/enemy_mid.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://chqlqywn2ey2v"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_owgr6"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_owgr6")]
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 50.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 3
 </file>
 
 <file path="scripts/components/counter_executor_component.gd">
@@ -4146,23 +4479,6 @@ O `ImpactResolver` é agnóstico. Ele detecta `Hitbox` vs `Hurtbox`.
 3.  **Nomes de Classes:** Usar `class_name` para facilitar injeção (ex: `class_name SimpleEnemy`).
 </file>
 
-<file path="scenes/enemy_joke.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://d3d5tokp7sjew"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_lnph3"]
-
-[node name="EnemyEntity" instance=ExtResource("1_lnph3")]
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 10.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 10
-</file>
-
 <file path="scripts/components/camera_2d.gd">
 class_name GameCamera2D
 extends Camera2D
@@ -4463,91 +4779,6 @@ func _play_sound_instance(sound_stream: AudioStream):
 	player.play()
 </file>
 
-<file path="scripts/states/block_stun_state.gd">
-extends State
-class_name BlockStunState
-
-var current_profile: BlockStunProfile
-var time_left_in_phase: float = 0.0
-var _recoil_velocity: Vector2
-
-# --- Adição: Variável para controlar a ordem dos sons ---
-var _current_sfx_index: int = 0
-# ------------------------------------------------------
-
-# ✅ Precarrega as 4 variações só uma vez
-const BLOCK_SFX = [
-	preload("res://audio/clash.ogg"),
-	preload("res://audio/clash1.ogg"),
-	preload("res://audio/clash2.ogg"),
-	preload("res://audio/clash3.ogg"),
-	preload("res://audio/clash4.ogg"),
-	preload("res://audio/clash5.ogg"),
-	preload("res://audio/clash6.ogg"),
-	preload("res://audio/clash7.ogg"),
-	preload("res://audio/clash8.ogg"),
-]
-
-func enter(args: Dictionary = {}):
-	self.current_profile = args.get("profile")
-	if not current_profile:
-		state_machine.on_current_state_finished()
-		return
-
-	time_left_in_phase = current_profile.duration
-
-	var recoil: Vector2 = args.get("knockback_vector", Vector2.ZERO)
-	_recoil_velocity = recoil
-	if recoil.x != 0:
-		_recoil_velocity.x *= -owner_node.facing_sign
-
-	_emit_phase_signal()
-
-func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
-	if not current_profile:
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-
-	time_left_in_phase -= delta
-	if time_left_in_phase <= 0:
-		state_machine.on_current_state_finished()
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-
-	_recoil_velocity = _recoil_velocity.lerp(Vector2.ZERO, 0.15)
-	var final_velocity = physics_component.apply_gravity(_recoil_velocity, delta)
-	return final_velocity
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	return _resolve_default_contact(context)
-
-func get_poise_shield_contribution() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.poise_shield_contribution
-
-func allow_reentry() -> bool:
-	return true
-
-func _emit_phase_signal():
-	# ✅ Seleciona sequencialmente usando o índice atual
-	var sfx_to_play: AudioStream = BLOCK_SFX[_current_sfx_index % BLOCK_SFX.size()]
-	
-	# Incrementa para o próximo hit (cicla infinitamente)
-	_current_sfx_index += 1
-
-	var phase_data = {
-		"state_name": self.name,
-		"phase_name": "BLOCK_STUN",
-		"profile": current_profile,
-		"animation_to_play": current_profile.animation_name,
-		# ✅ passa a variação sequencial
-		"sfx_to_play": sfx_to_play,
-	}
-	state_machine.emit_phase_change(phase_data)
-
-func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-</file>
-
 <file path="scripts/states/death_state.gd">
 class_name DeathState
 extends State
@@ -4765,6 +4996,23 @@ func allow_reentry() -> bool:
 	return true
 </file>
 
+<file path="scenes/enemy_joke.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://d3d5tokp7sjew"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_lnph3"]
+
+[node name="EnemyEntity" instance=ExtResource("1_lnph3")]
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 10.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 10
+</file>
+
 <file path="scripts/components/player_feedback_component.gd">
 extends Node
 # PlayerFeedbackComponent.gd
@@ -4925,71 +5173,89 @@ var defender_outcome: DefenderOutcome
 var attacker_outcome: AttackerOutcome = AttackerOutcome.NONE
 </file>
 
-<file path="scripts/platform/simple_state.gd">
-class_name SimpleState
-extends Node
+<file path="scripts/states/block_stun_state.gd">
+extends State
+class_name BlockStunState
 
-var state_machine: BaseSimpleStateMachine
-var owner_node: Node
-var physics_component: Node
-var surface_contact_component: SurfaceContactComponent
-var wall_detector: WallDetectorComponent
+var current_profile: BlockStunProfile
+var time_left_in_phase: float = 0.0
+var _recoil_velocity: Vector2
 
-func initialize(sm: BaseSimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
-	self.state_machine = sm
-	self.owner_node = owner
-	self.physics_component = physics_comp
-	self.surface_contact_component = surface_contact_comp
-	self.wall_detector = p_wall_detector
+# --- Adição: Variável para controlar a ordem dos sons ---
+var _current_sfx_index: int = 0
+# ------------------------------------------------------
 
-func enter(_args: Dictionary = {}):
-	pass
+# ✅ Precarrega as 4 variações só uma vez
+const BLOCK_SFX = [
+	preload("res://audio/clash.ogg"),
+	preload("res://audio/clash1.ogg"),
+	preload("res://audio/clash2.ogg"),
+	preload("res://audio/clash3.ogg"),
+	preload("res://audio/clash4.ogg"),
+	preload("res://audio/clash5.ogg"),
+	preload("res://audio/clash6.ogg"),
+	preload("res://audio/clash7.ogg"),
+	preload("res://audio/clash8.ogg"),
+]
 
-func exit():
-	pass
+func enter(args: Dictionary = {}):
+	self.current_profile = args.get("profile")
+	if not current_profile:
+		state_machine.on_current_state_finished()
+		return
 
-func process_physics(_delta: float) -> Vector2:
-	return Vector2.ZERO
+	time_left_in_phase = current_profile.duration
 
-func handle_attack_outcome(result: ContactResult):
-	print("result.attacker_outcome: ", result.attacker_outcome)
-	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT:
-		var target_pos = Vector2.ZERO
-		if is_instance_valid(result.defender_node):
-			target_pos = result.defender_node.global_position
-			
-		var reason = {
-			"outcome": "ATTACK_CONNECTED",
-			"target_position": target_pos
-		}
-		state_machine.on_current_state_finished(reason)
+	var recoil: Vector2 = args.get("knockback_vector", Vector2.ZERO)
+	_recoil_velocity = recoil
+	if recoil.x != 0:
+		_recoil_velocity.x *= -owner_node.facing_sign
+
+	_emit_phase_signal()
+
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	if not current_profile:
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+
+	time_left_in_phase -= delta
+	if time_left_in_phase <= 0:
+		state_machine.on_current_state_finished()
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+
+	_recoil_velocity = _recoil_velocity.lerp(Vector2.ZERO, 0.15)
+	var final_velocity = physics_component.apply_gravity(_recoil_velocity, delta)
+	return final_velocity
 
 func resolve_contact(context: ContactContext) -> ContactResult:
-	var result_for_attacker = ContactResult.new()
-	result_for_attacker.attacker_node = context.attacker_node
-	result_for_attacker.defender_node = context.defender_node
-	result_for_attacker.attack_profile = context.attack_profile
+	return _resolve_default_contact(context)
 
-	if context.defender_health_comp:
-		context.defender_health_comp.take_damage(context.attack_profile.damage)
-		
-		if not context.defender_health_comp.is_dead():
-			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
-			var push_force = 350.0 # Valor base, idealmente viria do AttackProfile mas mantemos simples aqui
-			
-			# Se o AttackProfile tiver dados de knockback, podemos usar (opcional)
-			# if context.attack_profile.knockback_vector != Vector2.ZERO: ...
-			
-			var knockback = direction * push_force
-			knockback.y = -100.0 # Um leve pulinho para tirar do chão
-			
-			var reason = { "outcome": "HIT", "knockback_vector": knockback }
-			state_machine.on_current_state_finished(reason)
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
 
-	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
-	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY
+func allow_reentry() -> bool:
+	return true
 
-	return result_for_attacker
+func _emit_phase_signal():
+	# ✅ Seleciona sequencialmente usando o índice atual
+	var sfx_to_play: AudioStream = BLOCK_SFX[_current_sfx_index % BLOCK_SFX.size()]
+	
+	# Incrementa para o próximo hit (cicla infinitamente)
+	_current_sfx_index += 1
+
+	var phase_data = {
+		"state_name": self.name,
+		"phase_name": "BLOCK_STUN",
+		"profile": current_profile,
+		"animation_to_play": current_profile.animation_name,
+		# ✅ passa a variação sequencial
+		"sfx_to_play": sfx_to_play,
+	}
+	state_machine.emit_phase_change(phase_data)
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 </file>
 
 <file path="scripts/states/locomotion_state.gd">
@@ -5193,6 +5459,72 @@ func _should_animation_loop(anim_name: StringName) -> bool:
 	return anim_name in [&"idle", &"walk", &"run"]
 </file>
 
+<file path="scripts/platform/simple_state.gd">
+class_name SimpleState
+extends Node
+
+var state_machine: BaseSimpleStateMachine
+var owner_node: Node
+var physics_component: Node
+var surface_contact_component: SurfaceContactComponent
+var wall_detector: WallDetectorComponent
+
+func initialize(sm: BaseSimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+	self.state_machine = sm
+	self.owner_node = owner
+	self.physics_component = physics_comp
+	self.surface_contact_component = surface_contact_comp
+	self.wall_detector = p_wall_detector
+
+func enter(_args: Dictionary = {}):
+	pass
+
+func exit():
+	pass
+
+func process_physics(_delta: float) -> Vector2:
+	return Vector2.ZERO
+
+func handle_attack_outcome(result: ContactResult):
+	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT:
+		var target_pos = Vector2.ZERO
+		if is_instance_valid(result.defender_node):
+			target_pos = result.defender_node.global_position
+			
+		var reason = {
+			"outcome": "ATTACK_CONNECTED",
+			"target_position": target_pos
+		}
+		state_machine.on_current_state_finished(reason)
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var result_for_attacker = ContactResult.new()
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
+
+	if context.defender_health_comp:
+		context.defender_health_comp.take_damage(context.attack_profile.damage)
+		
+		if not context.defender_health_comp.is_dead():
+			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
+			var push_force = 350.0 # Valor base, idealmente viria do AttackProfile mas mantemos simples aqui
+			
+			# Se o AttackProfile tiver dados de knockback, podemos usar (opcional)
+			# if context.attack_profile.knockback_vector != Vector2.ZERO: ...
+			
+			var knockback = direction * push_force
+			knockback.y = -100.0 # Um leve pulinho para tirar do chão
+			
+			var reason = { "outcome": "HIT", "knockback_vector": knockback }
+			state_machine.on_current_state_finished(reason)
+
+	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
+	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY
+
+	return result_for_attacker
+</file>
+
 <file path="scripts/states/dodge_state.gd">
 class_name DodgeState
 extends State
@@ -5348,6 +5680,36 @@ func _change_phase(new_phase: Phases):
 	state_machine.emit_phase_change(phase_data)
 </file>
 
+<file path="scripts/profiles/jump_profile.gd">
+class_name JumpProfile
+extends Resource
+
+@export_group("Animations")
+@export var rising_animation: StringName
+@export var falling_animation: StringName
+@export var air_rising_animation: StringName
+
+@export_group("Audio")
+@export var jump_sfx: AudioStream
+@export var landing_sfx: AudioStream
+@export var air_jump_sfx: AudioStream
+
+@export_group("Rules")
+@export var coyote_time: float = 0.12
+@export var max_air_jumps: int = 1
+
+@export_group("Physics")
+@export var air_control_speed: float = 500.0
+@export var wall_jump_impulse: Vector2 = Vector2(800, -1150)
+
+@export_group("Variable Jump")
+@export var min_jump_velocity: float = 1150.0
+@export var max_jump_velocity: float = -1150.0
+@export var max_hold_time: float = 0.0
+@export var hold_accel: float = 0.0
+@export var release_cut_multiplier: float = 0.5
+</file>
+
 <file path="scripts/platform/simple_enemy.tscn">
 [gd_scene load_steps=31 format=3 uid="uid://def1lykxj4wss"]
 
@@ -5432,6 +5794,8 @@ skeleton_file_res = ExtResource("5_2wo0y")
 shader = ExtResource("8_dct62")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_modifier = 0.0
+shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_intensity = 0.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
 radius = 38.0
@@ -5478,16 +5842,11 @@ metadata/_custom_type_script = "uid://nkr7lri0t1dn"
 
 [node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
 script = ExtResource("12_wfdv6")
-stagger_duration = null
-friction = null
 audio = ExtResource("13_skhkn")
 metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
 
 [node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
 script = ExtResource("14_ir8sv")
-recoil_duration = null
-recoil_speed = null
-friction = null
 metadata/_custom_type_script = "uid://7cvdf53tkds2"
 
 [node name="AnimationComponent" type="Node" parent="."]
@@ -5518,13 +5877,14 @@ metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
 
 [node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
 position = Vector2(0, -38)
-target_position = Vector2(45, 0)
+target_position = Vector2(50, 0)
 
 [node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
 position = Vector2(40, 0)
 target_position = Vector2(0, 21)
 
 [node name="Hitbox" type="Area2D" parent="."]
+visible = false
 collision_layer = 16
 collision_mask = 32
 script = ExtResource("13_r4g4d")
@@ -5542,36 +5902,6 @@ script = ExtResource("14_yf6nf")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
 position = Vector2(0, -38)
 shape = SubResource("CircleShape2D_3xv3x")
-</file>
-
-<file path="scripts/profiles/jump_profile.gd">
-class_name JumpProfile
-extends Resource
-
-@export_group("Animations")
-@export var rising_animation: StringName
-@export var falling_animation: StringName
-@export var air_rising_animation: StringName
-
-@export_group("Audio")
-@export var jump_sfx: AudioStream
-@export var landing_sfx: AudioStream
-@export var air_jump_sfx: AudioStream
-
-@export_group("Rules")
-@export var coyote_time: float = 0.12
-@export var max_air_jumps: int = 1
-
-@export_group("Physics")
-@export var air_control_speed: float = 500.0
-@export var wall_jump_impulse: Vector2 = Vector2(800, -1150)
-
-@export_group("Variable Jump")
-@export var min_jump_velocity: float = 1150.0
-@export var max_jump_velocity: float = -1150.0
-@export var max_hold_time: float = 0.0
-@export var hold_accel: float = 0.0
-@export var release_cut_multiplier: float = 0.5
 </file>
 
 <file path="scripts/states/attack_state.gd">
@@ -6254,6 +6584,71 @@ func allow_reentry() -> bool:
 	return true
 </file>
 
+<file path="scripts/profiles/attack_profile.gd">
+class_name AttackProfile
+extends Resource
+
+enum ParryInteractionType {
+	STANDARD,
+	UNPARRYABLE
+}
+
+enum UnparryableType {
+	NONE,
+	THRUST,
+	SWEEP
+}
+
+enum MovementType {
+	PHYSICS,
+	PATH_TARGET
+}
+
+@export_group("Phases")
+@export var startup_duration: float = 0.3
+@export var active_duration: float = 0.1
+@export var block_recoil_duration: float = 0.55
+@export var recovery_duration: float = 0.45
+@export var link_duration: float = 0.6
+
+@export_group("Presentation")
+@export var animation_name: StringName
+@export var startup_sfx: AudioStream
+@export var active_sfx: AudioStream
+@export var recovery_sfx: AudioStream
+@export var impact_sfx: AudioStream
+
+@export_group("Hitbox")
+@export var hitbox_size: Vector2 = Vector2(160, 140)
+@export var hitbox_position: Vector2 = Vector2(100, -30)
+
+@export_group("Mechanics")
+@export var damage: float = 1.0
+@export var stamina_cost: float = 0.0
+@export var focus_cost: int = 0
+@export var focus_gain_on_hit: int = 0
+@export var stamina_damage: float = 10.0
+@export var poise_impact_contribution: float = 10.0
+@export var poise_momentum_gain: float = 0.0
+@export var poise_momentum_duration: float = 1.5
+@export var knockback_vector: Vector2 = Vector2(1000, 0)
+@export var defender_knockback_on_parry: float = 120.0
+@export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
+@export var unparryable_type: UnparryableType = UnparryableType.NONE
+
+@export_group("Movement")
+@export var movement_type: MovementType = MovementType.PHYSICS
+@export var startup_movement_velocity: Vector2 = Vector2.ZERO
+@export var active_movement_velocity: Vector2 = Vector2.ZERO
+@export var recovery_movement_velocity: Vector2 = Vector2.ZERO
+@export var link_movement_velocity: Vector2 = Vector2.ZERO
+
+@export_group("Poise Contributions per Phase (Defensivo)")
+@export var startup_poise_shield: float = 10.0
+@export var active_poise_shield: float = 10.0
+@export var recovery_poise_shield: float = 300.0
+</file>
+
 <file path="scripts/actors/enemy.gd">
 class_name Enemy
 extends CharacterBody2D
@@ -6442,71 +6837,6 @@ func reset_air_actions():
 		air_jumps_left = jump_profile.max_air_jumps
 	air_dash_used = false
 	has_locked_air_pool = true
-</file>
-
-<file path="scripts/profiles/attack_profile.gd">
-class_name AttackProfile
-extends Resource
-
-enum ParryInteractionType {
-	STANDARD,
-	UNPARRYABLE
-}
-
-enum UnparryableType {
-	NONE,
-	THRUST,
-	SWEEP
-}
-
-enum MovementType {
-	PHYSICS,
-	PATH_TARGET
-}
-
-@export_group("Phases")
-@export var startup_duration: float = 0.3
-@export var active_duration: float = 0.1
-@export var block_recoil_duration: float = 0.55
-@export var recovery_duration: float = 0.45
-@export var link_duration: float = 0.6
-
-@export_group("Presentation")
-@export var animation_name: StringName
-@export var startup_sfx: AudioStream
-@export var active_sfx: AudioStream
-@export var recovery_sfx: AudioStream
-@export var impact_sfx: AudioStream
-
-@export_group("Hitbox")
-@export var hitbox_size: Vector2 = Vector2(160, 140)
-@export var hitbox_position: Vector2 = Vector2(100, -30)
-
-@export_group("Mechanics")
-@export var damage: float = 1.0
-@export var stamina_cost: float = 0.0
-@export var focus_cost: int = 0
-@export var focus_gain_on_hit: int = 0
-@export var stamina_damage: float = 10.0
-@export var poise_impact_contribution: float = 10.0
-@export var poise_momentum_gain: float = 0.0
-@export var poise_momentum_duration: float = 1.5
-@export var knockback_vector: Vector2 = Vector2(1000, 0)
-@export var defender_knockback_on_parry: float = 120.0
-@export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
-@export var unparryable_type: UnparryableType = UnparryableType.NONE
-
-@export_group("Movement")
-@export var movement_type: MovementType = MovementType.PHYSICS
-@export var startup_movement_velocity: Vector2 = Vector2.ZERO
-@export var active_movement_velocity: Vector2 = Vector2.ZERO
-@export var recovery_movement_velocity: Vector2 = Vector2.ZERO
-@export var link_movement_velocity: Vector2 = Vector2.ZERO
-
-@export_group("Poise Contributions per Phase (Defensivo)")
-@export var startup_poise_shield: float = 10.0
-@export var active_poise_shield: float = 10.0
-@export var recovery_poise_shield: float = 300.0
 </file>
 
 <file path="scripts/states/airborne_state.gd">
@@ -8145,7 +8475,7 @@ func _unhandled_input(event: InputEvent):
 </file>
 
 <file path="scenes/testing_dojo.tscn">
-[gd_scene load_steps=21 format=4 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=22 format=4 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="2_7od0s"]
@@ -8164,6 +8494,7 @@ func _unhandled_input(event: InputEvent):
 [ext_resource type="PackedScene" uid="uid://dtjlr4crlrjgr" path="res://scenes/token.tscn" id="16_hi14r"]
 [ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="17_5ycas"]
 [ext_resource type="PackedScene" uid="uid://dhjvjsjvv2gir" path="res://scripts/platform/flying_enemy.tscn" id="17_eguil"]
+[ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="18_eguil"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_8esgq"]
 texture = ExtResource("13_8esgq")
@@ -8183,7 +8514,7 @@ size = Vector2(5292, 1142)
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(1913, 486)
+position = Vector2(973, -1016)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -8195,8 +8526,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-16.875, -328.997)
-rotation = 0.4629
+position = Vector2(-14.5, -334.747)
+rotation = 0.448386
 scale = Vector2(1, 1)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
@@ -8253,7 +8584,7 @@ actor_to_watch = NodePath("../PlayerEntity/Player")
 
 [node name="Ground" type="TileMapLayer" parent="."]
 position = Vector2(1113, -3981)
-tile_map_data = PackedByteArray("AADu/08AAAAAAAAAAADv/08AAAAAAAAAAADw/08AAAAAAAAAAADx/08AAAAAAAAAAADy/08AAAAAAAAAAADz/08AAAAAAAAAAAD0/08AAAAAAAAAAAD1/08AAAAAAAAAAAD2/08AAAAAAAAAAAD3/08AAAAAAAAAAAD4/08AAAAAAAAAAAD5/08AAAAAAAAAAAD6/08AAAAAAAAAAAD7/08AAAAAAAAAAAD8/08AAAAAAAAAAAD9/08AAAAAAAAAAAD+/08AAAAAAAAAAAD//08AAAAAAAAAAAAAAE8AAAAAAAAAAAABAE8AAAAAAAAAAAACAE8AAAAAAAAAAAADAE8AAAAAAAAAAAAEAE8AAAAAAAAAAAAFAE8AAAAAAAAAAAAGAE8AAAAAAAAAAAAHAE8AAAAAAAAAAAAIAE8AAAAAAAAAAAAJAE8AAAAAAAAAAAAKAE8AAAAAAAAAAAALAE8AAAAAAAAAAAAMAE8AAAAAAAAAAAASAE8AAAAAAAAAAAATAE8AAAAAAAAAAAAUAE8AAAAAAAAAAAAVAE8AAAAAAAAAAAAWAE8AAAAAAAAAAAAXAE8AAAAAAAAAAAAYAE8AAAAAAAAAAAAZAE8AAAAAAAAAAAAaAE8AAAAAAAAAAAAbAE8AAAAAAAAAAAAcAE8AAAAAAAAAAAAdAE8AAAAAAAAAAAAeAE8AAAAAAAAAAAAfAE8AAAAAAAAAAAAgAE8AAAAAAAAAAAAhAE8AAAAAAAAAAAAiAE8AAAAAAAAAAAAjAE8AAAAAAAAAAAAkAE8AAAAAAAAAAAAlAE8AAAAAAAAAAAAmAE8AAAAAAAAAAAAnAE8AAAAAAAAAAAAoAE8AAAAAAAAAAAApAE8AAAAAAAAAAAAqAE8AAAAAAAAAAAArAE8AAAAAAAAAAAAsAE8AAAAAAAAAAAAtAE8AAAAAAAAAAAAuAE8AAAAAAAAAAAAvAE8AAAAAAAAAAAAwAE8AAAAAAAAAAAAxAE8AAAAAAAAAAAAyAE8AAAAAAAAAAAAzAE8AAAAAAAAAAAA0AE8AAAAAAAAAAAA1AE8AAAAAAAAAAAA2AE8AAAAAAAAAAAA3AE8AAAAAAAAAAAA4AE8AAAAAAAAAAAA5AE8AAAAAAAAAAAA6AE8AAAAAAAAAAAA7AE8AAAAAAAAAAAA8AE8AAAAAAAAAAAA9AE8AAAAAAAAAAAA+AE8AAAAAAAAAAAA/AE8AAAAAAAAAAABAAE8AAAAAAAAAAABBAE8AAAAAAAAAAABCAE8AAAAAAAAAAABDAE8AAAAAAAAAAABEAE8AAAAAAAAAAABFAE8AAAAAAAAAAABFAEwAAAAAAAAAAABFAE0AAAAAAAAAAABFAE4AAAAAAAAAAABLAE8AAAAAAAAAAABMAE8AAAAAAAAAAABNAE8AAAAAAAAAAABOAE8AAAAAAAAAAABPAE8AAAAAAAAAAABQAE8AAAAAAAAAAABLAEwAAAAAAAAAAABLAE0AAAAAAAAAAABLAE4AAAAAAAAAAABRAE8AAAAAAAAAAABSAE8AAAAAAAAAAABTAE8AAAAAAAAAAABUAE8AAAAAAAAAAABVAE8AAAAAAAAAAABWAE8AAAAAAAAAAABAAEwAAAAAAAAAAABAAE0AAAAAAAAAAABAAE4AAAAAAAAAAABBAEwAAAAAAAAAAABBAE0AAAAAAAAAAABBAE4AAAAAAAAAAABCAEwAAAAAAAAAAABCAE0AAAAAAAAAAABCAE4AAAAAAAAAAABDAEwAAAAAAAAAAABDAE0AAAAAAAAAAABDAE4AAAAAAAAAAABEAEwAAAAAAAAAAABEAE0AAAAAAAAAAABEAE4AAAAAAAAAAABMAEwAAAAAAAAAAABMAE0AAAAAAAAAAABMAE4AAAAAAAAAAABNAEwAAAAAAAAAAABNAE0AAAAAAAAAAABNAE4AAAAAAAAAAABOAEwAAAAAAAAAAABOAE0AAAAAAAAAAABOAE4AAAAAAAAAAABPAEwAAAAAAAAAAABPAE0AAAAAAAAAAABPAE4AAAAAAAAAAABQAEwAAAAAAAAAAABQAE0AAAAAAAAAAABQAE4AAAAAAAAAAABXAE8AAAAAAAAAAABYAE8AAAAAAAAAAABZAE8AAAAAAAAAAABaAE8AAAAAAAAAAABbAE8AAAAAAAAAAABcAE4AAAAAAAAAAABcAE8AAAAAAAAAAABdAE4AAAAAAAAAAABdAE8AAAAAAAAAAABeAE4AAAAAAAAAAABeAE8AAAAAAAAAAABfAE4AAAAAAAAAAABfAE8AAAAAAAAAAABgAE4AAAAAAAAAAABgAE8AAAAAAAAAAABcAE0AAAAAAAAAAABdAE0AAAAAAAAAAABeAE0AAAAAAAAAAABfAE0AAAAAAAAAAABgAE0AAAAAAAAAAABcAEsAAAAAAAAAAABcAEwAAAAAAAAAAABdAEsAAAAAAAAAAABdAEwAAAAAAAAAAABeAEsAAAAAAAAAAABeAEwAAAAAAAAAAABfAEsAAAAAAAAAAABfAEwAAAAAAAAAAABgAEsAAAAAAAAAAABgAEwAAAAAAAAAAABhAEsAAAAAAAAAAABhAEwAAAAAAAAAAABhAE0AAAAAAAAAAABhAE4AAAAAAAAAAABhAE8AAAAAAAAAAABiAEsAAAAAAAAAAABiAEwAAAAAAAAAAABiAE0AAAAAAAAAAABiAE4AAAAAAAAAAABiAE8AAAAAAAAAAABjAEsAAAAAAAAAAABjAEwAAAAAAAAAAABjAE0AAAAAAAAAAABjAE4AAAAAAAAAAABjAE8AAAAAAAAAAABkAEsAAAAAAAAAAABkAEwAAAAAAAAAAABkAE0AAAAAAAAAAABkAE4AAAAAAAAAAABkAE8AAAAAAAAAAABlAEsAAAAAAAAAAABlAEwAAAAAAAAAAABlAE0AAAAAAAAAAABlAE4AAAAAAAAAAABlAE8AAAAAAAAAAABmAEsAAAAAAAAAAABmAEwAAAAAAAAAAABmAE0AAAAAAAAAAABmAE4AAAAAAAAAAABmAE8AAAAAAAAAAABnAEsAAAAAAAAAAABnAEwAAAAAAAAAAABnAE0AAAAAAAAAAABnAE4AAAAAAAAAAABnAE8AAAAAAAAAAABoAEsAAAAAAAAAAABoAEwAAAAAAAAAAABoAE0AAAAAAAAAAABoAE4AAAAAAAAAAABoAE8AAAAAAAAAAABpAEsAAAAAAAAAAABpAEwAAAAAAAAAAABpAE0AAAAAAAAAAABpAE4AAAAAAAAAAABpAE8AAAAAAAAAAABqAE4AAAAAAAAAAABqAE8AAAAAAAAAAABrAE4AAAAAAAAAAABrAE8AAAAAAAAAAABsAE4AAAAAAAAAAABsAE8AAAAAAAAAAABtAE4AAAAAAAAAAABtAE8AAAAAAAAAAABuAE4AAAAAAAAAAABuAE8AAAAAAAAAAABvAE4AAAAAAAAAAABvAE8AAAAAAAAAAABwAE4AAAAAAAAAAABwAE8AAAAAAAAAAABxAE4AAAAAAAAAAABxAE8AAAAAAAAAAAByAE4AAAAAAAAAAAByAE8AAAAAAAAAAABzAE4AAAAAAAAAAABzAE8AAAAAAAAAAAB0AE4AAAAAAAAAAAB0AE8AAAAAAAAAAAB1AE4AAAAAAAAAAAB1AE8AAAAAAAAAAAB2AE4AAAAAAAAAAAB2AE8AAAAAAAAAAAB3AE4AAAAAAAAAAAB3AE8AAAAAAAAAAAB4AE4AAAAAAAAAAAB4AE8AAAAAAAAAAAB5AE4AAAAAAAAAAAB5AE8AAAAAAAAAAAB6AE4AAAAAAAAAAAB6AE8AAAAAAAAAAAB7AE4AAAAAAAAAAAB7AE8AAAAAAAAAAAB8AE4AAAAAAAAAAAB8AE8AAAAAAAAAAAB9AE4AAAAAAAAAAAB9AE8AAAAAAAAAAAB+AE4AAAAAAAAAAAB+AE8AAAAAAAAAAAB/AE4AAAAAAAAAAAB/AE8AAAAAAAAAAACAAE4AAAAAAAAAAACAAE8AAAAAAAAAAACBAE4AAAAAAAAAAACBAE8AAAAAAAAAAACCAE4AAAAAAAAAAACCAE8AAAAAAAAAAACDAE4AAAAAAAAAAACDAE8AAAAAAAAAAACZAEQAAAAAAAAAAACZAEUAAAAAAAAAAACZAEYAAAAAAAAAAACZAEcAAAAAAAAAAACZAEgAAAAAAAAAAACZAEkAAAAAAAAAAACZAEoAAAAAAAAAAACZAEsAAAAAAAAAAACaAEQAAAAAAAAAAACaAEUAAAAAAAAAAACaAEYAAAAAAAAAAACaAEcAAAAAAAAAAACaAEgAAAAAAAAAAACaAEkAAAAAAAAAAACaAEoAAAAAAAAAAACaAEsAAAAAAAAAAACmAE8AAAAAAAAAAACnAE8AAAAAAAAAAACoAE8AAAAAAAAAAACpAE8AAAAAAAAAAACqAE8AAAAAAAAAAACrAE8AAAAAAAAAAACsAE8AAAAAAAAAAACtAE8AAAAAAAAAAACuAE8AAAAAAAAAAACvAE8AAAAAAAAAAACwAE8AAAAAAAAAAACxAE8AAAAAAAAAAACyAE8AAAAAAAAAAACzAE8AAAAAAAAAAAC0AE8AAAAAAAAAAAC1AE8AAAAAAAAAAAC2AE8AAAAAAAAAAAC3AE8AAAAAAAAAAAC4AE8AAAAAAAAAAAC5AE8AAAAAAAAAAAC6AE8AAAAAAAAAAAC7AE8AAAAAAAAAAACOAEIAAAAAAAAAAACOAEMAAAAAAAAAAACOAEQAAAAAAAAAAACOAEUAAAAAAAAAAACPAEIAAAAAAAAAAACPAEMAAAAAAAAAAACPAEQAAAAAAAAAAACPAEUAAAAAAAAAAACOAEEAAAAAAAAAAACPAEEAAAAAAAAAAACOAEAAAAAAAAAAAACPAEAAAAAAAAAAAAD4AE8AAAAAAAAAAAD4AFAAAAAAAAAAAAD5AE8AAAAAAAAAAAD5AFAAAAAAAAAAAAD6AE8AAAAAAAAAAAD6AFAAAAAAAAAAAAD7AE8AAAAAAAAAAAD7AFAAAAAAAAAAAAD8AE8AAAAAAAAAAAD8AFAAAAAAAAAAAAD9AE8AAAAAAAAAAAD9AFAAAAAAAAAAAAD+AE8AAAAAAAAAAAD+AFAAAAAAAAAAAAD/AE8AAAAAAAAAAAD/AFAAAAAAAAAAAAAAAU8AAAAAAAAAAAAAAVAAAAAAAAAAAAABAU8AAAAAAAAAAAABAVAAAAAAAAAAAAACAU8AAAAAAAAAAAACAVAAAAAAAAAAAAADAU8AAAAAAAAAAAADAVAAAAAAAAAAAAAEAU8AAAAAAAAAAAAEAVAAAAAAAAAAAAAFAU8AAAAAAAAAAAAFAVAAAAAAAAAAAAAGAU8AAAAAAAAAAAAGAVAAAAAAAAAAAAAHAU8AAAAAAAAAAAAHAVAAAAAAAAAAAAAIAU8AAAAAAAAAAAAIAVAAAAAAAAAAAAAJAU8AAAAAAAAAAAAJAVAAAAAAAAAAAAAKAU8AAAAAAAAAAAAKAVAAAAAAAAAAAAALAU8AAAAAAAAAAAALAVAAAAAAAAAAAAAMAU8AAAAAAAAAAAAMAVAAAAAAAAAAAAANAU8AAAAAAAAAAAANAVAAAAAAAAAAAAAOAU8AAAAAAAAAAAAOAVAAAAAAAAAAAAAPAU8AAAAAAAAAAAAPAVAAAAAAAAAAAAAQAU8AAAAAAAAAAAAQAVAAAAAAAAAAAAARAU8AAAAAAAAAAAARAVAAAAAAAAAAAAASAU8AAAAAAAAAAAASAVAAAAAAAAAAAAATAU8AAAAAAAAAAAATAVAAAAAAAAAAAAAUAU8AAAAAAAAAAAAUAVAAAAAAAAAAAAAVAU8AAAAAAAAAAAAVAVAAAAAAAAAAAAAWAU8AAAAAAAAAAAAWAVAAAAAAAAAAAAAXAU8AAAAAAAAAAAAXAVAAAAAAAAAAAAAYAU8AAAAAAAAAAAAYAVAAAAAAAAAAAAAZAU8AAAAAAAAA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AADzAFAAAAAAAAAAAAD0AFAAAAAAAAAAAAD1AFAAAAAAAAAAAAD2AFAAAAAAAAAAAAD3AFAAAAAAAAAAAAC7AEkAAAAAAAAAAAC7AEoAAAAAAAAAAAC7AEsAAAAAAAAAAAC7AEwAAAAAAAAAAAC7AE0AAAAAAAAAAAC7AE4AAAAAAAAAAAC8AEkAAAAAAAAAAAC8AEoAAAAAAAAAAAC8AEsAAAAAAAAAAAC8AEwAAAAAAAAAAAC8AE0AAAAAAAAAAAC8AE4AAAAAAAAAAAC9AEkAAAAAAAAAAAC9AEoAAAAAAAAAAAC9AEsAAAAAAAAAAAC9AEwAAAAAAAAAAAC9AE0AAAAAAAAAAAC9AE4AAAAAAAAAAAC+AEkAAAAAAAAAAAC+AEoAAAAAAAAAAAC+AEsAAAAAAAAAAAC+AEwAAAAAAAAAAAC+AE0AAAAAAAAAAAC+AE4AAAAAAAAAAAC/AEkAAAAAAAAAAAC/AEoAAAAAAAAAAAC/AEsAAAAAAAAAAAC/AEwAAAAAAAAAAAC/AE0AAAAAAAAAAAC/AE4AAAAAAAAAAADAAEkAAAAAAAAAAADAAEoAAAAAAAAAAADAAEsAAAAAAAAAAADAAEwAAAAAAAAAAADAAE0AAAAAAAAAAADAAE4AAAAAAAAAAADLAEUAAAAAAAAAAADLAEYAAAAAAAAAAADMAEUAAAAAAAAAAADMAEYAAAAAAAAAAADNAEUAAAAAAAAAAADNAEYAAAAAAAAAAADOAEUAAAAAAAAAAADOAEYAAAAAAAAAAADPAEUAAAAAAAAAAADPAEYAAAAAAAAAAADQAEUAAAAAAAAAAADQAEYAAAAAAAAAAADRAEUAAAAAAAAAAADRAEYAAAAAAAAAAADSAEUAAAAAAAAAAADSAEYAAAAAAAAAAADeAEUAAAAAAAAAAADeAEYAAAAAAAAAAADfAEUAAAAAAAAAAADfAEYAAAAAAAAAAADgAEUAAAAAAAAAAADgAEYAAAAAAAAAAADhAEUAAAAAAAAAAADhAEYAAAAAAAAAAADiAEUAAAAAAAAAAADiAEYAAAAAAAAAAADjAEUAAAAAAAAAAADjAEYAAAAAAAAAAADkAEUAAAAAAAAAAADkAEYAAAAAAAAAAADlAEUAAAAAAAAAAADlAEYAAAAAAAAAAADyAEwAAAAAAAAAAADyAE0AAAAAAAAAAADyAE4AAAAAAAAAAADzAEwAAAAAAAAAAADzAE0AAAAAAAAAAADzAE4AAAAAAAAAAAD0AEwAAAAAAAAAAAD0AE0AAAAAAAAAAAD0AE4AAAAAAAAAAAD1AEwAAAAAAAAAAAD1AE0AAAAAAAAAAAD1AE4AAAAAAAAAAAAMAFAAAAAAAAAAAAAMAFEAAAAAAAAAAAAMAFIAAAAAAAAAAAAMAFMAAAAAAAAAAAAMAFQAAAAAAAAAAAAMAFUAAAAAAAAAAAAMAFYAAAAAAAAAAAANAFYAAAAAAAAAAAAOAFYAAAAAAAAAAAAPAFYAAAAAAAAAAAAQAFYAAAAAAAAAAAARAFYAAAAAAAAAAAASAFYAAAAAAAAAAAASAFAAAAAAAAAAAAASAFEAAAAAAAAAAAASAFIAAAAAAAAAAAASAFMAAAAAAAAAAAASAFQAAAAAAAAAAAASAFUAAAAAAAAAAAAaAE0AAAAAAAAAAAAaAE4AAAAAAAAAAAAbAE0AAAAAAAAAAAAbAE4AAAAAAAAAAAC9/08AAAAAAAAAAAC+/08AAAAAAAAAAAC//08AAAAAAAAAAADA/08AAAAAAAAAAADB/08AAAAAAAAAAADC/08AAAAAAAAAAADD/08AAAAAAAAAAADE/08AAAAAAAAAAADF/08AAAAAAAAAAADG/08AAAAAAAAAAADH/08AAAAAAAAAAADI/08AAAAAAAAAAADJ/08AAAAAAAAAAADK/08AAAAAAAAAAADL/08AAAAAAAAAAADM/08AAAAAAAAAAADN/08AAAAAAAAAAADO/08AAAAAAAAAAADP/08AAAAAAAAAAADQ/08AAAAAAAAAAADR/08AAAAAAAAAAADS/08AAAAAAAAAAADT/08AAAAAAAAAAADU/08AAAAAAAAAAADV/08AAAAAAAAAAADW/08AAAAAAAAAAADX/08AAAAAAAAAAADY/08AAAAAAAAAAADZ/08AAAAAAAAAAADa/08AAAAAAAAAAADb/08AAAAAAAAAAADc/08AAAAAAAAAAADd/08AAAAAAAAAAADe/08AAAAAAAAAAADf/08AAAAAAAAAAADg/08AAAAAAAAAAADh/08AAAAAAAAAAADi/08AAAAAAAAAAADj/08AAAAAAAAAAADk/08AAAAAAAAAAADl/08AAAAAAAAAAADm/08AAAAAAAAAAADn/08AAAAAAAAAAADo/08AAAAAAAAAAADp/08AAAAAAAAAAADq/08AAAAAAAAAAADr/08AAAAAAAAAAADs/08AAAAAAAAAAADt/08AAAAAAAAAAACS/08AAAAAAAAAAACT/08AAAAAAAAAAACU/08AAAAAAAAAAACV/08AAAAAAAAAAACW/08AAAAAAAAAAACX/08AAAAAAAAAAACY/08AAAAAAAAAAACZ/08AAAAAAAAAAACa/08AAAAAAAAAAACb/08AAAAAAAAAAACc/08AAAAAAAAAAACd/08AAAAAAAAAAACe/08AAAAAAAAAAACf/08AAAAAAAAAAACg/08AAAAAAAAAAACh/08AAAAAAAAAAACi/08AAAAAAAAAAACj/08AAAAAAAAAAACk/08AAAAAAAAAAACl/08AAAAAAAAAAACm/08AAAAAAAAAAACn/08AAAAAAAAAAACo/08AAAAAAAAAAACp/08AAAAAAAAAAACq/08AAAAAAAAAAACr/08AAAAAAAAAAACs/08AAAAAAAAAAACt/08AAAAAAAAAAACu/08AAAAAAAAAAACv/08AAAAAAAAAAACw/08AAAAAAAAAAACx/08AAAAAAAAAAACy/08AAAAAAAAAAACz/08AAAAAAAAAAAC0/08AAAAAAAAAAAC1/08AAAAAAAAAAAC2/08AAAAAAAAAAAC3/08AAAAAAAAAAAC4/08AAAAAAAAAAAC5/08AAAAAAAAAAAC6/08AAAAAAAAAAAC7/08AAAAAAAAAAAC8/08AAAAAAAAAAABp/08AAAAAAAAAAABq/08AAAAAAAAAAABr/08AAAAAAAAAAABs/08AAAAAAAAAAABt/08AAAAAAAAAAABu/08AAAAAAAAAAABv/08AAAAAAAAAAABw/08AAAAAAAAAAABx/08AAAAAAAAAAABy/08AAAAAAAAAAABz/08AAAAAAAAAAAB0/08AAAAAAAAAAAB1/08AAAAAAAAAAAB2/08AAAAAAAAAAAB3/08AAAAAAAAAAAB4/08AAAAAAAAAAAB5/08AAAAAAAAAAAB6/08AAAAAAAAAAAB7/08AAAAAAAAAAAB8/08AAAAAAAAAAAB9/08AAAAAAAAAAAB+/08AAAAAAAAAAAB//08AAAAAAAAAAACA/08AAAAAAAAAAACB/08AAAAAAAAAAACC/08AAAAAAAAAAACD/08AAAAAAAAAAACE/08AAAAAAAAAAACF/08AAAAAAAAAAACG/08AAAAAAAAAAACH/08AAAAAAAAAAACI/08AAAAAAAAAAACJ/08AAAAAAAAAAACK/08AAAAAAAAAAACL/08AAAAAAAAAAACM/08AAAAAAAAAAACN/08AAAAAAAAAAACO/08AAAAAAAAAAACP/08AAAAAAAAAAACQ/08AAAAAAAAAAACR/08AAAAAAAAAAABo/08AAAAAAAAAAABS/08AAAAAAAAAAABT/08AAAAAAAAAAABU/08AAAAAAAAAAABV/08AAAAAAAAAAABW/08AAAAAAAAAAABX/08AAAAAAAAAAABY/08AAAAAAAAAAABZ/08AAAAAAAAAAABa/08AAAAAAAAAAABb/08AAAAAAAAAAABc/08AAAAAAAAAAABd/08AAAAAAAAAAABe/08AAAAAAAAAAABf/08AAAAAAAAAAABg/08AAAAAAAAAAABh/08AAAAAAAAAAABi/08AAAAAAAAAAABj/08AAAAAAAAAAABk/08AAAAAAAAAAABl/08AAAAAAAAAAABm/08AAAAAAAAAAABn/08AAAAAAAAAAABR/08AAAAAAAAAAABQ/08AAAAAAAAAAABP/08AAAAAAAAAAABO/08AAAAAAAAAAABN/08AAAAAAAAAAABM/08AAAAAAAAAAABL/08AAAAAAAAAAABK/08AAAAAAAAAAABJ/08AAAAAAAAAAABI/08AAAAAAAAAAABH/08AAAAAAAAAAABG/08AAAAAAAAAAABF/08AAAAAAAAAAABE/08AAAAAAAAAAABC/08AAAAAAAAAAABB/08AAAAAAAAAAABA/08AAAAAAAAAAAA//08AAAAAAAAAAAA+/08AAAAAAAAAAAA9/08AAAAAAAAAAAA8/08AAAAAAAAAAAA7/08AAAAAAAAAAAA6/08AAAAAAAAAAAA5/08AAAAAAAAAAAA4/08AAAAAAAAAAAA3/08AAAAAAAAAAAA2/08AAAAAAAAAAAA1/08AAAAAAAAAAABK/00AAAAAAAAAAABK/04AAAAAAAAAAABL/00AAAAAAAAAAABL/04AAAAAAAAAAABZ/00AAAAAAAAAAABZ/04AAAAAAAAAAABa/00AAAAAAAAAAABa/04AAAAAAAAAAABn/0wAAAAAAAAAAABn/00AAAAAAAAAAABn/04AAAAAAAAAAABo/0wAAAAAAAAAAABo/00AAAAAAAAAAABo/04AAAAAAAAAAABp/0wAAAAAAAAAAABp/00AAAAAAAAAAABp/04AAAAAAAAAAABq/0wAAAAAAAAAAABq/00AAAAAAAAAAABq/04AAAAAAAAAAABr/0wAAAAAAAAAAABr/00AAAAAAAAAAABr/04AAAAAAAAAAABs/0wAAAAAAAAAAABs/00AAAAAAAAAAABs/04AAAAAAAAAAABt/0wAAAAAAAAAAABt/00AAAAAAAAAAABt/04AAAAAAAAAAABz/0wAAAAAAAAAAABz/00AAAAAAAAAAABz/04AAAAAAAAAAAB0/0wAAAAAAAAAAAB0/00AAAAAAAAAAAB0/04AAAAAAAAAAAB1/0wAAAAAAAAAAAB1/00AAAAAAAAAAAB1/04AAAAAAAAAAAB2/0wAAAAAAAAAAAB2/00AAAAAAAAAAAB2/04AAAAAAAAAAAB3/0wAAAAAAAAAAAB3/00AAAAAAAAAAAB3/04AAAAAAAAAAAB4/0wAAAAAAAAAAAB4/00AAAAAAAAAAAB4/04AAAAAAAAAAAB5/0wAAAAAAAAAAAB5/00AAAAAAAAAAAB5/04AAAAAAAAAAAB9/0kAAAAAAAAAAAB9/0oAAAAAAAAAAAB9/0sAAAAAAAAAAAB9/0wAAAAAAAAAAAB9/00AAAAAAAAAAAB9/04AAAAAAAAAAAB+/0kAAAAAAAAAAAB+/0oAAAAAAAAAAAB+/0sAAAAAAAAAAAB+/0wAAAAAAAAAAAB+/00AAAAAAAAAAAB+/04AAAAAAAAAAAB//0kAAAAAAAAAAAB//0oAAAAAAAAAAAB//0sAAAAAAAAAAAB//0wAAAAAAAAAAAB//00AAAAAAAAAAAB//04AAAAAAAAAAACA/0kAAAAAAAAAAACA/0oAAAAAAAAAAACA/0sAAAAAAAAAAACA/0wAAAAAAAAAAACA/00AAAAAAAAAAACA/04AAAAAAAAAAACB/0kAAAAAAAAAAACB/0oAAAAAAAAAAACB/0sAAAAAAAAAAACB/0wAAAAAAAAAAACB/00AAAAAAAAAAACB/04AAAAAAAAAAACC/0kAAAAAAAAAAACC/0oAAAAAAAAAAACC/0sAAAAAAAAAAACC/0wAAAAAAAAAAACC/00AAAAAAAAAAACC/04AAAAAAAAAAACD/0kAAAAAAAAAAACD/0oAAAAAAAAAAACD/0sAAAAAAAAAAACD/0wAAAAAAAAAAACD/00AAAAAAAAAAACD/04AAAAAAAAAAACE/0kAAAAAAAAAAACE/0oAAAAAAAAAAACE/0sAAAAAAAAAAACE/0wAAAAAAAAAAACE/00AAAAAAAAAAACE/04AAAAAAAAAAACF/0kAAAAAAAAAAACF/0oAAAAAAAAAAACF/0sAAAAAAAAAAACF/0wAAAAAAAAAAACF/00AAAAAAAAAAACF/04AAAAAAAAAAACG/0kAAAAAAAAAAACG/0oAAAAAAAAAAACG/0sAAAAAAAAAAACG/0wAAAAAAAAAAACG/00AAAAAAAAAAACG/04AAAAAAAAAAACH/0kAAAAAAAAAAACH/0oAAAAAAAAAAACH/0sAAAAAAAAAAACH/0wAAAAAAAAAAACH/00AAAAAAAAAAACH/04AAAAAAAAAAACI/0kAAAAAAAAAAACI/0oAAAAAAAAAAACI/0sAAAAAAAAAAACI/0wAAAAAAAAAAACI/00AAAAAAAAAAACI/04AAAAAAAAAAACJ/0kAAAAAAAAAAACJ/0oAAAAAAAAAAACJ/0sAAAAAAAAAAACJ/0wAAAAAAAAAAACJ/00AAAAAAAAAAACJ/04AAAAAAAAAAACK/0kAAAAAAAAAAACK/0oAAAAAAAAAAACK/0sAAAAAAAAAAACK/0wAAAAAAAAAAACK/00AAAAAAAAAAACK/04AAAAAAAAAAACL/0kAAAAAAAAAAACL/0oAAAAAAAAAAACL/0sAAAAAAAAAAACL/0wAAAAAAAAAAACL/00AAAAAAAAAAACL/04AAAAAAAAAAACM/0kAAAAAAAAAAACM/0oAAAAAAAAAAACM/0sAAAAAAAAAAACM/0wAAAAAAAAAAACM/00AAAAAAAAAAACM/04AAAAAAAAAAACN/0kAAAAAAAAAAACN/0oAAAAAAAAAAACN/0sAAAAAAAAAAACN/0wAAAAAAAAAAACN/00AAAAAAAAAAACN/04AAAAAAAAAAACO/0kAAAAAAAAAAACO/0oAAAAAAAAAAACO/0sAAAAAAAAAAACO/0wAAAAAAAAAAACO/00AAAAAAAAAAACO/04AAAAAAAAAAACP/0kAAAAAAAAAAACP/0oAAAAAAAAAAACP/0sAAAAAAAAAAACP/0wAAAAAAAAAAACP/00AAAAAAAAAAACP/04AAAAAAAAAAACQ/0kAAAAAAAAAAACQ/0oAAAAAAAAAAACQ/0sAAAAAAAAAAACQ/0wAAAAAAAAAAACQ/00AAAAAAAAAAACQ/04AAAAAAAAAAACR/0kAAAAAAAAAAACR/0oAAAAAAAAAAACR/0sAAAAAAAAAAACR/0wAAAAAAAAAAACR/00AAAAAAAAAAACR/04AAAAAAAAAAAAxAU8AAAAAAAAAAAAxAVAAAAAAAAAAAAAyAU8AAAAAAAAAAAAyAVAAAAAAAAAAAAAzAU8AAAAAAAAAAAAzAVAAAAAAAAAAAAA0AU8AAAAAAAAAAAA0AVAAAAAAAAAAAAA1AU8AAAAAAAAAAAA1AVAAAAAAAAAAAAA2AU8AAAAAAAAAAAA2AVAAAAAAAAAAAAA3AU8AAAAAAAAAAAA3AVAAAAAAAAAAAAA4AU8AAAAAAAAAAAA4AVAAAAAAAAAAAAA5AU8AAAAAAAAAAAA5AVAAAAAAAAAAAAA6AU8AAAAAAAAAAAA6AVAAAAAAAAAAAAA7AU8AAAAAAAAAAAA7AVAAAAAAAAAAAAA8AU8AAAAAAAAAAAA8AVAAAAAAAAAAAAA9AU8AAAAAAAAAAAA9AVAAAAAAAAAAAAA+AU8AAAAAAAAAAAA+AVAAAAAAAAAAAAA/AU8AAAAAAAAAAAA/AVAAAAAAAAAAAABAAU8AAAAAAAAAAABAAVAAAAAAAAAAAABBAU8AAAAAAAAAAABBAVAAAAAAAAAAAABCAU8AAAAAAAAAAABCAVAAAAAAAAAAAABDAU8AAAAAAAAAAABDAVAAAAAAAAAAAABEAU8AAAAAAAAAAABEAVAAAAAAAAAAAABFAU8AAAAAAAAAAABFAVAAAAAAAAAAAABGAU8AAAAAAAAAAABGAVAAAAAAAAAAAABHAU8AAAAAAAAAAABHAVAAAAAAAAAAAABIAU8AAAAAAAAAAABIAVAAAAAAAAAAAADBAFUAAAAAAAAAAADBAFYAAAAAAAAAAADCAFUAAAAAAAAAAADCAFYAAAAAAAAAAADDAFUAAAAAAAAAAADDAFYAAAAAAAAAAADEAFUAAAAAAAAAAADEAFYAAAAAAAAAAADFAFUAAAAAAAAAAADFAFYAAAAAAAAAAADGAFUAAAAAAAAAAADGAFYAAAAAAAAAAADHAFUAAAAAAAAAAADHAFYAAAAAAAAAAADIAFUAAAAAAAAAAADIAFYAAAAAAAAAAADJAFUAAAAAAAAAAADJAFYAAAAAAAAAAADKAFUAAAAAAAAAAADKAFYAAAAAAAAAAADLAFUAAAAAAAAAAADLAFYAAAAAAAAAAADMAFUAAAAAAAAAAADMAFYAAAAAAAAAAADNAFUAAAAAAAAAAADNAFYAAAAAAAAAAADOAFUAAAAAAAAAAADOAFYAAAAAAAAAAADPAFUAAAAAAAAAAADPAFYAAAAAAAAAAADQAFUAAAAAAAAAAADQAFYAAAAAAAAAAADRAFUAAAAAAAAAAADRAFYAAAAAAAAAAADSAFUAAAAAAAAAAADSAFYAAAAAAAAAAADTAFUAAAAAAAAAAADTAFYAAAAAAAAAAADUAFUAAAAAAAAAAADUAFYAAAAAAAAAAADVAFUAAAAAAAAAAADVAFYAAAAAAAAAAADWAFUAAAAAAAAAAADWAFYAAAAAAAAAAADXAFUAAAAAAAAAAADXAFYAAAAAAAAAAADYAFUAAAAAAAAAAADYAFYAAAAAAAAAAADZAFUAAAAAAAAAAADZAFYAAAAAAAAAAADaAFUAAAAAAAAAAADaAFYAAAAAAAAAAADbAFUAAAAAAAAAAADbAFYAAAAAAAAAAADcAFUAAAAAAAAAAADcAFYAAAAAAAAAAADdAFUAAAAAAAAAAADdAFYAAAAAAAAAAADeAFUAAAAAAAAAAADeAFYAAAAAAAAAAADfAFUAAAAAAAAAAADfAFYAAAAAAAAAAADgAFUAAAAAAAAAAADgAFYAAAAAAAAAAADhAFUAAAAAAAAAAADhAFYAAAAAAAAAAADiAFUAAAAAAAAAAADiAFYAAAAAAAAAAADjAFUAAAAAAAAAAADjAFYAAAAAAAAAAADkAFUAAAAAAAAAAADkAFYAAAAAAAAAAADlAFUAAAAAAAAAAADlAFYAAAAAAAAAAADmAFUAAAAAAAAAAADmAFYAAAAAAAAAAADnAFUAAAAAAAAAAADnAFYAAAAAAAAAAADoAFUAAAAAAAAAAADoAFYAAAAAAAAAAADpAFUAAAAAAAAAAADpAFYAAAAAAAAAAADqAFUAAAAAAAAAAADqAFYAAAAAAAAA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")
+tile_map_data = PackedByteArray("AADu/08AAAAAAAAAAADv/08AAAAAAAAAAADw/08AAAAAAAAAAADx/08AAAAAAAAAAADy/08AAAAAAAAAAADz/08AAAAAAAAAAAD0/08AAAAAAAAAAAD1/08AAAAAAAAAAAD2/08AAAAAAAAAAAD3/08AAAAAAAAAAAD4/08AAAAAAAAAAAD5/08AAAAAAAAAAAD6/08AAAAAAAAAAAD7/08AAAAAAAAAAAD8/08AAAAAAAAAAAD9/08AAAAAAAAAAAD+/08AAAAAAAAAAAD//08AAAAAAAAAAAAAAE8AAAAAAAAAAAABAE8AAAAAAAAAAAACAE8AAAAAAAAAAAADAE8AAAAAAAAAAAAEAE8AAAAAAAAAAAAFAE8AAAAAAAAAAAAGAE8AAAAAAAAAAAAHAE8AAAAAAAAAAAAIAE8AAAAAAAAAAAAJAE8AAAAAAAAAAAAKAE8AAAAAAAAAAAALAE8AAAAAAAAAAAAMAE8AAAAAAAAAAAASAE8AAAAAAAAAAAATAE8AAAAAAAAAAAAUAE8AAAAAAAAAAAAVAE8AAAAAAAAAAAAWAE8AAAAAAAAAAAAXAE8AAAAAAAAAAAAYAE8AAAAAAAAAAAAZAE8AAAAAAAAAAAAaAE8AAAAAAAAAAAAbAE8AAAAAAAAAAAAcAE8AAAAAAAAAAAAdAE8AAAAAAAAAAAAeAE8AAAAAAAAAAAAfAE8AAAAAAAAAAAAgAE8AAAAAAAAAAAAhAE8AAAAAAAAAAAAiAE8AAAAAAAAAAAAjAE8AAAAAAAAAAAAkAE8AAAAAAAAAAAAlAE8AAAAAAAAAAAAmAE8AAAAAAAAAAAAnAE8AAAAAAAAAAAAoAE8AAAAAAAAAAAApAE8AAAAAAAAAAAAqAE8AAAAAAAAAAAArAE8AAAAAAAAAAAAsAE8AAAAAAAAAAAAtAE8AAAAAAAAAAAAuAE8AAAAAAAAAAAAvAE8AAAAAAAAAAAAwAE8AAAAAAAAAAAAxAE8AAAAAAAAAAAAyAE8AAAAAAAAAAAAzAE8AAAAAAAAAAAA0AE8AAAAAAAAAAAA1AE8AAAAAAAAAAAA2AE8AAAAAAAAAAAA3AE8AAAAAAAAAAAA4AE8AAAAAAAAAAAA5AE8AAAAAAAAAAAA6AE8AAAAAAAAAAAA7AE8AAAAAAAAAAAA8AE8AAAAAAAAAAAA9AE8AAAAAAAAAAAA+AE8AAAAAAAAAAAA/AE8AAAAAAAAAAABAAE8AAAAAAAAAAABBAE8AAAAAAAAAAABCAE8AAAAAAAAAAABDAE8AAAAAAAAAAABEAE8AAAAAAAAAAABFAE8AAAAAAAAAAABFAEwAAAAAAAAAAABFAE0AAAAAAAAAAABFAE4AAAAAAAAAAABLAE8AAAAAAAAAAABMAE8AAAAAAAAAAABNAE8AAAAAAAAAAABOAE8AAAAAAAAAAABPAE8AAAAAAAAAAABQAE8AAAAAAAAAAABLAEwAAAAAAAAAAABLAE0AAAAAAAAAAABLAE4AAAAAAAAAAABRAE8AAAAAAAAAAABSAE8AAAAAAAAAAABTAE8AAAAAAAAAAABUAE8AAAAAAAAAAABVAE8AAAAAAAAAAABWAE8AAAAAAAAAAABAAEwAAAAAAAAAAABAAE0AAAAAAAAAAABAAE4AAAAAAAAAAABBAEwAAAAAAAAAAABBAE0AAAAAAAAAAABBAE4AAAAAAAAAAABCAEwAAAAAAAAAAABCAE0AAAAAAAAAAABCAE4AAAAAAAAAAABDAEwAAAAAAAAAAABDAE0AAAAAAAAAAABDAE4AAAAAAAAAAABEAEwAAAAAAAAAAABEAE0AAAAAAAAAAABEAE4AAAAAAAAAAABMAEwAAAAAAAAAAABMAE0AAAAAAAAAAABMAE4AAAAAAAAAAABNAEwAAAAAAAAAAABNAE0AAAAAAAAAAABNAE4AAAAAAAAAAABOAEwAAAAAAAAAAABOAE0AAAAAAAAAAABOAE4AAAAAAAAAAABPAEwAAAAAAAAAAABPAE0AAAAAAAAAAABPAE4AAAAAAAAAAABQAEwAAAAAAAAAAABQAE0AAAAAAAAAAABQAE4AAAAAAAAAAABXAE8AAAAAAAAAAABYAE8AAAAAAAAAAABZAE8AAAAAAAAAAABaAE8AAAAAAAAAAABbAE8AAAAAAAAAAABcAE4AAAAAAAAAAABcAE8AAAAAAAAAAABdAE4AAAAAAAAAAABdAE8AAAAAAAAAAABeAE4AAAAAAAAAAABeAE8AAAAAAAAAAABfAE4AAAAAAAAAAABfAE8AAAAAAAAAAABgAE4AAAAAAAAAAABgAE8AAAAAAAAAAABcAE0AAAAAAAAAAABdAE0AAAAAAAAAAABeAE0AAAAAAAAAAABfAE0AAAAAAAAAAABgAE0AAAAAAAAAAABcAEsAAAAAAAAAAABcAEwAAAAAAAAAAABdAEsAAAAAAAAAAABdAEwAAAAAAAAAAABeAEsAAAAAAAAAAABeAEwAAAAAAAAAAABfAEsAAAAAAAAAAABfAEwAAAAAAAAAAABgAEsAAAAAAAAAAABgAEwAAAAAAAAAAABhAEsAAAAAAAAAAABhAEwAAAAAAAAAAABhAE0AAAAAAAAAAABhAE4AAAAAAAAAAABhAE8AAAAAAAAAAABiAEsAAAAAAAAAAABiAEwAAAAAAAAAAABiAE0AAAAAAAAAAABiAE4AAAAAAAAAAABiAE8AAAAAAAAAAABjAEsAAAAAAAAAAABjAEwAAAAAAAAAAABjAE0AAAAAAAAAAABjAE4AAAAAAAAAAABjAE8AAAAAAAAAAABkAEsAAAAAAAAAAABkAEwAAAAAAAAAAABkAE0AAAAAAAAAAABkAE4AAAAAAAAAAABkAE8AAAAAAAAAAABlAEsAAAAAAAAAAABlAEwAAAAAAAAAAABlAE0AAAAAAAAAAABlAE4AAAAAAAAAAABlAE8AAAAAAAAAAABmAEsAAAAAAAAAAABmAEwAAAAAAAAAAABmAE0AAAAAAAAAAABmAE4AAAAAAAAAAABmAE8AAAAAAAAAAABnAEsAAAAAAAAAAABnAEwAAAAAAAAAAABnAE0AAAAAAAAAAABnAE4AAAAAAAAAAABnAE8AAAAAAAAAAABoAEsAAAAAAAAAAABoAEwAAAAAAAAAAABoAE0AAAAAAAAAAABoAE4AAAAAAAAAAABoAE8AAAAAAAAAAABpAEsAAAAAAAAAAABpAEwAAAAAAAAAAABpAE0AAAAAAAAAAABpAE4AAAAAAAAAAABpAE8AAAAAAAAAAABqAE4AAAAAAAAAAABqAE8AAAAAAAAAAABrAE4AAAAAAAAAAABrAE8AAAAAAAAAAABsAE4AAAAAAAAAAABsAE8AAAAAAAAAAABtAE4AAAAAAAAAAABtAE8AAAAAAAAAAABuAE4AAAAAAAAAAABuAE8AAAAAAAAAAABvAE4AAAAAAAAAAABvAE8AAAAAAAAAAABwAE4AAAAAAAAAAABwAE8AAAAAAAAAAABxAE4AAAAAAAAAAABxAE8AAAAAAAAAAAByAE4AAAAAAAAAAAByAE8AAAAAAAAAAABzAE4AAAAAAAAAAABzAE8AAAAAAAAAAAB0AE4AAAAAAAAAAAB0AE8AAAAAAAAAAAB1AE4AAAAAAAAAAAB1AE8AAAAAAAAAAAB2AE4AAAAAAAAAAAB2AE8AAAAAAAAAAAB3AE4AAAAAAAAAAAB3AE8AAAAAAAAAAAB4AE4AAAAAAAAAAAB4AE8AAAAAAAAAAAB5AE4AAAAAAAAAAAB5AE8AAAAAAAAAAAB6AE4AAAAAAAAAAAB6AE8AAAAAAAAAAAB7AE4AAAAAAAAAAAB7AE8AAAAAAAAAAAB8AE4AAAAAAAAAAAB8AE8AAAAAAAAAAAB9AE4AAAAAAAAAAAB9AE8AAAAAAAAAAAB+AE4AAAAAAAAAAAB+AE8AAAAAAAAAAAB/AE4AAAAAAAAAAAB/AE8AAAAAAAAAAACAAE4AAAAAAAAAAACAAE8AAAAAAAAAAACBAE4AAAAAAAAAAACBAE8AAAAAAAAAAACCAE4AAAAAAAAAAACCAE8AAAAAAAAAAACDAE4AAAAAAAAAAACDAE8AAAAAAAAAAACZAEQAAAAAAAAAAACZAEUAAAAAAAAAAACZAEYAAAAAAAAAAACZAEcAAAAAAAAAAACZAEgAAAAAAAAAAACZAEkAAAAAAAAAAACZAEoAAAAAAAAAAACZAEsAAAAAAAAAAACaAEQAAAAAAAAAAACaAEUAAAAAAAAAAACaAEYAAAAAAAAAAACaAEcAAAAAAAAAAACaAEgAAAAAAAAAAACaAEkAAAAAAAAAAACaAEoAAAAAAAAAAACaAEsAAAAAAAAAAACmAE8AAAAAAAAAAACnAE8AAAAAAAAAAACoAE8AAAAAAAAAAACpAE8AAAAAAAAAAACqAE8AAAAAAAAAAACrAE8AAAAAAAAAAACsAE8AAAAAAAAAAACtAE8AAAAAAAAAAACuAE8AAAAAAAAAAACvAE8AAAAAAAAAAACwAE8AAAAAAAAAAACxAE8AAAAAAAAAAACyAE8AAAAAAAAAAACzAE8AAAAAAAAAAAC0AE8AAAAAAAAAAAC1AE8AAAAAAAAAAAC2AE8AAAAAAAAAAAC3AE8AAAAAAAAAAAC4AE8AAAAAAAAAAAC5AE8AAAAAAAAAAAC6AE8AAAAAAAAAAAC7AE8AAAAAAAAAAACOAEIAAAAAAAAAAACOAEMAAAAAAAAAAACOAEQAAAAAAAAAAACOAEUAAAAAAAAAAACPAEIAAAAAAAAAAACPAEMAAAAAAAAAAACPAEQAAAAAAAAAAACPAEUAAAAAAAAAAACOAEEAAAAAAAAAAACPAEEAAAAAAAAAAACOAEAAAAAAAAAAAACPAEAAAAAAAAAAAAD4AE8AAAAAAAAAAAD4AFAAAAAAAAAAAAD5AE8AAAAAAAAAAAD5AFAAAAAAAAAAAAD6AE8AAAAAAAAAAAD6AFAAAAAAAAAAAAD7AE8AAAAAAAAAAAD7AFAAAAAAAAAAAAD8AE8AAAAAAAAAAAD8AFAAAAAAAAAAAAD9AE8AAAAAAAAAAAD9AFAAAAAAAAAAAAD+AE8AAAAAAAAAAAD+AFAAAAAAAAAAAAD/AE8AAAAAAAAAAAD/AFAAAAAAAAAAAAAAAU8AAAAAAAAAAAAAAVAAAAAAAAAAAAABAU8AAAAAAAAAAAABAVAAAAAAAAAAAAACAU8AAAAAAAAAAAACAVAAAAAAAAAAAAADAU8AAAAAAAAAAAADAVAAAAAAAAAAAAAEAU8AAAAAAAAAAAAEAVAAAAAAAAAAAAAFAU8AAAAAAAAAAAAFAVAAAAAAAAAAAAAGAU8AAAAAAAAAAAAGAVAAAAAAAAAAAAAHAU8AAAAAAAAAAAAHAVAAAAAAAAAAAAAIAU8AAAAAAAAAAAAIAVAAAAAAAAAAAAAJAU8AAAAAAAAAAAAJAVAAAAAAAAAAAAAKAU8AAAAAAAAAAAAKAVAAAAAAAAAAAAALAU8AAAAAAAAAAAALAVAAAAAAAAAAAAAMAU8AAAAAAAAAAAAMAVAAAAAAAAAAAAANAU8AAAAAAAAAAAANAVAAAAAAAAAAAAAOAU8AAAAAAAAAAAAOAVAAAAAAAAAAAAAPAU8AAAAAAAAAAAAPAVAAAAAAAAAAAAAQAU8AAAAAAAAAAAAQAVAAAAAAAAAAAAARAU8AAAAAAAAAAAARAVAAAAAAAAAAAAASAU8AAAAAAAAAAAASAVAAAAAAAAAAAAATAU8AAAAAAAAAAAATAVAAAAAAAAAAAAAUAU8AAAAAAAAAAAAUAVAAAAAAAAAAAAAVAU8AAAAAAAAAAAAVAVAAAAAAAAAAAAAWAU8AAAAAAAAAAAAWAVAAAAAAAAAAAAAXAU8AAAAAAAAAAAAXAVAAAAAAAAAAAAAYAU8AAAAAAAAAAAAYAVAAAAAAAAAAAAAZAU8AAAAAAAAA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AADzAFAAAAAAAAAAAAD0AFAAAAAAAAAAAAD1AFAAAAAAAAAAAAD2AFAAAAAAAAAAAAD3AFAAAAAAAAAAAAC7AEkAAAAAAAAAAAC7AEoAAAAAAAAAAAC7AEsAAAAAAAAAAAC7AEwAAAAAAAAAAAC7AE0AAAAAAAAAAAC7AE4AAAAAAAAAAAC8AEkAAAAAAAAAAAC8AEoAAAAAAAAAAAC8AEsAAAAAAAAAAAC8AEwAAAAAAAAAAAC8AE0AAAAAAAAAAAC8AE4AAAAAAAAAAAC9AEkAAAAAAAAAAAC9AEoAAAAAAAAAAAC9AEsAAAAAAAAAAAC9AEwAAAAAAAAAAAC9AE0AAAAAAAAAAAC9AE4AAAAAAAAAAAC+AEkAAAAAAAAAAAC+AEoAAAAAAAAAAAC+AEsAAAAAAAAAAAC+AEwAAAAAAAAAAAC+AE0AAAAAAAAAAAC+AE4AAAAAAAAAAAC/AEkAAAAAAAAAAAC/AEoAAAAAAAAAAAC/AEsAAAAAAAAAAAC/AEwAAAAAAAAAAAC/AE0AAAAAAAAAAAC/AE4AAAAAAAAAAADAAEkAAAAAAAAAAADAAEoAAAAAAAAAAADAAEsAAAAAAAAAAADAAEwAAAAAAAAAAADAAE0AAAAAAAAAAADAAE4AAAAAAAAAAADLAEUAAAAAAAAAAADLAEYAAAAAAAAAAADMAEUAAAAAAAAAAADMAEYAAAAAAAAAAADNAEUAAAAAAAAAAADNAEYAAAAAAAAAAADOAEUAAAAAAAAAAADOAEYAAAAAAAAAAADPAEUAAAAAAAAAAADPAEYAAAAAAAAAAADQAEUAAAAAAAAAAADQAEYAAAAAAAAAAADRAEUAAAAAAAAAAADRAEYAAAAAAAAAAADSAEUAAAAAAAAAAADSAEYAAAAAAAAAAADeAEUAAAAAAAAAAADeAEYAAAAAAAAAAADfAEUAAAAAAAAAAADfAEYAAAAAAAAAAADgAEUAAAAAAAAAAADgAEYAAAAAAAAAAADhAEUAAAAAAAAAAADhAEYAAAAAAAAAAADiAEUAAAAAAAAAAADiAEYAAAAAAAAAAADjAEUAAAAAAAAAAADjAEYAAAAAAAAAAADkAEUAAAAAAAAAAADkAEYAAAAAAAAAAADlAEUAAAAAAAAAAADlAEYAAAAAAAAAAADyAEwAAAAAAAAAAADyAE0AAAAAAAAAAADyAE4AAAAAAAAAAADzAEwAAAAAAAAAAADzAE0AAAAAAAAAAADzAE4AAAAAAAAAAAD0AEwAAAAAAAAAAAD0AE0AAAAAAAAAAAD0AE4AAAAAAAAAAAD1AEwAAAAAAAAAAAD1AE0AAAAAAAAAAAD1AE4AAAAAAAAAAAAMAFAAAAAAAAAAAAAMAFEAAAAAAAAAAAAMAFIAAAAAAAAAAAAMAFMAAAAAAAAAAAAMAFQAAAAAAAAAAAAMAFUAAAAAAAAAAAAMAFYAAAAAAAAAAAANAFYAAAAAAAAAAAAOAFYAAAAAAAAAAAAPAFYAAAAAAAAAAAAQAFYAAAAAAAAAAAARAFYAAAAAAAAAAAASAFYAAAAAAAAAAAASAFAAAAAAAAAAAAASAFEAAAAAAAAAAAASAFIAAAAAAAAAAAASAFMAAAAAAAAAAAASAFQAAAAAAAAAAAASAFUAAAAAAAAAAAAaAE0AAAAAAAAAAAAaAE4AAAAAAAAAAAAbAE0AAAAAAAAAAAAbAE4AAAAAAAAAAAC9/08AAAAAAAAAAAC+/08AAAAAAAAAAAC//08AAAAAAAAAAADA/08AAAAAAAAAAADB/08AAAAAAAAAAADC/08AAAAAAAAAAADD/08AAAAAAAAAAADE/08AAAAAAAAAAADF/08AAAAAAAAAAADG/08AAAAAAAAAAADH/08AAAAAAAAAAADI/08AAAAAAAAAAADJ/08AAAAAAAAAAADK/08AAAAAAAAAAADL/08AAAAAAAAAAADM/08AAAAAAAAAAADN/08AAAAAAAAAAADO/08AAAAAAAAAAADP/08AAAAAAAAAAADQ/08AAAAAAAAAAADR/08AAAAAAAAAAADS/08AAAAAAAAAAADT/08AAAAAAAAAAADU/08AAAAAAAAAAADV/08AAAAAAAAAAADW/08AAAAAAAAAAADX/08AAAAAAAAAAADY/08AAAAAAAAAAADZ/08AAAAAAAAAAADa/08AAAAAAAAAAADb/08AAAAAAAAAAADc/08AAAAAAAAAAADd/08AAAAAAAAAAADe/08AAAAAAAAAAADf/08AAAAAAAAAAADg/08AAAAAAAAAAADh/08AAAAAAAAAAADi/08AAAAAAAAAAADj/08AAAAAAAAAAADk/08AAAAAAAAAAADl/08AAAAAAAAAAADm/08AAAAAAAAAAADn/08AAAAAAAAAAADo/08AAAAAAAAAAADp/08AAAAAAAAAAADq/08AAAAAAAAAAADr/08AAAAAAAAAAADs/08AAAAAAAAAAADt/08AAAAAAAAAAACS/08AAAAAAAAAAACT/08AAAAAAAAAAACU/08AAAAAAAAAAACV/08AAAAAAAAAAACW/08AAAAAAAAAAACX/08AAAAAAAAAAACY/08AAAAAAAAAAACZ/08AAAAAAAAAAACa/08AAAAAAAAAAACb/08AAAAAAAAAAACc/08AAAAAAAAAAACd/08AAAAAAAAAAACe/08AAAAAAAAAAACf/08AAAAAAAAAAACg/08AAAAAAAAAAACh/08AAAAAAAAAAACi/08AAAAAAAAAAACj/08AAAAAAAAAAACk/08AAAAAAAAAAACl/08AAAAAAAAAAACm/08AAAAAAAAAAACn/08AAAAAAAAAAACo/08AAAAAAAAAAACp/08AAAAAAAAAAACq/08AAAAAAAAAAACr/08AAAAAAAAAAACs/08AAAAAAAAAAACt/08AAAAAAAAAAACu/08AAAAAAAAAAACv/08AAAAAAAAAAACw/08AAAAAAAAAAACx/08AAAAAAAAAAACy/08AAAAAAAAAAACz/08AAAAAAAAAAAC0/08AAAAAAAAAAAC1/08AAAAAAAAAAAC2/08AAAAAAAAAAAC3/08AAAAAAAAAAAC4/08AAAAAAAAAAAC5/08AAAAAAAAAAAC6/08AAAAAAAAAAAC7/08AAAAAAAAAAAC8/08AAAAAAAAAAABp/08AAAAAAAAAAABq/08AAAAAAAAAAABr/08AAAAAAAAAAABs/08AAAAAAAAAAABt/08AAAAAAAAAAABu/08AAAAAAAAAAABv/08AAAAAAAAAAABw/08AAAAAAAAAAABx/08AAAAAAAAAAABy/08AAAAAAAAAAABz/08AAAAAAAAAAAB0/08AAAAAAAAAAAB1/08AAAAAAAAAAAB2/08AAAAAAAAAAAB3/08AAAAAAAAAAAB4/08AAAAAAAAAAAB5/08AAAAAAAAAAAB6/08AAAAAAAAAAAB7/08AAAAAAAAAAAB8/08AAAAAAAAAAAB9/08AAAAAAAAAAAB+/08AAAAAAAAAAAB//08AAAAAAAAAAACA/08AAAAAAAAAAACB/08AAAAAAAAAAACC/08AAAAAAAAAAACD/08AAAAAAAAAAACE/08AAAAAAAAAAACF/08AAAAAAAAAAACG/08AAAAAAAAAAACH/08AAAAAAAAAAACI/08AAAAAAAAAAACJ/08AAAAAAAAAAACK/08AAAAAAAAAAACL/08AAAAAAAAAAACM/08AAAAAAAAAAACN/08AAAAAAAAAAACO/08AAAAAAAAAAACP/08AAAAAAAAAAACQ/08AAAAAAAAAAACR/08AAAAAAAAAAABo/08AAAAAAAAAAABS/08AAAAAAAAAAABT/08AAAAAAAAAAABU/08AAAAAAAAAAABV/08AAAAAAAAAAABW/08AAAAAAAAAAABX/08AAAAAAAAAAABY/08AAAAAAAAAAABZ/08AAAAAAAAAAABa/08AAAAAAAAAAABb/08AAAAAAAAAAABc/08AAAAAAAAAAABd/08AAAAAAAAAAABe/08AAAAAAAAAAABf/08AAAAAAAAAAABg/08AAAAAAAAAAABh/08AAAAAAAAAAABi/08AAAAAAAAAAABj/08AAAAAAAAAAABk/08AAAAAAAAAAABl/08AAAAAAAAAAABm/08AAAAAAAAAAABn/08AAAAAAAAAAABR/08AAAAAAAAAAABQ/08AAAAAAAAAAABP/08AAAAAAAAAAABO/08AAAAAAAAAAABN/08AAAAAAAAAAABM/08AAAAAAAAAAABL/08AAAAAAAAAAABK/08AAAAAAAAAAABJ/08AAAAAAAAAAABI/08AAAAAAAAAAABH/08AAAAAAAAAAABG/08AAAAAAAAAAABF/08AAAAAAAAAAABE/08AAAAAAAAAAABC/08AAAAAAAAAAABB/08AAAAAAAAAAABA/08AAAAAAAAAAAA//08AAAAAAAAAAAA+/08AAAAAAAAAAAA9/08AAAAAAAAAAAA8/08AAAAAAAAAAAA7/08AAAAAAAAAAAA6/08AAAAAAAAAAAA5/08AAAAAAAAAAAA4/08AAAAAAAAAAAA3/08AAAAAAAAAAAA2/08AAAAAAAAAAAA1/08AAAAAAAAAAABK/00AAAAAAAAAAABK/04AAAAAAAAAAABL/00AAAAAAAAAAABL/04AAAAAAAAAAABZ/00AAAAAAAAAAABZ/04AAAAAAAAAAABa/00AAAAAAAAAAABa/04AAAAAAAAAAABn/0wAAAAAAAAAAABn/00AAAAAAAAAAABn/04AAAAAAAAAAABo/0wAAAAAAAAAAABo/00AAAAAAAAAAABo/04AAAAAAAAAAABp/0wAAAAAAAAAAABp/00AAAAAAAAAAABp/04AAAAAAAAAAABq/0wAAAAAAAAAAABq/00AAAAAAAAAAABq/04AAAAAAAAAAABr/0wAAAAAAAAAAABr/00AAAAAAAAAAABr/04AAAAAAAAAAABs/0wAAAAAAAAAAABs/00AAAAAAAAAAABs/04AAAAAAAAAAABt/0wAAAAAAAAAAABt/00AAAAAAAAAAABt/04AAAAAAAAAAABz/0wAAAAAAAAAAABz/00AAAAAAAAAAABz/04AAAAAAAAAAAB0/0wAAAAAAAAAAAB0/00AAAAAAAAAAAB0/04AAAAAAAAAAAB1/0wAAAAAAAAAAAB1/00AAAAAAAAAAAB1/04AAAAAAAAAAAB2/0wAAAAAAAAAAAB2/00AAAAAAAAAAAB2/04AAAAAAAAAAAB3/0wAAAAAAAAAAAB3/00AAAAAAAAAAAB3/04AAAAAAAAAAAB4/0wAAAAAAAAAAAB4/00AAAAAAAAAAAB4/04AAAAAAAAAAAB5/0wAAAAAAAAAAAB5/00AAAAAAAAAAAB5/04AAAAAAAAAAAB9/0kAAAAAAAAAAAB9/0oAAAAAAAAAAAB9/0sAAAAAAAAAAAB9/0wAAAAAAAAAAAB9/00AAAAAAAAAAAB9/04AAAAAAAAAAAB+/0kAAAAAAAAAAAB+/0oAAAAAAAAAAAB+/0sAAAAAAAAAAAB+/0wAAAAAAAAAAAB+/00AAAAAAAAAAAB+/04AAAAAAAAAAAB//0kAAAAAAAAAAAB//0oAAAAAAAAAAAB//0sAAAAAAAAAAAB//0wAAAAAAAAAAAB//00AAAAAAAAAAAB//04AAAAAAAAAAACA/0kAAAAAAAAAAACA/0oAAAAAAAAAAACA/0sAAAAAAAAAAACA/0wAAAAAAAAAAACA/00AAAAAAAAAAACA/04AAAAAAAAAAACB/0kAAAAAAAAAAACB/0oAAAAAAAAAAACB/0sAAAAAAAAAAACB/0wAAAAAAAAAAACB/00AAAAAAAAAAACB/04AAAAAAAAAAACC/0kAAAAAAAAAAACC/0oAAAAAAAAAAACC/0sAAAAAAAAAAACC/0wAAAAAAAAAAACC/00AAAAAAAAAAACC/04AAAAAAAAAAACD/0kAAAAAAAAAAACD/0oAAAAAAAAAAACD/0sAAAAAAAAAAACD/0wAAAAAAAAAAACD/00AAAAAAAAAAACD/04AAAAAAAAAAACE/0kAAAAAAAAAAACE/0oAAAAAAAAAAACE/0sAAAAAAAAAAACE/0wAAAAAAAAAAACE/00AAAAAAAAAAACE/04AAAAAAAAAAACF/0kAAAAAAAAAAACF/0oAAAAAAAAAAACF/0sAAAAAAAAAAACF/0wAAAAAAAAAAACF/00AAAAAAAAAAACF/04AAAAAAAAAAACG/0kAAAAAAAAAAACG/0oAAAAAAAAAAACG/0sAAAAAAAAAAACG/0wAAAAAAAAAAACG/00AAAAAAAAAAACG/04AAAAAAAAAAACH/0kAAAAAAAAAAACH/0oAAAAAAAAAAACH/0sAAAAAAAAAAACH/0wAAAAAAAAAAACH/00AAAAAAAAAAACH/04AAAAAAAAAAACI/0kAAAAAAAAAAACI/0oAAAAAAAAAAACI/0sAAAAAAAAAAACI/0wAAAAAAAAAAACI/00AAAAAAAAAAACI/04AAAAAAAAAAACJ/0kAAAAAAAAAAACJ/0oAAAAAAAAAAACJ/0sAAAAAAAAAAACJ/0wAAAAAAAAAAACJ/00AAAAAAAAAAACJ/04AAAAAAAAAAACK/0kAAAAAAAAAAACK/0oAAAAAAAAAAACK/0sAAAAAAAAAAACK/0wAAAAAAAAAAACK/00AAAAAAAAAAACK/04AAAAAAAAAAACL/0kAAAAAAAAAAACL/0oAAAAAAAAAAACL/0sAAAAAAAAAAACL/0wAAAAAAAAAAACL/00AAAAAAAAAAACL/04AAAAAAAAAAACM/0kAAAAAAAAAAACM/0oAAAAAAAAAAACM/0sAAAAAAAAAAACM/0wAAAAAAAAAAACM/00AAAAAAAAAAACM/04AAAAAAAAAAACN/0kAAAAAAAAAAACN/0oAAAAAAAAAAACN/0sAAAAAAAAAAACN/0wAAAAAAAAAAACN/00AAAAAAAAAAACN/04AAAAAAAAAAACO/0kAAAAAAAAAAACO/0oAAAAAAAAAAACO/0sAAAAAAAAAAACO/0wAAAAAAAAAAACO/00AAAAAAAAAAACO/04AAAAAAAAAAACP/0kAAAAAAAAAAACP/0oAAAAAAAAAAACP/0sAAAAAAAAAAACP/0wAAAAAAAAAAACP/00AAAAAAAAAAACP/04AAAAAAAAAAACQ/0kAAAAAAAAAAACQ/0oAAAAAAAAAAACQ/0sAAAAAAAAAAACQ/0wAAAAAAAAAAACQ/00AAAAAAAAAAACQ/04AAAAAAAAAAACR/0kAAAAAAAAAAACR/0oAAAAAAAAAAACR/0sAAAAAAAAAAACR/0wAAAAAAAAAAACR/00AAAAAAAAAAACR/04AAAAAAAAAAAAxAU8AAAAAAAAAAAAxAVAAAAAAAAAAAAAyAU8AAAAAAAAAAAAyAVAAAAAAAAAAAAAzAU8AAAAAAAAAAAAzAVAAAAAAAAAAAAA0AU8AAAAAAAAAAAA0AVAAAAAAAAAAAAA1AU8AAAAAAAAAAAA1AVAAAAAAAAAAAAA2AU8AAAAAAAAAAAA2AVAAAAAAAAAAAAA3AU8AAAAAAAAAAAA3AVAAAAAAAAAAAAA4AU8AAAAAAAAAAAA4AVAAAAAAAAAAAAA5AU8AAAAAAAAAAAA5AVAAAAAAAAAAAAA6AU8AAAAAAAAAAAA6AVAAAAAAAAAAAAA7AU8AAAAAAAAAAAA7AVAAAAAAAAAAAAA8AU8AAAAAAAAAAAA8AVAAAAAAAAAAAAA9AU8AAAAAAAAAAAA9AVAAAAAAAAAAAAA+AU8AAAAAAAAAAAA+AVAAAAAAAAAAAAA/AU8AAAAAAAAAAAA/AVAAAAAAAAAAAABAAU8AAAAAAAAAAABAAVAAAAAAAAAAAABBAU8AAAAAAAAAAABBAVAAAAAAAAAAAABCAU8AAAAAAAAAAABCAVAAAAAAAAAAAABDAU8AAAAAAAAAAABDAVAAAAAAAAAAAABEAU8AAAAAAAAAAABEAVAAAAAAAAAAAABFAU8AAAAAAAAAAABFAVAAAAAAAAAAAABGAU8AAAAAAAAAAABGAVAAAAAAAAAAAABHAU8AAAAAAAAAAABHAVAAAAAAAAAAAABIAU8AAAAAAAAAAABIAVAAAAAAAAAAAADBAFUAAAAAAAAAAADBAFYAAAAAAAAAAADCAFUAAAAAAAAAAADCAFYAAAAAAAAAAADDAFUAAAAAAAAAAADDAFYAAAAAAAAAAADEAFUAAAAAAAAAAADEAFYAAAAAAAAAAADFAFUAAAAAAAAAAADFAFYAAAAAAAAAAADGAFUAAAAAAAAAAADGAFYAAAAAAAAAAADHAFUAAAAAAAAAAADHAFYAAAAAAAAAAADIAFUAAAAAAAAAAADIAFYAAAAAAAAAAADJAFUAAAAAAAAAAADJAFYAAAAAAAAAAADKAFUAAAAAAAAAAADKAFYAAAAAAAAAAADLAFUAAAAAAAAAAADLAFYAAAAAAAAAAADMAFUAAAAAAAAAAADMAFYAAAAAAAAAAADNAFUAAAAAAAAAAADNAFYAAAAAAAAAAADOAFUAAAAAAAAAAADOAFYAAAAAAAAAAADPAFUAAAAAAAAAAADPAFYAAAAAAAAAAADQAFUAAAAAAAAAAADQAFYAAAAAAAAAAADRAFUAAAAAAAAAAADRAFYAAAAAAAAAAADSAFUAAAAAAAAAAADSAFYAAAAAAAAAAADTAFUAAAAAAAAAAADTAFYAAAAAAAAAAADUAFUAAAAAAAAAAADUAFYAAAAAAAAAAADVAFUAAAAAAAAAAADVAFYAAAAAAAAAAADWAFUAAAAAAAAAAADWAFYAAAAAAAAAAADXAFUAAAAAAAAAAADXAFYAAAAAAAAAAADYAFUAAAAAAAAAAADYAFYAAAAAAAAAAADZAFUAAAAAAAAAAADZAFYAAAAAAAAAAADaAFUAAAAAAAAAAADaAFYAAAAAAAAAAADbAFUAAAAAAAAAAADbAFYAAAAAAAAAAADcAFUAAAAAAAAAAADcAFYAAAAAAAAAAADdAFUAAAAAAAAAAADdAFYAAAAAAAAAAADeAFUAAAAAAAAAAADeAFYAAAAAAAAAAADfAFUAAAAAAAAAAADfAFYAAAAAAAAAAADgAFUAAAAAAAAAAADgAFYAAAAAAAAAAADhAFUAAAAAAAAAAADhAFYAAAAAAAAAAADiAFUAAAAAAAAAAADiAFYAAAAAAAAAAADjAFUAAAAAAAAAAADjAFYAAAAAAAAAAADkAFUAAAAAAAAAAADkAFYAAAAAAAAAAADlAFUAAAAAAAAAAADlAFYAAAAAAAAAAADmAFUAAAAAAAAAAADmAFYAAAAAAAAAAADnAFUAAAAAAAAAAADnAFYAAAAAAAAAAADoAFUAAAAAAAAAAADoAFYAAAAAAAAAAADpAFUAAAAAAAAAAADpAFYAAAAAAAAAAADqAFUAAAAAAAAAAADqAFYAAAAAAAAA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")
 tile_set = SubResource("TileSet_erwad")
 
 [node name="CombatArena" type="Area2D" parent="." node_paths=PackedStringArray("spawn_points")]
@@ -8322,6 +8653,12 @@ position = Vector2(-12010, 591)
 point_a_node = NodePath("../../../Markers/PatrolPointA")
 point_b_node = NodePath("../../../Markers/PatrolPointB")
 
+[node name="RayCast2D" parent="FlyingEnemy/WallDetectorComponent" index="0"]
+target_position = Vector2(45, 0)
+
+[node name="Hitbox" parent="FlyingEnemy" index="9"]
+visible = true
+
 [node name="Markers" type="Node" parent="."]
 
 [node name="PatrolPointA" type="Marker2D" parent="Markers"]
@@ -8329,6 +8666,9 @@ position = Vector2(-12010, 592)
 
 [node name="PatrolPointB" type="Marker2D" parent="Markers"]
 position = Vector2(-11995, 1012)
+
+[node name="AggressiveEnemy" parent="." instance=ExtResource("18_eguil")]
+position = Vector2(-25446, -882)
 
 [editable path="PlayerEntity"]
 [editable path="FlyingEnemy"]
@@ -8486,6 +8826,8 @@ metadata/_custom_type_script = "uid://nsuhpbn3734f"
 shader = ExtResource("23_yb7ap")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_modifier = 0.0
+shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_intensity = 0.0
 
 [sub_resource type="Animation" id="Animation_gst0f"]
 resource_name = "Idle"
@@ -9115,6 +9457,8 @@ metadata/_custom_type_script = "uid://cyu224lucyda8"
 shader = ExtResource("31_qsb7e")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_modifier = 0.0
+shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_intensity = 0.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4gjji"]
 radius = 48.0

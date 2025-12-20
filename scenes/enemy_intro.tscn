@@ -4,8 +4,9 @@
 
 [node name="EnemyEntity" instance=ExtResource("1_v5fsh")]
 
-[node name="AnimationComponent" parent="Enemy" index="3"]
-flash_duration = 0.3
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.00856175, 0.207917, 0.00697496, 1)
+enemy_tint_intensity = 0.5
 
 [node name="HealthComponent" parent="Enemy" index="11"]
 max_health = 25.0

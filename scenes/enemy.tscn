@@ -149,6 +149,8 @@ metadata/_custom_type_script = "uid://nsuhpbn3734f"
 shader = ExtResource("23_yb7ap")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_modifier = 0.0
+shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_intensity = 0.0
 
 [sub_resource type="Animation" id="Animation_gst0f"]
 resource_name = "Idle"
@@ -270,6 +272,8 @@ death_profile = ExtResource("20_4lt7r")
 dash_attack_profile = ExtResource("17_5utat")
 wall_slide_profile = ExtResource("16_b5geg")
 neutral_dodge_profile = ExtResource("24_4c6tc")
+enemy_tint_color = Color(0.458824, 0.176471, 0.368627, 1)
+enemy_tint_intensity = 0.5
 
 [node name="SpineSprite" type="SpineSprite" parent="Enemy"]
 skeleton_data_res = ExtResource("23_by3os")
@@ -488,10 +492,10 @@ script = ExtResource("71_2qahx")
 script = ExtResource("72_4ceth")
 
 [node name="EnemyStatusUI" parent="Enemy" instance=ExtResource("12_otmr2")]
-offset_left = -87.0
-offset_top = -122.0
-offset_right = -47.0
-offset_bottom = -82.0
+offset_left = -85.0
+offset_top = -160.0
+offset_right = -45.0
+offset_bottom = -120.0
 
 [node name="PathTarget" type="Node2D" parent="."]
 visible = false

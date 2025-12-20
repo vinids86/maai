@@ -81,6 +81,8 @@ skeleton_file_res = ExtResource("5_2wo0y")
 shader = ExtResource("8_dct62")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_modifier = 0.0
+shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_intensity = 0.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
 radius = 38.0
@@ -162,13 +164,14 @@ metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
 
 [node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
 position = Vector2(0, -38)
-target_position = Vector2(45, 0)
+target_position = Vector2(50, 0)
 
 [node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
 position = Vector2(40, 0)
 target_position = Vector2(0, 21)
 
 [node name="Hitbox" type="Area2D" parent="."]
+visible = false
 collision_layer = 16
 collision_mask = 32
 script = ExtResource("13_r4g4d")

@@ -278,6 +278,8 @@ metadata/_custom_type_script = "uid://cyu224lucyda8"
 shader = ExtResource("31_qsb7e")
 shader_parameter/flash_color = Color(1, 1, 1, 1)
 shader_parameter/flash_modifier = 0.0
+shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_intensity = 0.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4gjji"]
 radius = 48.0

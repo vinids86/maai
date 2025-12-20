@@ -4,6 +4,10 @@
 
 [node name="EnemyEntity2" instance=ExtResource("1_o8g13")]
 
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.690196, 0.701961, 0.870588, 1)
+enemy_tint_intensity = 0.5
+
 [node name="HealthComponent" parent="Enemy" index="11"]
 max_health = 25.0
 

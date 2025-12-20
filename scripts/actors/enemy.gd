@@ -54,6 +54,10 @@ extends CharacterBody2D
 @export var up_dodge_profile: DodgeProfile
 @export var down_dodge_profile: DodgeProfile
 
+@export_group("Visual Identity")
+@export var enemy_tint_color: Color = Color.WHITE
+@export_range(0.0, 1.0) var enemy_tint_intensity: float = 0.0
+
 var _equipped_skills: Dictionary = {}
 var facing_locked: bool = false
 
@@ -69,6 +73,9 @@ func _ready():
 	_update_facing_direction()
 	
 	animation_component.setup(state_machine, spine_sprite)
+	
+	_apply_visual_tint()
+	
 	spine_sprite.animation_event.connect(_on_spine_event)
 	
 	action_cost_validator.setup(stamina_component, null)
@@ -185,3 +192,10 @@ func reset_air_actions():
 		air_jumps_left = jump_profile.max_air_jumps
 	air_dash_used = false
 	has_locked_air_pool = true
+
+func _apply_visual_tint():
+	if is_instance_valid(spine_sprite) and spine_sprite.normal_material:
+		var mat = spine_sprite.normal_material as ShaderMaterial
+		if mat:
+			mat.set_shader_parameter("tint_color", enemy_tint_color)
+			mat.set_shader_parameter("tint_intensity", enemy_tint_intensity)
