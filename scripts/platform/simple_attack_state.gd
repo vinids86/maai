@@ -10,7 +10,6 @@ var _current_phase: Phases = Phases.STARTUP
 var _time_left: float = 0.0
 var _profile: AttackProfile
 
-# Direção travada no início do ataque
 var _attack_direction: float = 1.0
 
 func enter(_args: Dictionary = {}):
@@ -29,14 +28,19 @@ func process_physics(delta: float) -> Vector2:
 	if not _profile:
 		return Vector2.ZERO
 		
+	if _current_phase == Phases.STARTUP:
+		var target = GameManager.player_node
+		
+		if is_instance_valid(target):
+			owner_node.face_position(target.global_position.x)
+			_attack_direction = owner_node.get_facing_direction()
+	
 	_time_left -= delta
 	
 	if _time_left <= 0:
 		_advance_phase()
 	
-	# Calcula velocidade baseada na fase atual e nas configurações do profile
 	var move_velocity = Vector2.ZERO
-	
 	match _current_phase:
 		Phases.STARTUP:
 			move_velocity = _profile.startup_movement_velocity
@@ -45,11 +49,8 @@ func process_physics(delta: float) -> Vector2:
 		Phases.RECOVERY:
 			move_velocity = _profile.recovery_movement_velocity
 			
-	# Aplica a direção travada:
-	# Se attack_direction for -1 (esquerda) e velocity.x for 100 (frente), resultado = -100
 	var final_velocity_x = move_velocity.x * _attack_direction
 	
-	# Mantém a gravidade padrão do inimigo
 	var final_velocity_y = owner_node.velocity.y
 	if not owner_node.is_on_floor():
 		final_velocity_y += 980.0 * delta
@@ -106,6 +107,14 @@ func _spawn_projectile() -> void:
 	if not projectile:
 		push_error("SimpleAttackState: Cena configurada não é um Projectile válido.")
 		return
+
+	var target = GameManager.player_node
+	
+	if is_instance_valid(target):
+		var dir_to_target = sign(target.global_position.x - owner_node.global_position.x)
+		if dir_to_target != 0:
+			_attack_direction = dir_to_target
+			owner_node.set_facing_direction(_attack_direction)
 
 	var spawn_pos = owner_node.global_position
 	

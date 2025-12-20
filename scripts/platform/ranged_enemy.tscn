@@ -41,6 +41,7 @@ metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
 [node name="RangedEnemy" instance=ExtResource("1_u4pjs")]
 attack_profile = SubResource("Resource_2u8hu")
+enemy_tint_color = Color(5.76471, 0.682353, 0.772549, 1)
 
 [node name="SimpleStateMachine" parent="." index="2"]
 attack_range = 1000.0

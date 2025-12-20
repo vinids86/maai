@@ -19,7 +19,6 @@ extends CharacterBody2D
 @export_range(0.0, 1.0) var enemy_tint_intensity: float = 0.0
 
 func _ready() -> void:
-	# Passamos null no primeiro parametro (StateMachine) e a nossa simple state machine no terceiro
 	animation_component.setup(null, spine_sprite, state_machine)
 	_apply_visual_tint()
 	state_machine.setup(
@@ -32,7 +31,6 @@ func _ready() -> void:
 	if hitbox and attack_profile:
 		hitbox.attack_profile = attack_profile
 	
-	# Conexão vital para a morte
 	health_component.died.connect(_on_health_component_died)
 	
 	surface_contact_component.call_deferred("setup", self)
@@ -49,6 +47,12 @@ func get_death_profile() -> DeathProfile:
 	
 func get_attack_profile() -> AttackProfile:
 	return attack_profile
+
+func face_position(target_x: float) -> void:
+	var direction_to_target = sign(target_x - global_position.x)
+	
+	if direction_to_target != 0:
+		set_facing_direction(direction_to_target)
 
 func set_facing_direction(direction: float) -> void:
 	var facing_sign = sign(direction)
@@ -70,7 +74,6 @@ func get_facing_direction() -> float:
 			return 1.0
 		return sign(spine_sprite.scale.x)
 	
-	# Fallback original
 	if is_zero_approx(scale.x):
 		return 1.0
 	return sign(scale.x)
@@ -91,4 +94,3 @@ func _apply_visual_tint():
 		if mat:
 			mat.set_shader_parameter("tint_color", enemy_tint_color)
 			mat.set_shader_parameter("tint_intensity", enemy_tint_intensity)
-			
