@@ -298,7 +298,6 @@ libraries = {
 
 [node name="AnimationComponent" type="Node" parent="Enemy"]
 script = ExtResource("22_sdxul")
-flash_duration = null
 metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Enemy"]

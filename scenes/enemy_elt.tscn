@@ -4,9 +4,6 @@
 
 [node name="EnemyEntity2" instance=ExtResource("1_o8g13")]
 
-[node name="AnimationComponent" parent="Enemy" index="3"]
-flash_duration = null
-
 [node name="HealthComponent" parent="Enemy" index="11"]
 max_health = 25.0
 

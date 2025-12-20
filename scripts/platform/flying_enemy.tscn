@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://dhjvjsjvv2gir"]
+
+[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_rqvq3"]
+[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_f30pw"]
+
+[node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
+
+[node name="SimpleStateMachine" parent="." index="2"]
+initial_state_key = "SimplePatrolFlyState"
+
+[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="4"]
+script = ExtResource("2_f30pw")
+metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 2.0

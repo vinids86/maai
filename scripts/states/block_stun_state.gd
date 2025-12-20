@@ -77,3 +77,6 @@ func _emit_phase_signal():
 		"sfx_to_play": sfx_to_play,
 	}
 	state_machine.emit_phase_change(phase_data)
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)

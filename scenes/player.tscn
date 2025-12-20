@@ -405,7 +405,6 @@ one_shot = true
 
 [node name="AnimationComponent" type="Node" parent="Player"]
 script = ExtResource("15_a8ls1")
-flash_duration = null
 
 [node name="AudioComponent" type="Node" parent="Player" node_paths=PackedStringArray("e_state_machine")]
 script = ExtResource("16_qfm1y")
