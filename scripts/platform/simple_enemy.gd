@@ -42,6 +42,9 @@ func get_locomotion_profile() -> LocomotionProfile:
 
 func get_death_profile() -> DeathProfile:
 	return death_profile
+	
+func get_attack_profile() -> AttackProfile:
+	return attack_profile
 
 func set_facing_direction(direction: float) -> void:
 	var facing_sign = sign(direction)
@@ -56,6 +59,17 @@ func set_facing_direction(direction: float) -> void:
 		
 	if is_instance_valid(hitbox):
 		hitbox.scale.x = abs(hitbox.scale.x) * facing_sign
+		
+func get_facing_direction() -> float:
+	if is_instance_valid(spine_sprite):
+		if is_zero_approx(spine_sprite.scale.x):
+			return 1.0
+		return sign(spine_sprite.scale.x)
+	
+	# Fallback original
+	if is_zero_approx(scale.x):
+		return 1.0
+	return sign(scale.x)
 
 func _on_health_component_died():
 	state_machine.transition_to("SimpleDeathState")

@@ -1,0 +1,94 @@
+class_name SimpleAttackState
+extends SimpleState
+
+enum Phases { STARTUP, ACTIVE, RECOVERY }
+var _current_phase: Phases = Phases.STARTUP
+var _time_left: float = 0.0
+var _profile: AttackProfile
+
+# Direção travada no início do ataque
+var _attack_direction: float = 1.0
+
+func enter(_args: Dictionary = {}):
+	_profile = owner_node.get_attack_profile()
+	
+	if not _profile:
+		push_warning("SimpleAttackState: Inimigo sem AttackProfile configurado.")
+		state_machine.on_current_state_finished({"outcome": "ATTACK_FINISHED"})
+		return
+	
+	_attack_direction = owner_node.get_facing_direction()
+	
+	_change_phase(Phases.STARTUP)
+
+func process_physics(delta: float) -> Vector2:
+	if not _profile:
+		return Vector2.ZERO
+		
+	_time_left -= delta
+	
+	if _time_left <= 0:
+		_advance_phase()
+	
+	# Calcula velocidade baseada na fase atual e nas configurações do profile
+	var move_velocity = Vector2.ZERO
+	
+	match _current_phase:
+		Phases.STARTUP:
+			move_velocity = _profile.startup_movement_velocity
+		Phases.ACTIVE:
+			move_velocity = _profile.active_movement_velocity
+		Phases.RECOVERY:
+			move_velocity = _profile.recovery_movement_velocity
+			
+	# Aplica a direção travada:
+	# Se attack_direction for -1 (esquerda) e velocity.x for 100 (frente), resultado = -100
+	var final_velocity_x = move_velocity.x * _attack_direction
+	
+	# Mantém a gravidade padrão do inimigo
+	var final_velocity_y = owner_node.velocity.y
+	if not owner_node.is_on_floor():
+		final_velocity_y += 980.0 * delta
+		
+	return Vector2(final_velocity_x, final_velocity_y)
+
+func _advance_phase():
+	match _current_phase:
+		Phases.STARTUP:
+			_change_phase(Phases.ACTIVE)
+		Phases.ACTIVE:
+			_change_phase(Phases.RECOVERY)
+		Phases.RECOVERY:
+			state_machine.on_current_state_finished({"outcome": "ATTACK_FINISHED"})
+
+func _change_phase(new_phase: Phases):
+	_current_phase = new_phase
+	
+	var duration = 0.0
+	var sfx: AudioStream
+	var anim_name: StringName = &""
+	
+	match _current_phase:
+		Phases.STARTUP:
+			duration = _profile.startup_duration
+			sfx = _profile.startup_sfx
+			anim_name = _profile.animation_name 
+			
+		Phases.ACTIVE:
+			duration = _profile.active_duration
+			sfx = _profile.active_sfx
+			
+		Phases.RECOVERY:
+			duration = _profile.recovery_duration
+			sfx = _profile.recovery_sfx
+			
+	_time_left = duration
+	
+	# Envia sinal para tocar som/animação assincronamente nos componentes
+	state_machine.emit_phase_change({
+		"state": "SimpleAttackState",
+		"phase": Phases.keys()[_current_phase],
+		"profile": _profile,
+		"animation_to_play": anim_name,
+		"sfx_to_play": sfx
+	})

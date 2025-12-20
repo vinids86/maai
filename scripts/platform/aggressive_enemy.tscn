@@ -1,0 +1,61 @@
+[gd_scene load_steps=8 format=3 uid="uid://b4uo35lo3wukl"]
+
+[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_6h87l"]
+[ext_resource type="Script" uid="uid://co6k05df3ffqv" path="res://scripts/platform/aggressive_state_machine.gd" id="2_6iwo7"]
+[ext_resource type="AudioStream" uid="uid://snkhhvuv11sl" path="res://audio/attack_1.wav" id="2_r2vcs"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_u6f6r"]
+[ext_resource type="Script" uid="uid://b300sb85dsb48" path="res://scripts/platform/simple_chase_state.gd" id="3_6iwo7"]
+[ext_resource type="Script" uid="uid://dsf43ffjw15we" path="res://scripts/platform/simple_attack_state.gd" id="4_5r6u3"]
+
+[sub_resource type="Resource" id="Resource_r2vcs"]
+script = ExtResource("2_u6f6r")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.45
+link_duration = 0.6
+animation_name = &"jump"
+active_sfx = ExtResource("2_r2vcs")
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(1000, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(-100, 0)
+active_movement_velocity = Vector2(3600, 0)
+recovery_movement_velocity = Vector2(70, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[node name="AggressiveEnemy" instance=ExtResource("1_6h87l")]
+attack_profile = SubResource("Resource_r2vcs")
+
+[node name="SpineSprite" parent="." index="0"]
+preview_animation = "hit"
+
+[node name="SimpleStateMachine" parent="." index="2"]
+script = ExtResource("2_6iwo7")
+detection_range = 1000.0
+attack_range = 300.0
+attack_cooldown = 1.0
+
+[node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
+script = ExtResource("3_6iwo7")
+metadata/_custom_type_script = "uid://b300sb85dsb48"
+
+[node name="SimpleAttackState" type="Node" parent="SimpleStateMachine" index="5"]
+script = ExtResource("4_5r6u3")
+metadata/_custom_type_script = "uid://dsf43ffjw15we"

@@ -8,6 +8,15 @@
 [node name="SimpleStateMachine" parent="." index="2"]
 initial_state_key = "SimplePatrolFlyState"
 
+[node name="SimpleStaggerState" parent="SimpleStateMachine" index="2"]
+stagger_duration = 0.8
+friction = 800.0
+
+[node name="SimpleRecoilState" parent="SimpleStateMachine" index="3"]
+recoil_duration = 0.4
+recoil_speed = 300.0
+friction = 1000.0
+
 [node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="4"]
 script = ExtResource("2_f30pw")
 metadata/_custom_type_script = "uid://c7wk7u7twwnhd"

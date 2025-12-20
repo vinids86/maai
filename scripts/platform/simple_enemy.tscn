@@ -127,16 +127,11 @@ metadata/_custom_type_script = "uid://nkr7lri0t1dn"
 
 [node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
 script = ExtResource("12_wfdv6")
-stagger_duration = null
-friction = null
 audio = ExtResource("13_skhkn")
 metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
 
 [node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
 script = ExtResource("14_ir8sv")
-recoil_duration = null
-recoil_speed = null
-friction = null
 metadata/_custom_type_script = "uid://7cvdf53tkds2"
 
 [node name="AnimationComponent" type="Node" parent="."]
