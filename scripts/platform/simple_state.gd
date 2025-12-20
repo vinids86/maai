@@ -34,6 +34,17 @@ func handle_attack_outcome(result: ContactResult):
 			"target_position": target_pos
 		}
 		state_machine.on_current_state_finished(reason)
+		
+	elif result.attacker_outcome == ContactResult.AttackerOutcome.PARRIED:
+		state_machine.trigger_groggy(4.0)
+		
+		var knockback = result.knockback_vector
+		
+		var reason = {
+			"outcome": "HIT",
+			"knockback_vector": knockback
+		}
+		state_machine.on_current_state_finished(reason)
 
 func resolve_contact(context: ContactContext) -> ContactResult:
 	var result_for_attacker = ContactResult.new()
@@ -45,14 +56,17 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
 		
 		if not context.defender_health_comp.is_dead():
+			# Cálculo básico de knockback
 			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
-			var push_force = 350.0 # Valor base, idealmente viria do AttackProfile mas mantemos simples aqui
+			var push_force = 350.0 
 			
-			# Se o AttackProfile tiver dados de knockback, podemos usar (opcional)
-			# if context.attack_profile.knockback_vector != Vector2.ZERO: ...
+			# Se o AttackProfile tiver knockback definido, usamos ele
+			if context.attack_profile.knockback_vector != Vector2.ZERO:
+				# Ajusta a direção X baseada em quem bateu
+				push_force = context.attack_profile.knockback_vector.x
 			
 			var knockback = direction * push_force
-			knockback.y = -100.0 # Um leve pulinho para tirar do chão
+			knockback.y = -150.0 # Pulinho padrão ao tomar hit
 			
 			var reason = { "outcome": "HIT", "knockback_vector": knockback }
 			state_machine.on_current_state_finished(reason)

@@ -37,7 +37,7 @@ size = Vector2(5292, 1142)
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(1436, -1141)
+position = Vector2(17294, 802)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -49,8 +49,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-16.9063, -334.915)
-rotation = 0.432626
+position = Vector2(-19.7578, -327.476)
+rotation = 0.441803
 scale = Vector2(1, 1)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
@@ -171,6 +171,9 @@ position = Vector2(-12806, 965)
 
 [node name="FlyingEnemy" parent="." instance=ExtResource("17_eguil")]
 position = Vector2(-12010, 591)
+
+[node name="SimpleStaggerState" parent="FlyingEnemy/SimpleStateMachine" index="2"]
+knockback_multiplier = 0.5
 
 [node name="SimplePatrolFlyState" parent="FlyingEnemy/SimpleStateMachine" index="4"]
 point_a_node = NodePath("../../../Markers/PatrolPointA")

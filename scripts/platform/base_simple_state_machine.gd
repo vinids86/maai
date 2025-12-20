@@ -13,6 +13,8 @@ var physics_component: Node
 var wall_detector: WallDetectorComponent
 var surface_contact_component: SurfaceContactComponent 
 
+var _groggy_timer: float = 0.0
+
 func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
 	owner_node = p_owner_node
 	physics_component = p_physics_comp
@@ -39,9 +41,17 @@ func _start_initial_state():
 		push_error("BaseSimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
 
 func process_physics(delta: float) -> Vector2:
+	if _groggy_timer > 0:
+		_groggy_timer -= delta
+		if _groggy_timer <= 0 and current_state.name == "SimpleGroggyState":
+			on_current_state_finished({"outcome": "GROGGY_FINISHED"})
+
 	if not current_state:
 		return Vector2.ZERO
 	return current_state.process_physics(delta)
+
+func trigger_groggy(duration: float):
+	_groggy_timer = duration
 
 func emit_phase_change(data: Dictionary):
 	emit_signal("phase_changed", data)
@@ -55,8 +65,23 @@ func _on_impact_resolved(result: ContactResult):
 			current_state.handle_attack_outcome(result)
 
 func on_current_state_finished(reason: Dictionary = {}):
+	
+	if current_state.name == "SimpleDeathState":
+		return
+
+	var outcome = reason.get("outcome")
+	if outcome == "HIT" or outcome == "ATTACK_CONNECTED":
+		_decide_next_state(reason)
+		return
+
+	if _groggy_timer > 0:
+		if current_state.name != "SimpleGroggyState":
+			transition_to("SimpleGroggyState")
+			return
+
 	_decide_next_state(reason)
 
+# Função abstrata para filhos implementarem
 func _decide_next_state(_reason: Dictionary):
 	pass
 
