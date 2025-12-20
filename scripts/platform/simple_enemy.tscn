@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3 uid="uid://def1lykxj4wss"]
+[gd_scene load_steps=36 format=3 uid="uid://def1lykxj4wss"]
 
 [ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
@@ -26,6 +26,7 @@
 [ext_resource type="Script" uid="uid://ebh4v2paogrs" path="res://scripts/platform/flying_chase_state.gd" id="16_kttm4"]
 [ext_resource type="Script" uid="uid://vt6ench6q7cm" path="res://scripts/platform/flying_attack_state.gd" id="17_lh40x"]
 [ext_resource type="Script" uid="uid://dnreygx8olxx3" path="res://scripts/platform/simple_grounded_state.gd" id="18_r4g4d"]
+[ext_resource type="Script" uid="uid://dsf43ffjw15we" path="res://scripts/platform/simple_attack_state.gd" id="19_yf6nf"]
 
 [sub_resource type="Resource" id="Resource_tvabn"]
 script = ExtResource("2_5vwvj")
@@ -155,6 +156,10 @@ metadata/_custom_type_script = "uid://vt6ench6q7cm"
 [node name="SimpleGroundedState" type="Node" parent="SimpleStateMachine"]
 script = ExtResource("18_r4g4d")
 metadata/_custom_type_script = "uid://dnreygx8olxx3"
+
+[node name="SimpleAttackState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("19_yf6nf")
+metadata/_custom_type_script = "uid://dsf43ffjw15we"
 
 [node name="AnimationComponent" type="Node" parent="."]
 script = ExtResource("8_skhkn")

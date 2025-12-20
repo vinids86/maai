@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=4 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=25 format=4 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="2_7od0s"]
@@ -19,7 +19,7 @@
 [ext_resource type="PackedScene" uid="uid://dhjvjsjvv2gir" path="res://scripts/platform/flying_enemy.tscn" id="17_eguil"]
 [ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="18_eguil"]
 [ext_resource type="PackedScene" uid="uid://by2iisxspfs2r" path="res://scripts/platform/flying_aggressive_enemy.tscn" id="19_lc6wr"]
-[ext_resource type="Script" uid="uid://ebh4v2paogrs" path="res://scripts/platform/flying_chase_state.gd" id="20_asj2p"]
+[ext_resource type="PackedScene" uid="uid://bs1683iw0jpyk" path="res://scripts/platform/ranged_enemy.tscn" id="21_wuj60"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_8esgq"]
 texture = ExtResource("13_8esgq")
@@ -36,6 +36,9 @@ sources/0 = SubResource("TileSetAtlasSource_8esgq")
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_m2w8e"]
 size = Vector2(5292, 1142)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_r2vcs"]
+radius = 72.0
+
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
@@ -51,8 +54,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-22.6719, -327.157)
-rotation = 0.40206
+position = Vector2(-19.3438, -327.643)
+rotation = 0.445953
 scale = Vector2(1, 1)
 
 [node name="EnemyIntro1" parent="." instance=ExtResource("3_xi06q")]
@@ -196,30 +199,33 @@ position = Vector2(-12010, 592)
 position = Vector2(-11995, 1012)
 
 [node name="AggressivePatrolPointA" type="Marker2D" parent="Markers"]
-position = Vector2(-25499, -1182)
+position = Vector2(-25326, -1283)
 
 [node name="AggressivePatrolPointB" type="Marker2D" parent="Markers"]
-position = Vector2(-27324, -1148)
+position = Vector2(-27555, -1335)
 
 [node name="AggressiveEnemy" parent="." instance=ExtResource("18_eguil")]
-position = Vector2(-22071, -759)
+position = Vector2(-24566, -831)
 
 [node name="FlyingAggressiveEnemy" parent="." instance=ExtResource("19_lc6wr")]
-position = Vector2(-27921, -1238)
+position = Vector2(-2971, -7899)
 
 [node name="SimplePatrolFlyState" parent="FlyingAggressiveEnemy/SimpleStateMachine" index="8"]
 point_a_node = NodePath("../../../Markers/AggressivePatrolPointA")
 point_b_node = NodePath("../../../Markers/AggressivePatrolPointB")
 
-[node name="FlyingChaseState" parent="FlyingAggressiveEnemy/SimpleStateMachine" index="9"]
-script = ExtResource("20_asj2p")
-metadata/_custom_type_script = "uid://ebh4v2paogrs"
-
 [node name="RayCast2D" parent="FlyingAggressiveEnemy/WallDetectorComponent" index="0"]
+position = Vector2(0, -38)
 target_position = Vector2(50, 0)
 
 [node name="FloorDetector" parent="FlyingAggressiveEnemy/WallDetectorComponent" index="1"]
 position = Vector2(40, 0)
+
+[node name="CollisionShape2D" parent="FlyingAggressiveEnemy/Hitbox" index="0"]
+shape = SubResource("CircleShape2D_r2vcs")
+
+[node name="RangedEnemy" parent="." instance=ExtResource("21_wuj60")]
+position = Vector2(-25276, -721)
 
 [editable path="PlayerEntity"]
 [editable path="FlyingEnemy"]

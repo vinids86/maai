@@ -56,8 +56,8 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
 		
 		if not context.defender_health_comp.is_dead():
-			# Cálculo básico de knockback
-			var direction = (context.defender_node.global_position - context.attacker_node.global_position).normalized()
+			# Cálculo básico de knockback usando a fonte física (projétil ou atacante)
+			var direction = (context.defender_node.global_position - context.source_node.global_position).normalized()
 			var push_force = 350.0 
 			
 			# Se o AttackProfile tiver knockback definido, usamos ele

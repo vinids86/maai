@@ -35,6 +35,9 @@ enum MovementType {
 @export var hitbox_size: Vector2 = Vector2(160, 140)
 @export var hitbox_position: Vector2 = Vector2(100, -30)
 
+@export_group("Projectile")
+@export var projectile_scene: PackedScene
+
 @export_group("Mechanics")
 @export var damage: float = 1.0
 @export var stamina_cost: float = 0.0

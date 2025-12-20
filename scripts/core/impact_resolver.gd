@@ -12,6 +12,12 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 	var context = ContactContext.new()
 	context.attacker_node = attacker
 	context.defender_node = defender
+	
+	if hitbox.source_node:
+		context.source_node = hitbox.source_node
+	else:
+		context.source_node = attacker
+		
 	context.attack_profile = hitbox.attack_profile
 	
 	# Poise do atacante é opcional (SimpleEnemy não tem)

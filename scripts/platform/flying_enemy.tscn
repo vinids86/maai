@@ -13,8 +13,8 @@ radius = 50.0
 radius = 50.0
 
 [node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
-enemy_tint_color = Color(0, 0, 100, 1)
-enemy_tint_intensity = 0.4
+enemy_tint_color = Color(0.635062, 0.750033, 0.982451, 1)
+enemy_tint_intensity = 0.06
 
 [node name="SpineSprite" parent="." index="0"]
 scale = Vector2(0.3, 0.3)

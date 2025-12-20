@@ -1,6 +1,10 @@
 class_name SimpleAttackState
 extends SimpleState
 
+## Ponto opcional de onde o projétil será instanciado.
+## Se não definido, usa a posição global do inimigo.
+@export var projectile_spawn_point: Marker2D
+
 enum Phases { STARTUP, ACTIVE, RECOVERY }
 var _current_phase: Phases = Phases.STARTUP
 var _time_left: float = 0.0
@@ -78,6 +82,10 @@ func _change_phase(new_phase: Phases):
 			duration = _profile.active_duration
 			sfx = _profile.active_sfx
 			
+			# LÓGICA DE PROJÉTIL: Instancia se configurado no profile
+			if _profile.projectile_scene:
+				_spawn_projectile()
+			
 		Phases.RECOVERY:
 			duration = _profile.recovery_duration
 			sfx = _profile.recovery_sfx
@@ -92,3 +100,27 @@ func _change_phase(new_phase: Phases):
 		"animation_to_play": anim_name,
 		"sfx_to_play": sfx
 	})
+
+func _spawn_projectile() -> void:
+	var scene = _profile.projectile_scene
+	var projectile = scene.instantiate() as Projectile
+	
+	if not projectile:
+		push_error("SimpleAttackState: Cena configurada não é um Projectile válido.")
+		return
+
+	# Calcula posição de spawn
+	var spawn_pos = owner_node.global_position
+	if projectile_spawn_point:
+		spawn_pos = projectile_spawn_point.global_position
+	
+	# Define direção do tiro (horizontal baseado no facing travado)
+	var shoot_dir = Vector2.RIGHT
+	shoot_dir.x = _attack_direction
+
+	# Adiciona na cena raiz para desacoplar movimento
+	get_tree().current_scene.add_child(projectile)
+	projectile.global_position = spawn_pos
+	
+	# Configura o projétil com o dono (inimigo) e direção
+	projectile.setup(owner_node, _profile, shoot_dir)

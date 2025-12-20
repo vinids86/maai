@@ -7,6 +7,7 @@ signal finished
 var _owner_node: Node
 var _hitbox: Area2D
 var _hitbox_shape: CollisionShape2D
+var _projectile_spawn_point: Marker2D # Novo ponto de origem opcional
 var _current_profile: AttackProfile
 var _path_follower_component: PathFollowerComponent
 var _path_target: Node2D
@@ -23,6 +24,9 @@ func setup(owner: Node):
 	_hitbox = owner.find_child("AttackHitbox") as Area2D
 	if _hitbox:
 		_hitbox_shape = _hitbox.find_child("CollisionShape2D") as CollisionShape2D
+	
+	# Busca opcional por um ponto de spawn de projéteis
+	_projectile_spawn_point = owner.find_child("ProjectileSpawnPoint") as Marker2D
 	
 	_path_follower_component = owner.find_child("PathFollowerComponent")
 	_path_target = owner.get_parent().get_node("PathTarget")
@@ -90,7 +94,11 @@ func get_physics_movement_velocity() -> Vector2:
 			move_vel = _current_profile.recovery_movement_velocity
 	
 	var final_velocity = Vector2.ZERO
-	final_velocity.x = move_vel.x * _owner_node.facing_sign
+	if "facing_sign" in _owner_node:
+		final_velocity.x = move_vel.x * _owner_node.facing_sign
+	else:
+		final_velocity.x = move_vel.x # Fallback seguro
+		
 	final_velocity.y = move_vel.y
 	return final_velocity
 
@@ -109,6 +117,7 @@ func _stop_execution():
 	if is_instance_valid(_hitbox):
 		_hitbox.position = Vector2.ZERO
 		_hitbox.scale = Vector2.ONE
+		_hitbox.source_node = null # Limpa a referência
 
 func _change_phase(new_phase: Phases):
 	_current_phase = new_phase
@@ -121,7 +130,13 @@ func _change_phase(new_phase: Phases):
 		Phases.ACTIVE:
 			_time_left_in_phase = _current_profile.active_duration
 			sfx_to_play = _current_profile.active_sfx
-			_update_and_enable_hitbox()
+			
+			# LÓGICA DE DECISÃO: Ranged vs Melee
+			if _current_profile.projectile_scene:
+				_spawn_projectile()
+			else:
+				_update_and_enable_hitbox()
+				
 		Phases.RECOVERY:
 			_time_left_in_phase = _current_profile.recovery_duration
 			sfx_to_play = _current_profile.recovery_sfx
@@ -130,7 +145,7 @@ func _change_phase(new_phase: Phases):
 				_hitbox_shape.shape = null
 	
 	var phase_data: Dictionary = {
-		"state_name": _owner_node.state_machine.current_state.name,
+		"state_name": _owner_node.state_machine.current_state.name if "state_machine" in _owner_node else "Unknown",
 		"phase_name": get_current_phase_name(),
 		"profile": _current_profile,
 		"sfx_to_play": sfx_to_play
@@ -141,8 +156,42 @@ func _change_phase(new_phase: Phases):
 	
 	emit_signal("attack_phase_changed", phase_data)
 
+func _spawn_projectile() -> void:
+	var scene = _current_profile.projectile_scene
+	var projectile = scene.instantiate() as Projectile
+	
+	if not projectile:
+		push_error("AttackExecutor: Cena configurada não é um Projectile válido.")
+		return
+
+	# Calcula posição de spawn
+	var spawn_pos = _owner_node.global_position
+	if _projectile_spawn_point:
+		spawn_pos = _projectile_spawn_point.global_position
+	# Fallback: Se não tiver marker, usa o offset do AttackProfile (ajustado para o lado)
+	else:
+		var offset = _current_profile.hitbox_position
+		if "facing_sign" in _owner_node:
+			offset.x *= _owner_node.facing_sign
+		spawn_pos += offset
+
+	# Calcula direção baseada no facing do owner
+	var shoot_dir = Vector2.RIGHT
+	if "facing_sign" in _owner_node:
+		shoot_dir.x = _owner_node.facing_sign
+
+	# Adiciona na cena raiz para desacoplar movimento
+	get_tree().current_scene.add_child(projectile)
+	projectile.global_position = spawn_pos
+	
+	# Configura o projétil (Isso define o source_node interno dele como self)
+	projectile.setup(_owner_node, _current_profile, shoot_dir)
+
 func _update_and_enable_hitbox():
 	_hitbox.attack_profile = _current_profile
+	
+	# No Melee, a fonte física é o próprio Owner
+	_hitbox.source_node = _owner_node 
 	
 	var shape: RectangleShape2D = RectangleShape2D.new()
 	shape.size = _current_profile.hitbox_size
@@ -150,7 +199,8 @@ func _update_and_enable_hitbox():
 	_hitbox_shape.shape = shape
 	
 	_hitbox.position = _current_profile.hitbox_position
-	_hitbox.position.x *= _owner_node.facing_sign
-	_hitbox.scale.x = _owner_node.facing_sign
+	if "facing_sign" in _owner_node:
+		_hitbox.position.x *= _owner_node.facing_sign
+		_hitbox.scale.x = _owner_node.facing_sign
 	
 	_hitbox_shape.set_deferred("disabled", false)

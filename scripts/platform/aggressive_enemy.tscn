@@ -1,11 +1,10 @@
-[gd_scene load_steps=12 format=3 uid="uid://b4uo35lo3wukl"]
+[gd_scene load_steps=11 format=3 uid="uid://b4uo35lo3wukl"]
 
 [ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_6h87l"]
 [ext_resource type="Script" uid="uid://co6k05df3ffqv" path="res://scripts/platform/aggressive_state_machine.gd" id="2_6iwo7"]
 [ext_resource type="AudioStream" uid="uid://snkhhvuv11sl" path="res://audio/attack_1.wav" id="2_r2vcs"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_u6f6r"]
 [ext_resource type="Script" uid="uid://b300sb85dsb48" path="res://scripts/platform/simple_chase_state.gd" id="3_6iwo7"]
-[ext_resource type="Script" uid="uid://dsf43ffjw15we" path="res://scripts/platform/simple_attack_state.gd" id="4_5r6u3"]
 [ext_resource type="Script" uid="uid://c84mr4ehwdq1i" path="res://scripts/platform/simple_parried_state.gd" id="7_52h12"]
 
 [sub_resource type="Resource" id="Resource_r2vcs"]
@@ -72,18 +71,13 @@ attack_state_name = "SimpleAttackState"
 recoil_state_name = "SimpleRecoilState"
 stagger_state_name = "SimpleStaggerState"
 immune_to_stagger = true
-initial_state_key = "SimplePatrolState"
 parries_required_for_groggy = 5
 
 [node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
 script = ExtResource("3_6iwo7")
 metadata/_custom_type_script = "uid://b300sb85dsb48"
 
-[node name="SimpleAttackState" type="Node" parent="SimpleStateMachine" index="5"]
-script = ExtResource("4_5r6u3")
-metadata/_custom_type_script = "uid://dsf43ffjw15we"
-
-[node name="SimpleParriedState" type="Node" parent="SimpleStateMachine" index="7"]
+[node name="SimpleParriedState" type="Node" parent="SimpleStateMachine" index="6"]
 script = ExtResource("7_52h12")
 metadata/_custom_type_script = "uid://c84mr4ehwdq1i"
 

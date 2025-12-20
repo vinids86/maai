@@ -9,6 +9,10 @@ extends Resource
 var attacker_node: Node
 var defender_node: Node
 
+## A origem física do impacto (ex: o Projétil, a Armadilha, ou o próprio Atacante em Melee).
+## Essencial para calcular a direção correta do Knockback.
+var source_node: Node
+
 # --- Referências aos Perfis de Ataque ---
 var attack_profile: AttackProfile
 var defender_attack_profile: AttackProfile = null

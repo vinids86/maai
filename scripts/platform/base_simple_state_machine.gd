@@ -60,16 +60,27 @@ func process_physics(delta: float) -> Vector2:
 		return Vector2.ZERO
 	return current_state.process_physics(delta)
 
-func trigger_groggy(duration: float):
+## Aciona o estado de atordoamento ou interrupção.
+## [param duration]: Tempo que o inimigo fica groggy.
+## [param hit_source]: (Opcional) A origem do impacto para calcular a direção do recuo.
+func trigger_groggy(duration: float, hit_source: Node = null):
 	_current_parry_count += 1
 	if _current_parry_count < parries_required_for_groggy:
 		var push_dir = Vector2.ZERO
-		if is_instance_valid(GameManager.player_node):
+		
+		# Prioridade: Usar a fonte exata do hit (ex: quem deu o parry ou disparou o tiro)
+		if is_instance_valid(hit_source):
+			push_dir = (owner_node.global_position - hit_source.global_position).normalized()
+		# Fallback: Usar o Player global (comportamento legado para segurança)
+		elif is_instance_valid(GameManager.player_node):
 			push_dir = (owner_node.global_position - GameManager.player_node.global_position).normalized()
-			push_dir.y = 0
-			if states.has(parried_state_name):
-				transition_to(parried_state_name, {"direction": push_dir})
+			
+		push_dir.y = 0
+		
+		if states.has(parried_state_name):
+			transition_to(parried_state_name, {"direction": push_dir})
 		return
+		
 	_current_parry_count = 0
 	_groggy_timer = duration
 	
@@ -85,6 +96,8 @@ func get_current_state() -> SimpleState:
 func _on_impact_resolved(result: ContactResult):
 	if result.attacker_node == owner_node:
 		if current_state:
+			# Nota: Se desejado, você pode atualizar handle_attack_outcome no SimpleState
+			# para passar result.defender_node ao chamar trigger_groggy.
 			current_state.handle_attack_outcome(result)
 
 func on_current_state_finished(reason: Dictionary = {}):

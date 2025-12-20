@@ -1,0 +1,49 @@
+[gd_scene load_steps=6 format=3 uid="uid://bs1683iw0jpyk"]
+
+[ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="1_u4pjs"]
+[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="2_uypep"]
+[ext_resource type="PackedScene" uid="uid://d3hx8uvp1ayyb" path="res://scenes/projectile.tscn" id="3_uk1qy"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="4_dwehw"]
+
+[sub_resource type="Resource" id="Resource_2u8hu"]
+script = ExtResource("4_dwehw")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.45
+link_duration = 0.6
+animation_name = &"jump"
+active_sfx = ExtResource("2_uypep")
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+projectile_scene = ExtResource("3_uk1qy")
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(1000, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[node name="RangedEnemy" instance=ExtResource("1_u4pjs")]
+attack_profile = SubResource("Resource_2u8hu")
+
+[node name="SimpleAttackState" parent="SimpleStateMachine" index="10" node_paths=PackedStringArray("projectile_spawn_point")]
+projectile_spawn_point = NodePath("../../ProjectileSpawnPoint")
+
+[node name="ProjectileSpawnPoint" type="Marker2D" parent="." index="11"]
+position = Vector2(73, -58)
