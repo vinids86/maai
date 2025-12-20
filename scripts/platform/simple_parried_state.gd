@@ -9,7 +9,6 @@ var _timer: float = 0.0
 var _current_velocity: Vector2 = Vector2.ZERO
 
 func enter(args: Dictionary = {}):
-	print("SimpleParriedState")
 	state_machine.emit_phase_change({"new_phase": "PARRIED"})
 	
 	_timer = duration_failsafe

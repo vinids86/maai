@@ -1,6 +1,10 @@
 class_name SimplePatrolFlyState
 extends SimpleState
 
+## Estado de Patrulha Aérea.
+## Move o inimigo entre dois pontos (Markers) com movimento senoidal (onda).
+## A detecção do player é feita externamente pela AggressiveStateMachine.
+
 @export_group("Patrol Points")
 ## Caminho para o nó Marker2D que representa o Ponto A.
 @export var point_a_node: NodePath
@@ -12,9 +16,9 @@ extends SimpleState
 @export_group("Flight Physics")
 ## Velocidade de deslocamento entre os pontos.
 @export var fly_speed: float = 150.0
-## Frequência da onda (velocidade da oscilação).
+## Frequência da onda (velocidade da oscilação para cima/baixo).
 @export var wave_frequency: float = 5.0
-## Amplitude da onda (largura da oscilação).
+## Amplitude da onda (altura da oscilação).
 @export var wave_amplitude: float = 150.0
 
 var _target_pos: Vector2
@@ -26,9 +30,7 @@ var _time_accum: float = 0.0
 func enter(_args: Dictionary = {}):
 	_time_accum = 0.0
 	
-	# Captura as posições globais dos Markers.
-	# CORREÇÃO: Usamos get_node_or_null() diretamente (no self), pois o NodePath 
-	# salvo no Inspetor é relativo a este nó de Estado, e não ao Inimigo (owner_node).
+	# Garante que temos posições válidas
 	var node_a = get_node_or_null(point_a_node)
 	var node_b = get_node_or_null(point_b_node)
 	
@@ -36,13 +38,20 @@ func enter(_args: Dictionary = {}):
 		_pos_a = node_a.global_position
 		_pos_b = node_b.global_position
 	else:
-		push_warning("SimplePatrolFlyState: Pontos A ou B não encontrados! Verifique os caminhos no Inspetor. Usando fallback.")
-		_pos_a = owner_node.global_position
-		_pos_b = owner_node.global_position + Vector2(200, 0) # Fallback padrão
+		# Fallback se esquecer de configurar os nós: patrulha 200px para a direita
+		if owner_node:
+			_pos_a = owner_node.global_position
+			_pos_b = owner_node.global_position + Vector2(200, 0)
 	
-	# Define o alvo inicial como o mais próximo ou sempre o B
+	# Define destino inicial (vai para B primeiro por padrão)
 	_target_pos = _pos_b
 	_going_to_a = false
+	
+	state_machine.emit_phase_change({
+		"state": "SimplePatrolFlyState",
+		"phase": "patrol",
+		"animation_to_play": "run"
+	})
 
 func process_physics(delta: float) -> Vector2:
 	_time_accum += delta
@@ -50,29 +59,23 @@ func process_physics(delta: float) -> Vector2:
 	var current_pos = owner_node.global_position
 	var distance = current_pos.distance_to(_target_pos)
 	
-	# 1. Verifica se chegou ao destino
+	# 1. Verifica chegada ao destino
 	if distance < arrival_threshold:
 		_switch_target()
 	
-	# 2. Calcula vetor de direção normalizado (Para onde ir)
+	# 2. Calcula movimento
 	var direction = (current_pos.direction_to(_target_pos)).normalized()
 	
-	# 3. Calcula velocidade linear base
+	# Velocidade linear
 	var linear_velocity = direction * fly_speed
 	
-	# 4. Calcula a Onda (Senoide)
-	# Precisamos de um vetor perpendicular à direção do movimento para aplicar a onda "de lado"
-	# Se a direção é (x, y), a perpendicular é (-y, x)
+	# Velocidade da onda (perpendicular ao movimento)
 	var perpendicular = Vector2(-direction.y, direction.x)
-	
-	# Usamos cosseno aqui para afetar a velocidade e gerar uma senoide na posição
 	var wave_velocity = perpendicular * cos(_time_accum * wave_frequency) * wave_amplitude
 	
-	# 5. Soma as velocidades
 	var final_velocity = linear_velocity + wave_velocity
 	
-	# 6. Orientação do Sprite (Facing)
-	# Só vira se houver movimento horizontal significativo
+	# 3. Orientação (Facing)
 	if abs(direction.x) > 0.1:
 		_flip_owner(sign(direction.x))
 		

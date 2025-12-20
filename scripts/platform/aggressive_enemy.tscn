@@ -19,7 +19,7 @@ animation_name = &"jump"
 active_sfx = ExtResource("2_r2vcs")
 hitbox_size = Vector2(160, 140)
 hitbox_position = Vector2(100, -30)
-damage = 20.0
+damage = 1.0
 stamina_cost = 0.0
 focus_cost = 0
 focus_gain_on_hit = 0
@@ -67,7 +67,12 @@ script = ExtResource("2_6iwo7")
 detection_range = 1000.0
 attack_range = 300.0
 attack_cooldown = 1.0
+chase_state_name = "SimpleChaseState"
+attack_state_name = "SimpleAttackState"
+recoil_state_name = "SimpleRecoilState"
+stagger_state_name = "SimpleStaggerState"
 immune_to_stagger = true
+initial_state_key = "SimplePatrolState"
 parries_required_for_groggy = 5
 
 [node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
@@ -84,6 +89,12 @@ metadata/_custom_type_script = "uid://c84mr4ehwdq1i"
 
 [node name="HealthComponent" parent="." index="5"]
 max_health = 10.0
+
+[node name="RayCast2D" parent="WallDetectorComponent" index="0"]
+target_position = Vector2(100, 0)
+
+[node name="FloorDetector" parent="WallDetectorComponent" index="1"]
+position = Vector2(100, 0)
 
 [node name="CollisionShape2D" parent="Hitbox" index="0"]
 position = Vector2(0, -72)

@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3 uid="uid://by2iisxspfs2r"]
+
+[ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="1_sma00"]
+[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_5h7yv"]
+
+[node name="FlyingAggressiveEnemy" instance=ExtResource("1_sma00")]
+enemy_tint_color = Color(0.14902, 0.0980392, 1, 1)
+enemy_tint_intensity = 0.5
+
+[node name="SimpleStateMachine" parent="." index="2"]
+attack_range = 500.0
+chase_state_name = "FlyingChaseState"
+attack_state_name = "FlyingAttackState"
+initial_state_key = "SimplePatrolFlyState"
+groggy_state_name = "SimpleGroundedState"
+parries_required_for_groggy = 3
+
+[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="8"]
+script = ExtResource("2_5h7yv")
+fly_speed = 300.0
+metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 5.0

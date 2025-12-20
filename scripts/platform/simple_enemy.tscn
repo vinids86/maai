@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3 uid="uid://def1lykxj4wss"]
+[gd_scene load_steps=35 format=3 uid="uid://def1lykxj4wss"]
 
 [ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
 [ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
@@ -23,6 +23,9 @@
 [ext_resource type="Script" uid="uid://7cvdf53tkds2" path="res://scripts/platform/simple_recoil_state.gd" id="14_ir8sv"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
 [ext_resource type="Script" uid="uid://ch6kcihci323o" path="res://scripts/platform/simple_groggy_state.gd" id="15_a8aot"]
+[ext_resource type="Script" uid="uid://ebh4v2paogrs" path="res://scripts/platform/flying_chase_state.gd" id="16_kttm4"]
+[ext_resource type="Script" uid="uid://vt6ench6q7cm" path="res://scripts/platform/flying_attack_state.gd" id="17_lh40x"]
+[ext_resource type="Script" uid="uid://dnreygx8olxx3" path="res://scripts/platform/simple_grounded_state.gd" id="18_r4g4d"]
 
 [sub_resource type="Resource" id="Resource_tvabn"]
 script = ExtResource("2_5vwvj")
@@ -141,6 +144,18 @@ metadata/_custom_type_script = "uid://7cvdf53tkds2"
 script = ExtResource("15_a8aot")
 metadata/_custom_type_script = "uid://ch6kcihci323o"
 
+[node name="FlyingChaseState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("16_kttm4")
+metadata/_custom_type_script = "uid://ebh4v2paogrs"
+
+[node name="FlyingAttackState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("17_lh40x")
+metadata/_custom_type_script = "uid://vt6ench6q7cm"
+
+[node name="SimpleGroundedState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("18_r4g4d")
+metadata/_custom_type_script = "uid://dnreygx8olxx3"
+
 [node name="AnimationComponent" type="Node" parent="."]
 script = ExtResource("8_skhkn")
 metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
@@ -152,7 +167,7 @@ metadata/_custom_type_script = "uid://nl1a7e12lrfa"
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("9_ir8sv")
-max_health = 3.0
+max_health = 1.0
 metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
 
 [node name="PhysicsComponent" type="Node" parent="."]

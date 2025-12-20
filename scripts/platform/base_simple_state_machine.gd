@@ -4,7 +4,14 @@ extends Node
 signal phase_changed(phase_data: Dictionary)
 signal transitioned(from_state: SimpleState, to_state: SimpleState)
 
+@export_group("State Configuration")
 @export var initial_state_key: String = ""
+## Nome do nó na cena que representa o estado de Groggy (vulnerável).
+@export var groggy_state_name: String = "SimpleGroggyState"
+## Nome do nó na cena que representa o estado de Parried (interrupção leve).
+@export var parried_state_name: String = "SimpleParriedState"
+
+@export_group("Mechanics")
 @export var parries_required_for_groggy: int = 1
 
 var _current_parry_count: int = 0
@@ -46,7 +53,7 @@ func _start_initial_state():
 func process_physics(delta: float) -> Vector2:
 	if _groggy_timer > 0:
 		_groggy_timer -= delta
-		if _groggy_timer <= 0 and current_state.name == "SimpleGroggyState":
+		if _groggy_timer <= 0 and current_state.name == groggy_state_name:
 			on_current_state_finished({"outcome": "GROGGY_FINISHED"})
 
 	if not current_state:
@@ -60,13 +67,14 @@ func trigger_groggy(duration: float):
 		if is_instance_valid(GameManager.player_node):
 			push_dir = (owner_node.global_position - GameManager.player_node.global_position).normalized()
 			push_dir.y = 0
-			transition_to("SimpleParriedState", {"direction": push_dir})
+			if states.has(parried_state_name):
+				transition_to(parried_state_name, {"direction": push_dir})
 		return
 	_current_parry_count = 0
 	_groggy_timer = duration
 	
-	if current_state.name != "SimpleGroggyState":
-		transition_to("SimpleGroggyState")
+	if current_state.name != groggy_state_name and states.has(groggy_state_name):
+		transition_to(groggy_state_name)
 
 func emit_phase_change(data: Dictionary):
 	emit_signal("phase_changed", data)
@@ -90,9 +98,10 @@ func on_current_state_finished(reason: Dictionary = {}):
 		return
 		
 	if _groggy_timer > 0:
-		if current_state.name != "SimpleGroggyState":
-			transition_to("SimpleGroggyState")
-			return
+		if current_state.name != groggy_state_name:
+			if states.has(groggy_state_name):
+				transition_to(groggy_state_name)
+				return
 
 	_decide_next_state(reason)
 

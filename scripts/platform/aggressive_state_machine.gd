@@ -6,6 +6,16 @@ extends BaseSimpleStateMachine
 @export var attack_range: float = 60.0
 @export var attack_cooldown: float = 1.0
 
+@export_group("State Map")
+## Nome do nó de Perseguição (Padrão: SimpleChaseState, Voador: FlyingChaseState)
+@export var chase_state_name: String = "SimpleChaseState"
+## Nome do nó de Ataque (Padrão: SimpleAttackState, Voador: FlyingAttackState)
+@export var attack_state_name: String = "SimpleAttackState"
+## Nome do nó de Recuo
+@export var recoil_state_name: String = "SimpleRecoilState"
+## Nome do nó de Stagger (Dano)
+@export var stagger_state_name: String = "SimpleStaggerState"
+
 @export_group("Resistance Settings")
 @export var immune_to_stagger: bool = false
 
@@ -26,33 +36,33 @@ func _check_for_player() -> void:
 	if is_instance_valid(player):
 		var dist = owner_node.global_position.distance_to(player.global_position)
 		if dist <= detection_range:
-			transition_to("SimpleChaseState")
+			transition_to(chase_state_name)
 
 func _decide_next_state(reason: Dictionary):
 	var outcome = reason.get("outcome")
 	
 	# 1. Prioridade: Reação a Dano (Recoil/Stagger)
 	if outcome == "ATTACK_CONNECTED":
-		transition_to("SimpleRecoilState", reason)
+		transition_to(recoil_state_name, reason)
 		return
 	
 	if outcome == "HIT":
 		if not immune_to_stagger or _groggy_timer > 0:
 			var knockback = reason.get("knockback_vector", Vector2.ZERO)
-			transition_to("SimpleStaggerState", {"knockback_vector": knockback})
+			transition_to(stagger_state_name, {"knockback_vector": knockback})
 		return
 
 	# 2. Prioridade: Ciclo de Combate
 	if outcome == "CHASE_FINISHED":
 		if _cooldown_timer <= 0:
-			transition_to("SimpleAttackState")
+			transition_to(attack_state_name)
 		else:
-			transition_to("SimpleChaseState")
+			transition_to(chase_state_name)
 		return
 		
 	if outcome == "ATTACK_FINISHED":
 		_cooldown_timer = attack_cooldown
-		transition_to("SimpleChaseState")
+		transition_to(chase_state_name)
 		return
 
 	# 3. Fallback: Perdeu o alvo ou terminou reação
@@ -67,16 +77,16 @@ func _decide_next_state(reason: Dictionary):
 			dist_to_player = owner_node.global_position.distance_to(GameManager.player_node.global_position)
 		
 		if dist_to_player <= attack_range and _cooldown_timer <= 0:
-			transition_to("SimpleAttackState")
+			transition_to(attack_state_name)
 		else:
-			transition_to("SimpleChaseState")
+			transition_to(chase_state_name)
 		return
 
 	var player = GameManager.player_node
 	if is_instance_valid(player):
 		var dist = owner_node.global_position.distance_to(player.global_position)
 		if dist <= detection_range:
-			transition_to("SimpleChaseState")
+			transition_to(chase_state_name)
 			return
 
 	if states.has(initial_state_key):
