@@ -24,7 +24,10 @@ func process_physics(_delta: float) -> Vector2:
 	return Vector2.ZERO
 
 func handle_attack_outcome(result: ContactResult):
-	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT:
+	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT or result.attacker_outcome == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+		if result.source_node != owner_node:
+			return 
+
 		var target_pos = Vector2.ZERO
 		if is_instance_valid(result.defender_node):
 			target_pos = result.defender_node.global_position
@@ -38,6 +41,7 @@ func handle_attack_outcome(result: ContactResult):
 	elif result.attacker_outcome == ContactResult.AttackerOutcome.PARRIED:
 		if result.source_node != owner_node:
 			return
+			
 		state_machine.trigger_groggy(3.0)
 		
 		var knockback = result.knockback_vector
@@ -58,17 +62,16 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
 		
 		if not context.defender_health_comp.is_dead():
-			# Cálculo básico de knockback usando a fonte física (projétil ou atacante)
-			var direction = (context.defender_node.global_position - context.source_node.global_position).normalized()
+			var source_pos = context.source_node.global_position if context.source_node else context.attacker_node.global_position
+			var direction = (context.defender_node.global_position - source_pos).normalized()
 			var push_force = 350.0 
 			
-			# Se o AttackProfile tiver knockback definido, usamos ele
 			if context.attack_profile.knockback_vector != Vector2.ZERO:
-				# Ajusta a direção X baseada em quem bateu
-				push_force = context.attack_profile.knockback_vector.x
+				push_force = abs(context.attack_profile.knockback_vector.x)
 			
 			var knockback = direction * push_force
-			knockback.y = -150.0 # Pulinho padrão ao tomar hit
+			
+			knockback.y = -150.0 
 			
 			var reason = { "outcome": "HIT", "knockback_vector": knockback }
 			state_machine.on_current_state_finished(reason)
