@@ -5,7 +5,9 @@ signal phase_changed(phase_data: Dictionary)
 signal transitioned(from_state: SimpleState, to_state: SimpleState)
 
 @export var initial_state_key: String = ""
+@export var parries_required_for_groggy: int = 1
 
+var _current_parry_count: int = 0
 var states: Dictionary = {}
 var current_state: SimpleState
 var owner_node: Node
@@ -31,6 +33,7 @@ func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: Sur
 			states[child.name] = child
 			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
 	
+	_current_parry_count = 0
 	_start_initial_state()
 
 func _start_initial_state():
@@ -51,7 +54,19 @@ func process_physics(delta: float) -> Vector2:
 	return current_state.process_physics(delta)
 
 func trigger_groggy(duration: float):
+	_current_parry_count += 1
+	if _current_parry_count < parries_required_for_groggy:
+		var push_dir = Vector2.ZERO
+		if is_instance_valid(GameManager.player_node):
+			push_dir = (owner_node.global_position - GameManager.player_node.global_position).normalized()
+			push_dir.y = 0
+			transition_to("SimpleParriedState", {"direction": push_dir})
+		return
+	_current_parry_count = 0
 	_groggy_timer = duration
+	
+	if current_state.name != "SimpleGroggyState":
+		transition_to("SimpleGroggyState")
 
 func emit_phase_change(data: Dictionary):
 	emit_signal("phase_changed", data)

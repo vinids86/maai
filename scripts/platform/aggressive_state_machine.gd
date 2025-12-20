@@ -60,6 +60,17 @@ func _decide_next_state(reason: Dictionary):
 		if states.has(initial_state_key):
 			transition_to(initial_state_key)
 		return
+		
+	if outcome == "PARRY_RECOVERED":
+		var dist_to_player = 9999.0
+		if is_instance_valid(GameManager.player_node):
+			dist_to_player = owner_node.global_position.distance_to(GameManager.player_node.global_position)
+		
+		if dist_to_player <= attack_range and _cooldown_timer <= 0:
+			transition_to("SimpleAttackState")
+		else:
+			transition_to("SimpleChaseState")
+		return
 
 	var player = GameManager.player_node
 	if is_instance_valid(player):
