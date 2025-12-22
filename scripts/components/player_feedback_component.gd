@@ -100,7 +100,7 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 			ContactResult.DefenderOutcome.GUARD_BROKEN:
 				duration = hitstop_on_parry_or_break
 			ContactResult.DefenderOutcome.BLOCKED:
-				duration = 0.1
+				duration = 0.05
 			_:
 				duration = hitstop_on_hit
 	elif i_am_attacker:
@@ -109,7 +109,7 @@ func _on_impact_resolved(contact: ContactResult) -> void:
 			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
 				duration = hitstop_on_parry_or_break
 			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
-				duration = 0.04
+				duration = 0.05
 			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
 				duration = 0.06
 			_:

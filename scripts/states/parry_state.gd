@@ -1,8 +1,8 @@
 class_name ParryState
 extends State
 
-const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(350, 0)
-const KNOCKBACK_DECAY_RATE = 2
+const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(30, 0)
+const KNOCKBACK_DECAY_RATE = 0.1
 
 var current_profile: ParryProfile
 var _knockback_velocity: Vector2 = Vector2.ZERO
@@ -27,12 +27,15 @@ func exit():
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
+		return physics_component.apply_gravity(owner_node.velocity, delta)
 
 	time_left_in_phase -= delta
 	
 	if _knockback_velocity != Vector2.ZERO:
-		_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, KNOCKBACK_DECAY_RATE)
+		_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, KNOCKBACK_DECAY_RATE * delta)
+	
+	var current_vertical_velocity = owner_node.velocity.y
+	var target_velocity = Vector2(_knockback_velocity.x, current_vertical_velocity)
 	
 	if time_left_in_phase <= 0:
 		var time_exceeded = -time_left_in_phase
@@ -43,12 +46,12 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 				time_left_in_phase -= time_exceeded
 			Phases.SUCCESS:
 				state_machine.on_current_state_finished()
-				return physics_component.apply_gravity(_knockback_velocity, delta)
+				return physics_component.apply_gravity(target_velocity, delta)
 			Phases.RECOVERY:
 				state_machine.on_current_state_finished()
-				return physics_component.apply_gravity(_knockback_velocity, delta)
+				return physics_component.apply_gravity(target_velocity, delta)
 				
-	return physics_component.apply_gravity(_knockback_velocity, delta)
+	return physics_component.apply_gravity(target_velocity, delta)
 
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if current_phase == Phases.SUCCESS:
@@ -142,14 +145,14 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			
 			var force_magnitude = context.attack_profile.defender_knockback_on_parry
 			if force_magnitude > 0.0:
-				#var direction = (owner_node.global_position - context.attacker_node.global_position).normalized()
 				var diff = owner_node.global_position - context.attacker_node.global_position
 				diff.y = 0
 				var direction = diff.normalized()
 				if direction == Vector2.ZERO:
 					direction = Vector2(-owner_node.facing_sign, 0)
+				
 				_knockback_velocity = direction * force_magnitude
-			
+							
 			result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
 			result_for_attacker.knockback_vector = ATTACKER_KNOCKBACK_ON_SUCCESS
 				

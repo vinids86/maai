@@ -6,7 +6,6 @@
 
 [node name="Enemy" parent="." index="0"]
 enemy_tint_color = Color(0.972549, 0.501961, 0.156863, 1)
-enemy_tint_intensity = 0.5
 
 [node name="HealthComponent" parent="Enemy" index="11"]
 max_health = 25.0

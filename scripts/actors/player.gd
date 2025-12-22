@@ -103,26 +103,6 @@ func _update_facing_direction():
 func _exit_tree():
 	if GameManager.player_node == self:
 		GameManager.unregister_player()
-		
-func _process(_delta):
-	# Usamos a tecla "T" para printar o relatório de debug quando ocorrer o bug
-	if Input.is_key_pressed(KEY_T):
-		print("\n=== DEBUG REPORT ===")
-		print("1. Time Scale (Deve ser 1.0): ", Engine.time_scale)
-		
-		# Tenta pegar o nome do estado atual. Ajuste o caminho se necessário.
-		if has_node("StateMachine"):
-			var sm = get_node("StateMachine")
-			# Verifica se a variável current_state existe e é válida
-			if sm.get("current_state"):
-				print("2. Estado Atual: ", sm.current_state.name)
-			else:
-				print("2. Estado Atual: NULO ou não acessível")
-		
-		print("3. Velocidade (Velocity): ", velocity)
-		print("4. Is On Floor: ", is_on_floor())
-		print("5. Input X: ", Input.get_axis("move_left", "move_right")) # Confirma se o input está chegando
-		print("====================\n")
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")

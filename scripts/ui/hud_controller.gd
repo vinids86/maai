@@ -1,9 +1,9 @@
 class_name HUDController
-extends Control
+extends CanvasLayer
 
-@onready var health_bar: TextureProgressBar = $HealthBar
-@onready var stamina_bar: TextureProgressBar = $StaminaBar
-@onready var focus_bar: TextureProgressBar = $FocusBar
+@onready var health_bar: TextureProgressBar = %HealthBar
+@onready var stamina_bar: TextureProgressBar = %StaminaBar
+@onready var focus_bar: TextureProgressBar = %FocusBar
 @onready var focus_segments_container: HBoxContainer = $FocusSegmentsContainer
 
 @export var segment_incomplete_color: Color = Color(0.5, 0.5, 0.5)

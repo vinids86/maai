@@ -411,6 +411,7 @@ e_state_machine = NodePath("../StateMachine")
 footstep_sfx = ExtResource("36_770dr")
 
 [node name="SFXPlayer" type="AudioStreamPlayer2D" parent="Player"]
+bus = &"SFX"
 
 [node name="VFXComponent" type="Node2D" parent="Player"]
 script = ExtResource("37_8f1cb")
