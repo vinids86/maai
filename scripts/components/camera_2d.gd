@@ -22,7 +22,7 @@ var _time_accum := 0.0
 @export var combat_cooldown: float = 3.0
 
 var _combat_timer: float = 0.0
-var _is_in_combat_mode: bool = false
+var _is_in_combat_mode: bool = false : set = _set_combat_mode
 var _enemies_in_combat: Array[Node] = []
 var _force_exploration_timer: float = 0.0
 
@@ -35,6 +35,11 @@ var _force_exploration_timer: float = 0.0
 var _peek_offset: Vector2 = Vector2.ZERO
 var _peek_timer: float = 0.0
 
+var _cinematic_layer: CanvasLayer
+var _top_bar: ColorRect
+var _bottom_bar: ColorRect
+const BAR_HEIGHT: int = 200
+
 func _ready():
 	_rng.randomize()
 	apply_preset()
@@ -42,6 +47,8 @@ func _ready():
 	
 	add_to_group("MainCamera")
 	zoom = exploration_zoom
+	
+	_setup_cinematic_bars()
 
 func set_preset(value):
 	preset = value
@@ -151,3 +158,48 @@ func force_combat_mode(duration: float = 5.0) -> void:
 func on_enemy_death_zoom_out(duration: float = 1.5) -> void:
 	_force_exploration_timer = duration
 	_combat_timer = 0
+	
+func _setup_cinematic_bars() -> void:
+	# Cria o CanvasLayer (UI) via código
+	_cinematic_layer = CanvasLayer.new()
+	_cinematic_layer.layer = 90 # Fica abaixo do HUD principal, mas acima do jogo
+	add_child(_cinematic_layer)
+	
+	# Cria a Barra Superior
+	_top_bar = ColorRect.new()
+	_top_bar.color = Color.BLACK
+	_top_bar.size = Vector2(get_viewport_rect().size.x, BAR_HEIGHT)
+	_top_bar.position.y = -BAR_HEIGHT # Escondida pra cima
+	_top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_cinematic_layer.add_child(_top_bar)
+	
+	# Cria a Barra Inferior
+	_bottom_bar = ColorRect.new()
+	_bottom_bar.color = Color.BLACK
+	_bottom_bar.size = Vector2(get_viewport_rect().size.x, BAR_HEIGHT)
+	_bottom_bar.position.y = get_viewport_rect().size.y # Escondida pra baixo
+	_bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_cinematic_layer.add_child(_bottom_bar)
+
+func _set_combat_mode(value: bool) -> void:
+	# Evita rodar a lógica se o valor não mudou
+	if _is_in_combat_mode == value:
+		return
+		
+	_is_in_combat_mode = value
+	
+	# Se o jogo ainda não estiver pronto (no _init), não tenta animar
+	if not is_inside_tree(): return
+
+	# Animação das Barras
+	var vp_size = get_viewport_rect().size
+	var tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	
+	if _is_in_combat_mode:
+		# Entrou em combate: Barras aparecem
+		tween.tween_property(_top_bar, "position:y", 0.0, 0.5)
+		tween.tween_property(_bottom_bar, "position:y", vp_size.y - BAR_HEIGHT, 0.5)
+	else:
+		# Saiu de combate: Barras somem
+		tween.tween_property(_top_bar, "position:y", -BAR_HEIGHT, 0.5)
+		tween.tween_property(_bottom_bar, "position:y", vp_size.y, 0.5)

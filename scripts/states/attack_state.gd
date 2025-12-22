@@ -121,7 +121,7 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	if executor_phase == "RECOVERY" or _current_phase != InternalPhase.EXECUTING:
 		return _resolve_default_contact(context)
 	else:
-		if context.attacker_node is SimpleEnemy:
+		if context.attacker_node is SimpleEnemy and not context.attacker_node.is_in_group("Environment"):
 			var ignored_result = ContactResult.new()
 			ignored_result.attacker_node = context.attacker_node
 			ignored_result.defender_node = context.defender_node

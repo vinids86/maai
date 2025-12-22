@@ -287,7 +287,7 @@ height = 200.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_mwp2n"]
 radius = 48.0
-height = 200.0
+height = 168.0
 
 [sub_resource type="Resource" id="Resource_md1ol"]
 script = ExtResource("21_487ah")
@@ -345,8 +345,8 @@ offset = Vector2(0, -400)
 position_smoothing_enabled = true
 script = ExtResource("23_8f1cb")
 preset = 2
-exploration_zoom = Vector2(0.55, 0.55)
-combat_zoom = Vector2(0.8, 0.8)
+exploration_zoom = Vector2(0.45, 0.45)
+combat_zoom = Vector2(0.7, 0.7)
 combat_cooldown = 1.5
 
 [node name="SpineSprite" type="SpineSprite" parent="Player"]
@@ -373,19 +373,16 @@ hitstop_slow_scale = 0.03
 trauma_att_none = 0.5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
-visible = false
 position = Vector2(0, -36)
 shape = SubResource("CapsuleShape2D_4gjji")
 
 [node name="Hurtbox" type="Area2D" parent="Player"]
-visible = false
 collision_layer = 32
 collision_mask = 16
 script = ExtResource("24_l71n6")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player/Hurtbox"]
-visible = false
-position = Vector2(0, -36)
+position = Vector2(0, -20)
 shape = SubResource("CapsuleShape2D_mwp2n")
 
 [node name="AttackHitbox" type="Area2D" parent="Player"]

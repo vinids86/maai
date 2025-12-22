@@ -25,6 +25,7 @@ HitStop="*res://scripts/components/hit_stop.gd"
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/size/mode=2
 
 [dotnet]
 
@@ -150,7 +151,7 @@ camera_look_down={
 
 [physics]
 
-2d/default_gravity=2600.0
+2d/default_gravity=2000.0
 
 [rendering]
 

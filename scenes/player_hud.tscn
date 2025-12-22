@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://do2y2oc4b30g2" path="res://assets/progress_focus.png" id="5_qcjqi"]
 
 [node name="PlayerHUD" type="Control"]
+z_index = 101
 layout_mode = 3
 anchors_preset = 0
 offset_left = 19.0
@@ -43,6 +44,7 @@ texture_under = ExtResource("2_er5qu")
 texture_progress = ExtResource("5_qcjqi")
 
 [node name="FocusSegmentsContainer" type="HBoxContainer" parent="."]
+z_index = 101
 layout_mode = 0
 offset_left = -699.079
 offset_top = -1047.63

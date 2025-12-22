@@ -93,7 +93,7 @@ shader_parameter/tint_intensity = 0.0
 radius = 38.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
-radius = 38.0
+radius = 40.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
 radius = 38.0
@@ -201,7 +201,7 @@ collision_mask = 32
 script = ExtResource("13_r4g4d")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(0, -38)
+position = Vector2(0, -40)
 shape = SubResource("CircleShape2D_yo2nc")
 
 [node name="Hurtbox" type="Area2D" parent="."]
