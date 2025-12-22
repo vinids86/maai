@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://bs1683iw0jpyk"]
+[gd_scene load_steps=9 format=3 uid="uid://bs1683iw0jpyk"]
 
 [ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="1_u4pjs"]
 [ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="2_uypep"]
@@ -39,16 +39,48 @@ active_poise_shield = 10.0
 recovery_poise_shield = 300.0
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_2u8hu"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_uypep"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_uk1qy"]
+radius = 50.0
+
 [node name="RangedEnemy" instance=ExtResource("1_u4pjs")]
 attack_profile = SubResource("Resource_2u8hu")
 enemy_tint_color = Color(5.76471, 0.682353, 0.772549, 1)
 
+[node name="SpineSprite" parent="." index="0"]
+scale = Vector2(0.28, 0.28)
+
+[node name="CollisionShape2D" parent="." index="1"]
+visible = false
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_2u8hu")
+
 [node name="SimpleStateMachine" parent="." index="2"]
 attack_range = 1000.0
+attack_cooldown = 0.06
 immune_to_stagger = false
 
 [node name="SimpleAttackState" parent="SimpleStateMachine" index="10" node_paths=PackedStringArray("projectile_spawn_point")]
 projectile_spawn_point = NodePath("../../ProjectileSpawnPoint")
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 3.0
+
+[node name="Hitbox" parent="." index="9"]
+visible = false
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_uypep")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_uk1qy")
 
 [node name="ProjectileSpawnPoint" type="Marker2D" parent="." index="11"]
 position = Vector2(73, -58)
