@@ -24,7 +24,9 @@ var _time_accum := 0.0
 var _combat_timer: float = 0.0
 var _is_in_combat_mode: bool = false : set = _set_combat_mode
 var _enemies_in_combat: Array[Node] = []
-var _force_exploration_timer: float = 0.0
+
+var _override_zoom_target: Vector2
+var _override_timer: float = 0.0
 
 @export_group("Manual Peek Control")
 @export var max_peek_offset: float = 500.0 
@@ -72,7 +74,7 @@ func apply_preset():
 func add_trauma(amount: float = 0.35) -> void:
 	trauma = clamp(trauma + amount, 0.0, 1.0)
 
-func _process(delta: float) -> void:	
+func _process(delta: float) -> void:    
 	_update_combat_state(delta)
 	_update_zoom(delta)
 	_process_manual_peek(delta)
@@ -113,39 +115,39 @@ func _process_manual_peek(delta: float) -> void:
 		_peek_offset = _peek_offset.lerp(target_peek, peek_smooth_speed * delta)
 
 func _update_combat_state(delta: float) -> void:
-	if _force_exploration_timer > 0:
-		_force_exploration_timer -= delta
-
 	for i in range(_enemies_in_combat.size() - 1, -1, -1):
 		if not is_instance_valid(_enemies_in_combat[i]):
 			_enemies_in_combat.remove_at(i)
 
-	if _enemies_in_combat.size() > 0 and _force_exploration_timer <= 0:
+	if _enemies_in_combat.size() > 0:
 		_is_in_combat_mode = true
 		_combat_timer = combat_cooldown
 	else:
-		if _combat_timer > 0 and _force_exploration_timer <= 0:
+		if _combat_timer > 0:
 			_combat_timer -= delta
 		else:
 			_is_in_combat_mode = false
 
 func _update_zoom(delta: float) -> void:
-	var target_zoom = exploration_zoom
-	if _is_in_combat_mode:
+	var target_zoom: Vector2
+	var current_speed = zoom_speed
+	
+	if _override_timer > 0:
+		_override_timer -= delta
+		target_zoom = _override_zoom_target
+		current_speed = zoom_speed * 2.0
+	elif _is_in_combat_mode:
 		target_zoom = combat_zoom
+	else:
+		target_zoom = exploration_zoom
 		
-	var current_zoom_speed = zoom_speed
-	if _force_exploration_timer > 0:
-		current_zoom_speed = zoom_speed * 2.5
-		
-	zoom = zoom.lerp(target_zoom, current_zoom_speed * delta)
+	zoom = zoom.lerp(target_zoom, current_speed * delta)
 
 func register_enemy_aggro(enemy: Node) -> void:
 	if not _enemies_in_combat.has(enemy):
 		_enemies_in_combat.append(enemy)
-		if _force_exploration_timer <= 0:
-			_is_in_combat_mode = true
-			_combat_timer = combat_cooldown
+		_is_in_combat_mode = true
+		_combat_timer = combat_cooldown
 
 func unregister_enemy_aggro(enemy: Node) -> void:
 	if _enemies_in_combat.has(enemy):
@@ -155,51 +157,46 @@ func force_combat_mode(duration: float = 5.0) -> void:
 	_is_in_combat_mode = true
 	_combat_timer = max(_combat_timer, duration)
 
+func request_zoom_override(zoom_value: Vector2, duration: float) -> void:
+	_override_zoom_target = zoom_value
+	_override_timer = duration
+
 func on_enemy_death_zoom_out(duration: float = 1.5) -> void:
-	_force_exploration_timer = duration
-	_combat_timer = 0
-	
+	request_zoom_override(exploration_zoom, duration)
+
 func _setup_cinematic_bars() -> void:
-	# Cria o CanvasLayer (UI) via código
 	_cinematic_layer = CanvasLayer.new()
-	_cinematic_layer.layer = 90 # Fica abaixo do HUD principal, mas acima do jogo
+	_cinematic_layer.layer = 90
 	add_child(_cinematic_layer)
 	
-	# Cria a Barra Superior
 	_top_bar = ColorRect.new()
 	_top_bar.color = Color.BLACK
 	_top_bar.size = Vector2(get_viewport_rect().size.x, BAR_HEIGHT)
-	_top_bar.position.y = -BAR_HEIGHT # Escondida pra cima
+	_top_bar.position.y = -BAR_HEIGHT
 	_top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_cinematic_layer.add_child(_top_bar)
 	
-	# Cria a Barra Inferior
 	_bottom_bar = ColorRect.new()
 	_bottom_bar.color = Color.BLACK
 	_bottom_bar.size = Vector2(get_viewport_rect().size.x, BAR_HEIGHT)
-	_bottom_bar.position.y = get_viewport_rect().size.y # Escondida pra baixo
+	_bottom_bar.position.y = get_viewport_rect().size.y 
 	_bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_cinematic_layer.add_child(_bottom_bar)
 
 func _set_combat_mode(value: bool) -> void:
-	# Evita rodar a lógica se o valor não mudou
 	if _is_in_combat_mode == value:
 		return
 		
 	_is_in_combat_mode = value
 	
-	# Se o jogo ainda não estiver pronto (no _init), não tenta animar
 	if not is_inside_tree(): return
 
-	# Animação das Barras
 	var vp_size = get_viewport_rect().size
 	var tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	
 	if _is_in_combat_mode:
-		# Entrou em combate: Barras aparecem
 		tween.tween_property(_top_bar, "position:y", 0.0, 0.5)
 		tween.tween_property(_bottom_bar, "position:y", vp_size.y - BAR_HEIGHT, 0.5)
 	else:
-		# Saiu de combate: Barras somem
 		tween.tween_property(_top_bar, "position:y", -BAR_HEIGHT, 0.5)
 		tween.tween_property(_bottom_bar, "position:y", vp_size.y, 0.5)

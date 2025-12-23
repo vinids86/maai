@@ -25,6 +25,7 @@ HitStop="*res://scripts/components/hit_stop.gd"
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/size/mode=2
 
 [dotnet]
 
