@@ -21,7 +21,7 @@ enum MovementType {
 @export var startup_duration: float = 0.3
 @export var active_duration: float = 0.1
 @export var block_recoil_duration: float = 0.55
-@export var recovery_duration: float = 0.45
+@export var recovery_duration: float = 0.2
 @export var link_duration: float = 0.6
 
 @export_group("Presentation")

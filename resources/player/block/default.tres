@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_lh3w7")
-duration = 0.6
+duration = 0.2
 animation_name = &"aim"
 sfx = ExtResource("2_pnc0q")
 poise_shield_contribution = 0.0
