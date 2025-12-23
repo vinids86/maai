@@ -1121,6 +1121,110 @@ func clear():
 	_time_left = 0.0
 </file>
 
+<file path="scripts/components/focus_component.gd">
+class_name FocusComponent
+extends Node
+
+signal focus_changed(current_focus, max_focus)
+signal segment_completed(completed_segments)
+
+@export var max_focus: int = 300
+@export var segments: int = 3
+@export var decay_delay: float = 3.0
+@export var decay_rate: float = 25.0
+@export var current_focus: float = 0.0
+
+@export_group("Focus Gain")
+@export var focus_gain_on_parry: int = 10
+
+var _is_decaying: bool = false 
+
+@onready var decay_timer: Timer = $DecayTimer
+
+func _ready() -> void:
+	decay_timer.wait_time = decay_delay
+	decay_timer.one_shot = true
+	
+	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+	decay_timer.timeout.connect(_on_DecayTimer_timeout)
+	
+	emit_signal("focus_changed", current_focus, max_focus)
+	emit_signal("segment_completed", 0)
+
+func _physics_process(delta: float) -> void:
+	if not _is_decaying:
+		return
+
+	var focus_per_segment = get_focus_per_segment()
+	if focus_per_segment == 0:
+		_is_decaying = false
+		return
+	
+	var target_focus = floor(current_focus / focus_per_segment) * focus_per_segment
+
+	current_focus -= decay_rate * delta
+	
+	if current_focus <= target_focus:
+		current_focus = target_focus
+		_is_decaying = false
+		_check_segment_completion()
+	
+	emit_signal("focus_changed", current_focus, max_focus)
+
+
+func _on_impact_resolved(result: ContactResult) -> void:
+	if result.attacker_node != owner:
+		return
+	
+	if result.attack_profile and result.attack_profile.focus_cost > 0:
+		return
+		
+	if result.attack_profile and "focus_gain_on_hit" in result.attack_profile:
+		gain_focus(result.attack_profile.focus_gain_on_hit)
+
+func gain_focus(amount: int) -> void:
+	var old_focus = current_focus
+	current_focus = min(current_focus + amount, max_focus)
+	
+	if current_focus > old_focus:
+		_is_decaying = false
+		decay_timer.start()
+		_check_segment_completion()
+		emit_signal("focus_changed", current_focus, max_focus)
+
+func consume_focus(cost: int) -> void:
+	current_focus -= cost
+	_is_decaying = false
+	decay_timer.start()
+	emit_signal("focus_changed", current_focus, max_focus)
+	_check_segment_completion()
+
+func has_enough_focus(cost: int) -> bool:
+	return current_focus >= cost
+
+func get_focus_per_segment() -> int:
+	if segments <= 0:
+		return max_focus
+	return max_focus / segments
+
+func _check_segment_completion() -> void:
+	var focus_per_segment = get_focus_per_segment()
+	if focus_per_segment == 0: return
+	
+	var current_segments = floor(current_focus / float(focus_per_segment))
+	emit_signal("segment_completed", current_segments)
+
+func _on_DecayTimer_timeout() -> void:
+	var focus_per_segment = get_focus_per_segment()
+	if focus_per_segment == 0: return
+
+	var completed_segments = floor(current_focus / focus_per_segment)
+	var focus_at_completed_segments = completed_segments * focus_per_segment
+
+	if current_focus > focus_at_completed_segments:
+		_is_decaying = true
+</file>
+
 <file path="scripts/components/hitbox.gd">
 class_name Hitbox
 extends Area2D
@@ -2834,74 +2938,6 @@ randomness = 0.75
 process_material = SubResource("ParticleProcessMaterial_jhjh3")
 </file>
 
-<file path="scenes/player_hud.tscn">
-[gd_scene load_steps=6 format=3 uid="uid://cpt4x4lssyjav"]
-
-[ext_resource type="Script" uid="uid://3ardk5ddx5yn" path="res://scripts/ui/hud_controller.gd" id="1_mlvnn"]
-[ext_resource type="Texture2D" uid="uid://dnd5if5ok4tck" path="res://assets/under.png" id="2_er5qu"]
-[ext_resource type="Texture2D" uid="uid://by5iff8a6w436" path="res://assets/progress_stamina.png" id="3_or0tx"]
-[ext_resource type="Texture2D" uid="uid://b6in2fan4sl6f" path="res://assets/progress_health.png" id="3_qcjqi"]
-[ext_resource type="Texture2D" uid="uid://do2y2oc4b30g2" path="res://assets/progress_focus.png" id="5_qcjqi"]
-
-[node name="PlayerHUD" type="CanvasLayer"]
-layer = 128
-script = ExtResource("1_mlvnn")
-
-[node name="MainLayout" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BarList" type="VBoxContainer" parent="MainLayout"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.073
-anchor_top = 0.1
-anchor_right = 0.073
-anchor_bottom = 0.162
-offset_left = 702.84
-offset_top = 776.0
-offset_right = 1106.84
-offset_bottom = 813.04
-
-[node name="HealthBar" type="TextureProgressBar" parent="MainLayout/BarList"]
-unique_name_in_owner = true
-layout_mode = 2
-texture_under = ExtResource("2_er5qu")
-texture_progress = ExtResource("3_qcjqi")
-
-[node name="StaminaBar" type="TextureProgressBar" parent="MainLayout/BarList"]
-unique_name_in_owner = true
-layout_mode = 2
-texture_under = ExtResource("2_er5qu")
-texture_progress = ExtResource("3_or0tx")
-
-[node name="FocusBar" type="TextureProgressBar" parent="MainLayout/BarList"]
-unique_name_in_owner = true
-layout_mode = 2
-max_value = 300.0
-texture_under = ExtResource("2_er5qu")
-texture_progress = ExtResource("5_qcjqi")
-
-[node name="FocusSegmentsContainer" type="HBoxContainer" parent="."]
-offset_left = -699.079
-offset_top = -1047.63
-offset_right = -659.079
-offset_bottom = -1007.63
-
-[node name="ColorRect" type="ColorRect" parent="FocusSegmentsContainer"]
-layout_mode = 2
-
-[node name="ColorRect2" type="ColorRect" parent="FocusSegmentsContainer"]
-layout_mode = 2
-
-[node name="ColorRect3" type="ColorRect" parent="FocusSegmentsContainer"]
-layout_mode = 2
-</file>
-
 <file path="scenes/projectile.tscn">
 [gd_scene load_steps=5 format=3 uid="uid://d3hx8uvp1ayyb"]
 
@@ -3475,63 +3511,6 @@ func _emit_phase_signal():
 	state_machine.emit_phase_change(phase_data)
 </file>
 
-<file path="scripts/ui/hud_controller.gd">
-class_name HUDController
-extends CanvasLayer
-
-@onready var health_bar: TextureProgressBar = %HealthBar
-@onready var stamina_bar: TextureProgressBar = %StaminaBar
-@onready var focus_bar: TextureProgressBar = %FocusBar
-@onready var focus_segments_container: HBoxContainer = $FocusSegmentsContainer
-
-@export var segment_incomplete_color: Color = Color(0.5, 0.5, 0.5)
-@export var segment_complete_color: Color = Color(0.2, 0.8, 1.0)
-
-
-func initialize_hud(player_node: Node):
-	var health_component = player_node.find_child("HealthComponent")
-	var stamina_component = player_node.find_child("StaminaComponent")
-	var focus_component = player_node.find_child("FocusComponent")
-	
-	if health_component:
-		health_component.health_changed.connect(update_health)
-
-		update_health(health_component.current_health, health_component.max_health)
-	
-	if stamina_component:
-		stamina_component.stamina_changed.connect(update_stamina)
-
-		update_stamina(stamina_component.current_stamina, stamina_component.max_stamina)
-
-	if focus_component:
-		focus_component.focus_changed.connect(_on_focus_changed)
-		focus_component.segment_completed.connect(_on_segment_completed)
-
-		_on_focus_changed(focus_component.current_focus, focus_component.max_focus)
-		_on_segment_completed(0)
-
-
-func update_health(current_health: float, max_health: float):
-	health_bar.max_value = max_health
-	health_bar.value = current_health
-
-func update_stamina(current_stamina: float, max_stamina: float):
-	stamina_bar.max_value = max_stamina
-	stamina_bar.value = current_stamina
-
-func _on_focus_changed(current_focus: int, max_focus: int):
-	focus_bar.max_value = max_focus
-	focus_bar.value = current_focus
-
-func _on_segment_completed(completed_segments: int):
-	var segments = focus_segments_container.get_children()
-	for i in range(segments.size()):
-		if i < completed_segments:
-			segments[i].color = segment_complete_color
-		else:
-			segments[i].color = segment_incomplete_color
-</file>
-
 <file path="scripts/vfx/spark_controller.gd">
 extends GPUParticles2D
 
@@ -3685,108 +3664,72 @@ func _animate_flash() -> void:
 		tween.chain().tween_callback(func(): flash.visible = false)
 </file>
 
-<file path="scripts/components/focus_component.gd">
-class_name FocusComponent
-extends Node
+<file path="scenes/player_hud.tscn">
+[gd_scene load_steps=6 format=3 uid="uid://cpt4x4lssyjav"]
 
-signal focus_changed(current_focus, max_focus)
-signal segment_completed(completed_segments)
+[ext_resource type="Script" uid="uid://3ardk5ddx5yn" path="res://scripts/ui/hud_controller.gd" id="1_mlvnn"]
+[ext_resource type="Texture2D" uid="uid://dnd5if5ok4tck" path="res://assets/under.png" id="2_er5qu"]
+[ext_resource type="Texture2D" uid="uid://by5iff8a6w436" path="res://assets/progress_stamina.png" id="3_or0tx"]
+[ext_resource type="Texture2D" uid="uid://b6in2fan4sl6f" path="res://assets/progress_health.png" id="3_qcjqi"]
+[ext_resource type="Texture2D" uid="uid://do2y2oc4b30g2" path="res://assets/progress_focus.png" id="5_qcjqi"]
 
-@export var max_focus: int = 300
-@export var segments: int = 3
-@export var decay_delay: float = 3.0
-@export var decay_rate: float = 25.0
-@export var current_focus: float = 0.0
+[node name="PlayerHUD" type="CanvasLayer"]
+layer = 128
+script = ExtResource("1_mlvnn")
 
-@export_group("Focus Gain")
-@export var focus_gain_on_parry: int = 10
+[node name="MainLayout" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-var _is_decaying: bool = false 
+[node name="BarList" type="VBoxContainer" parent="MainLayout"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.073
+anchor_top = 0.1
+anchor_right = 0.073
+anchor_bottom = 0.162
+offset_left = 702.84
+offset_top = 776.0
+offset_right = 1106.84
+offset_bottom = 813.04
 
-@onready var decay_timer: Timer = $DecayTimer
+[node name="HealthBar" type="TextureProgressBar" parent="MainLayout/BarList"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_under = ExtResource("2_er5qu")
+texture_progress = ExtResource("3_qcjqi")
 
-func _ready() -> void:
-	decay_timer.wait_time = decay_delay
-	decay_timer.one_shot = true
-	
-	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
-	decay_timer.timeout.connect(_on_DecayTimer_timeout)
-	
-	emit_signal("focus_changed", current_focus, max_focus)
-	emit_signal("segment_completed", 0)
+[node name="StaminaBar" type="TextureProgressBar" parent="MainLayout/BarList"]
+unique_name_in_owner = true
+layout_mode = 2
+texture_under = ExtResource("2_er5qu")
+texture_progress = ExtResource("3_or0tx")
 
-func _physics_process(delta: float) -> void:
-	if not _is_decaying:
-		return
+[node name="FocusBar" type="TextureProgressBar" parent="MainLayout/BarList"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 300.0
+texture_under = ExtResource("2_er5qu")
+texture_progress = ExtResource("5_qcjqi")
 
-	var focus_per_segment = get_focus_per_segment()
-	if focus_per_segment == 0:
-		_is_decaying = false
-		return
-	
-	var target_focus = floor(current_focus / focus_per_segment) * focus_per_segment
+[node name="FocusSegmentsContainer" type="HBoxContainer" parent="."]
+offset_left = -699.079
+offset_top = -1047.63
+offset_right = -659.079
+offset_bottom = -1007.63
 
-	current_focus -= decay_rate * delta
-	
-	if current_focus <= target_focus:
-		current_focus = target_focus
-		_is_decaying = false
-		_check_segment_completion()
-	
-	emit_signal("focus_changed", current_focus, max_focus)
+[node name="ColorRect" type="ColorRect" parent="FocusSegmentsContainer"]
+layout_mode = 2
 
+[node name="ColorRect2" type="ColorRect" parent="FocusSegmentsContainer"]
+layout_mode = 2
 
-func _on_impact_resolved(result: ContactResult) -> void:
-	if result.attacker_node != owner:
-		return
-	
-	if result.attack_profile and result.attack_profile.focus_cost > 0:
-		return
-		
-	if result.attack_profile and "focus_gain_on_hit" in result.attack_profile:
-		gain_focus(result.attack_profile.focus_gain_on_hit)
-
-func gain_focus(amount: int) -> void:
-	var old_focus = current_focus
-	current_focus = min(current_focus + amount, max_focus)
-	
-	if current_focus > old_focus:
-		_is_decaying = false
-		decay_timer.start()
-		_check_segment_completion()
-		emit_signal("focus_changed", current_focus, max_focus)
-
-func consume_focus(cost: int) -> void:
-	current_focus -= cost
-	_is_decaying = false
-	decay_timer.start()
-	emit_signal("focus_changed", current_focus, max_focus)
-	_check_segment_completion()
-
-func has_enough_focus(cost: int) -> bool:
-	return current_focus >= cost
-
-func get_focus_per_segment() -> int:
-	if segments <= 0:
-		return max_focus
-	return max_focus / segments
-
-func _check_segment_completion() -> void:
-	var focus_per_segment = get_focus_per_segment()
-	if focus_per_segment == 0: return
-	
-	var current_segments = floor(current_focus / float(focus_per_segment))
-	emit_signal("segment_completed", current_segments)
-
-func _on_DecayTimer_timeout() -> void:
-	var focus_per_segment = get_focus_per_segment()
-	if focus_per_segment == 0: return
-
-	var completed_segments = floor(current_focus / focus_per_segment)
-	var focus_at_completed_segments = completed_segments * focus_per_segment
-
-	if current_focus > focus_at_completed_segments:
-		_is_decaying = true
+[node name="ColorRect3" type="ColorRect" parent="FocusSegmentsContainer"]
+layout_mode = 2
 </file>
 
 <file path="scripts/components/path_follower_component.gd">
@@ -4197,6 +4140,63 @@ func _emit_phase_signal():
 		phase_data["sfx_to_play"] = current_profile.sfx
 	
 	state_machine.emit_phase_change(phase_data)
+</file>
+
+<file path="scripts/ui/hud_controller.gd">
+class_name HUDController
+extends CanvasLayer
+
+@onready var health_bar: TextureProgressBar = %HealthBar
+@onready var stamina_bar: TextureProgressBar = %StaminaBar
+@onready var focus_bar: TextureProgressBar = %FocusBar
+@onready var focus_segments_container: HBoxContainer = $FocusSegmentsContainer
+
+@export var segment_incomplete_color: Color = Color(0.5, 0.5, 0.5)
+@export var segment_complete_color: Color = Color(0.2, 0.8, 1.0)
+
+
+func initialize_hud(player_node: Node):
+	var health_component = player_node.find_child("HealthComponent")
+	var stamina_component = player_node.find_child("StaminaComponent")
+	var focus_component = player_node.find_child("FocusComponent")
+	
+	if health_component:
+		health_component.health_changed.connect(update_health)
+
+		update_health(health_component.current_health, health_component.max_health)
+	
+	if stamina_component:
+		stamina_component.stamina_changed.connect(update_stamina)
+
+		update_stamina(stamina_component.current_stamina, stamina_component.max_stamina)
+
+	if focus_component:
+		focus_component.focus_changed.connect(_on_focus_changed)
+		focus_component.segment_completed.connect(_on_segment_completed)
+
+		_on_focus_changed(focus_component.current_focus, focus_component.max_focus)
+		_on_segment_completed(0)
+
+
+func update_health(current_health: float, max_health: float):
+	health_bar.max_value = max_health
+	health_bar.value = current_health
+
+func update_stamina(current_stamina: float, max_stamina: float):
+	stamina_bar.max_value = max_stamina
+	stamina_bar.value = current_stamina
+
+func _on_focus_changed(current_focus: int, max_focus: int):
+	focus_bar.max_value = max_focus
+	focus_bar.value = current_focus
+
+func _on_segment_completed(completed_segments: int):
+	var segments = focus_segments_container.get_children()
+	for i in range(segments.size()):
+		if i < completed_segments:
+			segments[i].color = segment_complete_color
+		else:
+			segments[i].color = segment_incomplete_color
 </file>
 
 <file path="scenes/clash_spark.tscn">
@@ -5543,77 +5543,6 @@ O `ImpactResolver` é agnóstico. Ele detecta `Hitbox` vs `Hurtbox`.
 3.  **Nomes de Classes:** Usar `class_name` para facilitar injeção (ex: `class_name SimpleEnemy`).
 </file>
 
-<file path="scenes/enemy_adv.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://dyl8nbamfbxsl"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_8dky6"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_8dky6")]
-
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.592157, 0.478431, 0.658824, 1)
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 5
-</file>
-
-<file path="scenes/enemy_boss.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://lm36r7o518ao"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_5xr4n"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_5xr4n")]
-
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.00392157, 0.00392157, 0.376471, 1)
-</file>
-
-<file path="scenes/enemy_elt.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://dojo2btvv2tj0"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_o8g13"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_o8g13")]
-
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.690196, 0.701961, 0.870588, 1)
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 7
-</file>
-
-<file path="scenes/enemy_mid.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://chqlqywn2ey2v"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_owgr6"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_owgr6")]
-
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.372549, 0.541176, 0.117647, 1)
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 3
-</file>
-
 <file path="scripts/listeners/audio_component.gd">
 class_name AudioComponent
 extends Node
@@ -5842,6 +5771,77 @@ func _apply_visual_tint():
 			mat.set_shader_parameter("tint_intensity", enemy_tint_intensity)
 </file>
 
+<file path="scenes/enemy_adv.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://dyl8nbamfbxsl"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_8dky6"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_8dky6")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.592157, 0.478431, 0.658824, 1)
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 50.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 5
+</file>
+
+<file path="scenes/enemy_boss.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://lm36r7o518ao"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_5xr4n"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_5xr4n")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.00392157, 0.00392157, 0.376471, 1)
+</file>
+
+<file path="scenes/enemy_elt.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://dojo2btvv2tj0"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_o8g13"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_o8g13")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.690196, 0.701961, 0.870588, 1)
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 50.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 7
+</file>
+
+<file path="scenes/enemy_mid.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://chqlqywn2ey2v"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_owgr6"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_owgr6")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.372549, 0.541176, 0.117647, 1)
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 50.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 3
+</file>
+
 <file path="scripts/components/camera_2d.gd">
 class_name GameCamera2D
 extends Camera2D
@@ -6048,128 +6048,6 @@ func _set_combat_mode(value: bool) -> void:
 		# Saiu de combate: Barras somem
 		tween.tween_property(_top_bar, "position:y", -BAR_HEIGHT, 0.5)
 		tween.tween_property(_bottom_bar, "position:y", vp_size.y, 0.5)
-</file>
-
-<file path="scripts/components/player_feedback_component.gd">
-extends Node
-# PlayerFeedbackComponent.gd
-# Reage ao sinal ImpactResolver.impact_resolved(ContactResult)
-# e aplica trauma na Camera2D de acordo com o outcome.
-
-@onready var camera: Node = get_parent().get_node_or_null("Camera2D")
-
-@export_group("Hit Stop")
-@export var hitstop_on_hit: float = 0.06
-@export var hitstop_on_parry_or_break: float = 0.10
-@export var hitstop_slow_scale: float = 0.01
-
-@export_group("Defaults")
-@export var fallback_trauma: float = 0.25
-
-@export_group("Defender Outcomes (quando o Player DEFENDE)")
-@export var trauma_def_hit: float = 0.30
-@export var trauma_def_poise_broken: float = 0.55
-@export var trauma_def_parry_success: float = 0.85
-@export var trauma_def_blocked: float = 0.20
-@export var trauma_def_guard_broken: float = 0.60
-@export var trauma_def_dodged: float = 0.0
-@export var trauma_def_finisher_hit: float = 0.70
-@export var trauma_def_counter_success: float = 0.60
-
-@export_group("Attacker Outcomes (quando o Player ATACA)")
-@export var trauma_att_none: float = 0.20
-@export var trauma_att_parried: float = 0.35
-@export var trauma_att_deflected: float = 0.30
-@export var trauma_att_guard_break_success: float = 0.60
-@export var trauma_att_trade_lost: float = 0.25
-@export var trauma_att_finisher_success: float = 0.70
-@export var trauma_att_countered: float = 0.55
-
-func _ready() -> void:
-	if ImpactResolver:
-		ImpactResolver.impact_resolved.connect(_on_impact_resolved)
-
-func _on_impact_resolved(contact: ContactResult) -> void:
-	if camera == null:
-		camera = get_tree().get_first_node_in_group("MainCamera")
-
-	if camera == null or not camera.has_method("add_trauma"):
-		return
-	if contact == null:
-		return
-
-	var me := get_parent()
-	var i_am_defender := contact.defender_node == me
-	var i_am_attacker := contact.attacker_node == me
-	if not (i_am_defender or i_am_attacker):
-		return
-
-	var amount := fallback_trauma
-
-	if i_am_defender:
-		match contact.defender_outcome:
-			ContactResult.DefenderOutcome.HIT:
-				amount = trauma_def_hit
-			ContactResult.DefenderOutcome.POISE_BROKEN:
-				amount = trauma_def_poise_broken
-			ContactResult.DefenderOutcome.PARRY_SUCCESS:
-				amount = trauma_def_parry_success
-			ContactResult.DefenderOutcome.BLOCKED:
-				amount = trauma_def_blocked
-			ContactResult.DefenderOutcome.GUARD_BROKEN:
-				amount = trauma_def_guard_broken
-			ContactResult.DefenderOutcome.DODGED:
-				amount = trauma_def_dodged
-			ContactResult.DefenderOutcome.FINISHER_HIT:
-				amount = trauma_def_finisher_hit
-			_:
-				amount = fallback_trauma
-	elif i_am_attacker:
-		match contact.attacker_outcome:
-			ContactResult.AttackerOutcome.NONE:
-				amount = trauma_att_none
-			ContactResult.AttackerOutcome.PARRIED:
-				amount = trauma_att_parried
-			ContactResult.AttackerOutcome.DEFLECTED:
-				amount = trauma_att_deflected
-			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
-				amount = trauma_att_guard_break_success
-			ContactResult.AttackerOutcome.TRADE_LOST:
-				amount = trauma_att_trade_lost
-			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
-				amount = trauma_att_finisher_success
-			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
-				amount = trauma_att_guard_break_success
-			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
-				amount = trauma_att_guard_break_success
-			_:
-				amount = fallback_trauma
-
-	camera.call("add_trauma", amount)
-	
-	var duration := 0.0
-	if i_am_defender:
-		match contact.defender_outcome:
-			ContactResult.DefenderOutcome.GUARD_BROKEN:
-				duration = hitstop_on_parry_or_break
-			ContactResult.DefenderOutcome.BLOCKED:
-				duration = 0.05
-			_:
-				duration = hitstop_on_hit
-	elif i_am_attacker:
-		match contact.attacker_outcome:
-			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS, \
-			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
-				duration = hitstop_on_parry_or_break
-			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
-				duration = 0.05
-			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
-				duration = 0.06
-			_:
-				duration = hitstop_on_hit
-
-	if duration > 0.0:
-		HitStop.apply(duration, hitstop_slow_scale)
 </file>
 
 <file path="scripts/platform/aggressive_enemy.tscn">
@@ -6814,24 +6692,126 @@ func handle_attacker_parried(_result: ContactResult) -> bool:
 	return false
 </file>
 
-<file path="scenes/enemy_joke.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://d3d5tokp7sjew"]
+<file path="scripts/components/player_feedback_component.gd">
+extends Node
+# PlayerFeedbackComponent.gd
+# Reage ao sinal ImpactResolver.impact_resolved(ContactResult)
+# e aplica trauma na Camera2D de acordo com o outcome.
 
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_lnph3"]
+@onready var camera: Node = get_parent().get_node_or_null("Camera2D")
 
-[node name="EnemyEntity" instance=ExtResource("1_lnph3")]
+@export_group("Hit Stop")
+@export var hitstop_on_hit: float = 0.06
+@export var hitstop_on_parry_or_break: float = 0.10
+@export var hitstop_slow_scale: float = 0.01
 
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.972549, 0.501961, 0.156863, 1)
+@export_group("Defaults")
+@export var fallback_trauma: float = 0.25
 
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
+@export_group("Defender Outcomes (quando o Player DEFENDE)")
+@export var trauma_def_hit: float = 0.30
+@export var trauma_def_poise_broken: float = 0.55
+@export var trauma_def_parry_success: float = 0.85
+@export var trauma_def_blocked: float = 0.20
+@export var trauma_def_guard_broken: float = 0.60
+@export var trauma_def_dodged: float = 0.0
+@export var trauma_def_finisher_hit: float = 0.70
+@export var trauma_def_counter_success: float = 0.60
 
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 10.0
+@export_group("Attacker Outcomes (quando o Player ATACA)")
+@export var trauma_att_none: float = 0.20
+@export var trauma_att_parried: float = 0.35
+@export var trauma_att_deflected: float = 0.30
+@export var trauma_att_guard_break_success: float = 0.60
+@export var trauma_att_trade_lost: float = 0.25
+@export var trauma_att_finisher_success: float = 0.70
+@export var trauma_att_countered: float = 0.55
 
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 10
+func _ready() -> void:
+	if ImpactResolver:
+		ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+
+func _on_impact_resolved(contact: ContactResult) -> void:
+	if camera == null:
+		camera = get_tree().get_first_node_in_group("MainCamera")
+
+	if camera == null or not camera.has_method("add_trauma"):
+		return
+	if contact == null:
+		return
+
+	var me := get_parent()
+	var i_am_defender := contact.defender_node == me
+	var i_am_attacker := contact.attacker_node == me
+	if not (i_am_defender or i_am_attacker):
+		return
+
+	var amount := fallback_trauma
+
+	if i_am_defender:
+		match contact.defender_outcome:
+			ContactResult.DefenderOutcome.HIT:
+				amount = trauma_def_hit
+			ContactResult.DefenderOutcome.POISE_BROKEN:
+				amount = trauma_def_poise_broken
+			ContactResult.DefenderOutcome.PARRY_SUCCESS:
+				amount = trauma_def_parry_success
+			ContactResult.DefenderOutcome.BLOCKED:
+				amount = trauma_def_blocked
+			ContactResult.DefenderOutcome.GUARD_BROKEN:
+				amount = trauma_def_guard_broken
+			ContactResult.DefenderOutcome.DODGED:
+				amount = trauma_def_dodged
+			ContactResult.DefenderOutcome.FINISHER_HIT:
+				amount = trauma_def_finisher_hit
+			_:
+				amount = fallback_trauma
+	elif i_am_attacker:
+		match contact.attacker_outcome:
+			ContactResult.AttackerOutcome.NONE:
+				amount = trauma_att_none
+			ContactResult.AttackerOutcome.PARRIED:
+				amount = trauma_att_parried
+			ContactResult.AttackerOutcome.DEFLECTED:
+				amount = trauma_att_deflected
+			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
+				amount = trauma_att_guard_break_success
+			ContactResult.AttackerOutcome.TRADE_LOST:
+				amount = trauma_att_trade_lost
+			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
+				amount = trauma_att_finisher_success
+			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+				amount = trauma_att_guard_break_success
+			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
+				amount = trauma_att_guard_break_success
+			_:
+				amount = fallback_trauma
+
+	camera.call("add_trauma", amount)
+	
+	var duration := 0.0
+	if i_am_defender:
+		match contact.defender_outcome:
+			ContactResult.DefenderOutcome.GUARD_BROKEN:
+				duration = hitstop_on_parry_or_break
+			ContactResult.DefenderOutcome.BLOCKED:
+				duration = 0.05
+			_:
+				duration = hitstop_on_hit
+	elif i_am_attacker:
+		match contact.attacker_outcome:
+			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS, \
+			ContactResult.AttackerOutcome.FINISHER_SUCCESS:
+				duration = hitstop_on_parry_or_break
+			ContactResult.AttackerOutcome.ATTACK_BLOCKED:
+				duration = 0.05
+			ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+				duration = 0.06
+			_:
+				duration = hitstop_on_hit
+
+	if duration > 0.0:
+		HitStop.apply(duration, hitstop_slow_scale)
 </file>
 
 <file path="scripts/core/contact_result.gd">
@@ -6948,6 +6928,26 @@ func _on_phase_changed(phase_data: Dictionary):
 
 func _should_animation_loop(anim_name: StringName) -> bool:
 	return anim_name in [&"idle", &"walk", &"run"]
+</file>
+
+<file path="scenes/enemy_joke.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://d3d5tokp7sjew"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_lnph3"]
+
+[node name="EnemyEntity" instance=ExtResource("1_lnph3")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.972549, 0.501961, 0.156863, 1)
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 10.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 10
 </file>
 
 <file path="scripts/profiles/jump_profile.gd">
@@ -7268,14 +7268,14 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 
 	if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
-		var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector }
+		var reason = { "outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector * 1.5 }
 		state_machine.on_current_state_finished(reason)
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.NONE
 		return result_for_attacker
 
 	if context.defender_stamina_comp.take_stamina_damage(context.attack_profile.stamina_damage):
-		var block_recoil_fraction: float = 0.65
+		var block_recoil_fraction: float = 1.0
 		var base_knockback: Vector2 = context.attack_profile.knockback_vector
 		var recoil_velocity: Vector2 = base_knockback * block_recoil_fraction
 		var reason = { "outcome": "BLOCKED", "knockback_vector": recoil_velocity }
@@ -7291,182 +7291,72 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 	return result_for_attacker
 </file>
 
-<file path="scripts/states/parry_state.gd">
-class_name ParryState
-extends State
+<file path="scripts/profiles/attack_profile.gd">
+class_name AttackProfile
+extends Resource
 
-const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(350, 0)
-const KNOCKBACK_DECAY_RATE = 2
+enum ParryInteractionType {
+	STANDARD,
+	UNPARRYABLE
+}
 
-var current_profile: ParryProfile
-var _knockback_velocity: Vector2 = Vector2.ZERO
+enum UnparryableType {
+	NONE,
+	THRUST,
+	SWEEP
+}
 
-enum Phases { ACTIVE, SUCCESS, RECOVERY }
-var current_phase: Phases
-var time_left_in_phase: float = 0.0
+enum MovementType {
+	PHYSICS,
+	PATH_TARGET
+}
 
-func enter(args: Dictionary = {}):
-	self.current_profile = args.get("profile")
-	
-	if not current_profile:
-		state_machine.on_current_state_finished()
-		return
-	
-	owner_node.facing_locked = true
-	_knockback_velocity = Vector2.ZERO
-	_change_phase(Phases.ACTIVE)
+@export_group("Phases")
+@export var startup_duration: float = 0.3
+@export var active_duration: float = 0.1
+@export var block_recoil_duration: float = 0.55
+@export var recovery_duration: float = 0.45
+@export var link_duration: float = 0.6
 
-func exit():
-	owner_node.facing_locked = false
+@export_group("Presentation")
+@export var animation_name: StringName
+@export var startup_sfx: AudioStream
+@export var active_sfx: AudioStream
+@export var recovery_sfx: AudioStream
+@export var impact_sfx: AudioStream
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
-	if not current_profile:
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
+@export_group("Hitbox")
+@export var hitbox_size: Vector2 = Vector2(160, 140)
+@export var hitbox_position: Vector2 = Vector2(100, -30)
 
-	time_left_in_phase -= delta
-	
-	if _knockback_velocity != Vector2.ZERO:
-		_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, KNOCKBACK_DECAY_RATE)
-	
-	if time_left_in_phase <= 0:
-		var time_exceeded = -time_left_in_phase
-		
-		match current_phase:
-			Phases.ACTIVE:
-				_change_phase(Phases.RECOVERY)
-				time_left_in_phase -= time_exceeded
-			Phases.SUCCESS:
-				state_machine.on_current_state_finished()
-				return physics_component.apply_gravity(_knockback_velocity, delta)
-			Phases.RECOVERY:
-				state_machine.on_current_state_finished()
-				return physics_component.apply_gravity(_knockback_velocity, delta)
-				
-	return physics_component.apply_gravity(_knockback_velocity, delta)
+@export_group("Projectile")
+@export var projectile_scene: PackedScene
 
-func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
-	if current_phase == Phases.SUCCESS:
-		var riposte_profile = owner_node.get_riposte_profile()
-		var context = {"override_profile": riposte_profile}
-		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED, context)
-	
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+@export_group("Mechanics")
+@export var damage: float = 1.0
+@export var stamina_cost: float = 0.0
+@export var focus_cost: int = 0
+@export var focus_gain_on_hit: int = 0
+@export var stamina_damage: float = 10.0
+@export var poise_impact_contribution: float = 10.0
+@export var poise_momentum_gain: float = 0.0
+@export var poise_momentum_duration: float = 1.5
+@export var knockback_vector: Vector2 = Vector2(1000, 0)
+@export var defender_knockback_on_parry: float = 120.0
+@export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
+@export var unparryable_type: UnparryableType = UnparryableType.NONE
 
-func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
-	if current_phase == Phases.SUCCESS:
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-		
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+@export_group("Movement")
+@export var movement_type: MovementType = MovementType.PHYSICS
+@export var startup_movement_velocity: Vector2 = Vector2.ZERO
+@export var active_movement_velocity: Vector2 = Vector2.ZERO
+@export var recovery_movement_velocity: Vector2 = Vector2.ZERO
+@export var link_movement_velocity: Vector2 = Vector2.ZERO
 
-func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	if current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY:
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-		
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func _change_phase(new_phase: Phases):
-	current_phase = new_phase
-	
-	var sfx_to_play: AudioStream
-	match current_phase:
-		Phases.ACTIVE:
-			time_left_in_phase = current_profile.active_duration
-			sfx_to_play = current_profile.active_sfx
-		Phases.SUCCESS:
-			time_left_in_phase = current_profile.success_duration
-			sfx_to_play = current_profile.success_sfx
-		Phases.RECOVERY:
-			time_left_in_phase = current_profile.recovery_duration
-			sfx_to_play = current_profile.recovery_sfx
-			
-	var phase_data = {
-		"state_name": self.name,
-		"phase_name": Phases.keys()[current_phase],
-		"profile": current_profile,
-		"sfx_to_play": sfx_to_play
-	}
-	
-	if current_phase == Phases.ACTIVE:
-		phase_data["animation_to_play"] = current_profile.animation_name
-	
-	state_machine.emit_phase_change(phase_data)
-
-func _handle_direct_hit(context: ContactContext) -> ContactResult:
-	var result = ContactResult.new()
-	result.attacker_node = context.attacker_node
-	result.defender_node = context.defender_node
-	result.attack_profile = context.attack_profile
-
-	context.defender_health_comp.take_damage(context.attack_profile.damage)
-	
-	var reason = {"outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector}
-	state_machine.on_current_state_finished(reason)
-	
-	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
-	result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
-	return result
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	var result_for_attacker = ContactResult.new()
-	result_for_attacker.attacker_node = context.attacker_node
-	result_for_attacker.defender_node = context.defender_node
-	result_for_attacker.attack_profile = context.attack_profile
-	
-	match current_phase:
-		Phases.ACTIVE:
-			if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
-				return _handle_direct_hit(context)
-			
-			_change_phase(Phases.SUCCESS)
-			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
-			
-			var focus_comp = owner_node.find_child("FocusComponent")
-			if focus_comp:
-				focus_comp.gain_focus(focus_comp.focus_gain_on_parry)
-			
-			if context.defender_poise_comp and current_profile:
-				context.defender_poise_comp.apply_shield_bonus(
-					current_profile.shield_bonus_on_success,
-					current_profile.bonus_duration
-				)
-				context.defender_poise_comp.apply_sword_bonus(
-					current_profile.sword_bonus_on_success,
-					current_profile.bonus_duration
-				)
-			
-			var force_magnitude = context.attack_profile.defender_knockback_on_parry
-			if force_magnitude > 0.0:
-				#var direction = (owner_node.global_position - context.attacker_node.global_position).normalized()
-				var diff = owner_node.global_position - context.attacker_node.global_position
-				diff.y = 0
-				var direction = diff.normalized()
-				if direction == Vector2.ZERO:
-					direction = Vector2(-owner_node.facing_sign, 0)
-				_knockback_velocity = direction * force_magnitude
-			
-			result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
-			result_for_attacker.knockback_vector = ATTACKER_KNOCKBACK_ON_SUCCESS
-				
-			return result_for_attacker
-
-		Phases.SUCCESS:
-			return _resolve_default_contact(context)
-
-		Phases.RECOVERY:
-			return _resolve_default_contact(context)
-			
-	return null
-
-func get_poise_shield_contribution() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.poise_shield_contribution
-
-func get_poise_impact_contribution() -> float:
-	return 200.0
-
-func allow_reentry() -> bool:
-	return true
+@export_group("Poise Contributions per Phase (Defensivo)")
+@export var startup_poise_shield: float = 10.0
+@export var active_poise_shield: float = 10.0
+@export var recovery_poise_shield: float = 300.0
 </file>
 
 <file path="scripts/platform/simple_state.gd">
@@ -7554,72 +7444,206 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	return result_for_attacker
 </file>
 
-<file path="scripts/profiles/attack_profile.gd">
-class_name AttackProfile
-extends Resource
+<file path="scripts/states/parry_state.gd">
+class_name ParryState
+extends State
 
-enum ParryInteractionType {
-	STANDARD,
-	UNPARRYABLE
-}
+const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(30, 0)
+const KNOCKBACK_DECAY_RATE = 0.1
 
-enum UnparryableType {
-	NONE,
-	THRUST,
-	SWEEP
-}
+## Fricção aplicada ao deslize quando o parry é ativado no chão.
+## Quanto maior, mais rápido ele para.
+@export var slide_friction_ground: float = 1200.0
 
-enum MovementType {
-	PHYSICS,
-	PATH_TARGET
-}
+## Resistência do ar aplicada ao momentum quando o parry é ativado no ar.
+## Valores baixos mantêm o arco do pulo por mais tempo.
+@export var slide_friction_air: float = 1200.0
 
-@export_group("Phases")
-@export var startup_duration: float = 0.3
-@export var active_duration: float = 0.1
-@export var block_recoil_duration: float = 0.55
-@export var recovery_duration: float = 0.45
-@export var link_duration: float = 0.6
+var current_profile: ParryProfile
+var _knockback_velocity: Vector2 = Vector2.ZERO
+var _momentum_x: float = 0.0
 
-@export_group("Presentation")
-@export var animation_name: StringName
-@export var startup_sfx: AudioStream
-@export var active_sfx: AudioStream
-@export var recovery_sfx: AudioStream
-@export var impact_sfx: AudioStream
+enum Phases { ACTIVE, SUCCESS, RECOVERY }
+var current_phase: Phases
+var time_left_in_phase: float = 0.0
 
-@export_group("Hitbox")
-@export var hitbox_size: Vector2 = Vector2(160, 140)
-@export var hitbox_position: Vector2 = Vector2(100, -30)
+func enter(args: Dictionary = {}):
+	self.current_profile = args.get("profile")
+	
+	if not current_profile:
+		state_machine.on_current_state_finished()
+		return
+	
+	owner_node.facing_locked = true
+	_knockback_velocity = Vector2.ZERO
+	
+	_momentum_x = owner_node.velocity.x
+	
+	_change_phase(Phases.ACTIVE)
 
-@export_group("Projectile")
-@export var projectile_scene: PackedScene
+func exit():
+	owner_node.facing_locked = false
+	_momentum_x = 0.0
 
-@export_group("Mechanics")
-@export var damage: float = 1.0
-@export var stamina_cost: float = 0.0
-@export var focus_cost: int = 0
-@export var focus_gain_on_hit: int = 0
-@export var stamina_damage: float = 10.0
-@export var poise_impact_contribution: float = 10.0
-@export var poise_momentum_gain: float = 0.0
-@export var poise_momentum_duration: float = 1.5
-@export var knockback_vector: Vector2 = Vector2(1000, 0)
-@export var defender_knockback_on_parry: float = 120.0
-@export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
-@export var unparryable_type: UnparryableType = UnparryableType.NONE
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	if not current_profile:
+		return physics_component.apply_gravity(owner_node.velocity, delta)
 
-@export_group("Movement")
-@export var movement_type: MovementType = MovementType.PHYSICS
-@export var startup_movement_velocity: Vector2 = Vector2.ZERO
-@export var active_movement_velocity: Vector2 = Vector2.ZERO
-@export var recovery_movement_velocity: Vector2 = Vector2.ZERO
-@export var link_movement_velocity: Vector2 = Vector2.ZERO
+	time_left_in_phase -= delta
+	
+	if _knockback_velocity != Vector2.ZERO:
+		_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, KNOCKBACK_DECAY_RATE * delta)
+	
+	if _knockback_velocity.x == 0 and _momentum_x != 0:
+		var friction = slide_friction_ground if owner_node.is_on_floor() else slide_friction_air
+		_momentum_x = move_toward(_momentum_x, 0, friction * delta)
+	
+	var final_x_velocity = _knockback_velocity.x if _knockback_velocity.x != 0 else _momentum_x
+	
+	var current_vertical_velocity = owner_node.velocity.y
+	var target_velocity = Vector2(final_x_velocity, current_vertical_velocity)
+	
+	if time_left_in_phase <= 0:
+		var time_exceeded = -time_left_in_phase
+		
+		match current_phase:
+			Phases.ACTIVE:
+				_change_phase(Phases.RECOVERY)
+				time_left_in_phase -= time_exceeded
+			Phases.SUCCESS:
+				state_machine.on_current_state_finished()
+				return physics_component.apply_gravity(target_velocity, delta)
+			Phases.RECOVERY:
+				state_machine.on_current_state_finished()
+				return physics_component.apply_gravity(target_velocity, delta)
+				
+	return physics_component.apply_gravity(target_velocity, delta)
 
-@export_group("Poise Contributions per Phase (Defensivo)")
-@export var startup_poise_shield: float = 10.0
-@export var active_poise_shield: float = 10.0
-@export var recovery_poise_shield: float = 300.0
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	if current_phase == Phases.SUCCESS:
+		var riposte_profile = owner_node.get_riposte_profile()
+		var context = {"override_profile": riposte_profile}
+		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED, context)
+	
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
+	if current_phase == Phases.SUCCESS:
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+		
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	if current_phase == Phases.SUCCESS or current_phase == Phases.RECOVERY:
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+		
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func _change_phase(new_phase: Phases):
+	current_phase = new_phase
+	
+	var sfx_to_play: AudioStream
+	match current_phase:
+		Phases.ACTIVE:
+			time_left_in_phase = current_profile.active_duration
+			sfx_to_play = current_profile.active_sfx
+		Phases.SUCCESS:
+			time_left_in_phase = current_profile.success_duration
+			sfx_to_play = current_profile.success_sfx
+		Phases.RECOVERY:
+			time_left_in_phase = current_profile.recovery_duration
+			sfx_to_play = current_profile.recovery_sfx
+			
+	var phase_data = {
+		"state_name": self.name,
+		"phase_name": Phases.keys()[current_phase],
+		"profile": current_profile,
+		"sfx_to_play": sfx_to_play
+	}
+	
+	if current_phase == Phases.ACTIVE:
+		phase_data["animation_to_play"] = current_profile.animation_name
+	
+	state_machine.emit_phase_change(phase_data)
+
+func _handle_direct_hit(context: ContactContext) -> ContactResult:
+	var result = ContactResult.new()
+	result.attacker_node = context.attacker_node
+	result.defender_node = context.defender_node
+	result.attack_profile = context.attack_profile
+
+	context.defender_health_comp.take_damage(context.attack_profile.damage)
+	
+	var reason = {"outcome": "POISE_BROKEN", "knockback_vector": context.attack_profile.knockback_vector}
+	state_machine.on_current_state_finished(reason)
+	
+	result.attacker_outcome = ContactResult.AttackerOutcome.NONE
+	result.defender_outcome = ContactResult.DefenderOutcome.POISE_BROKEN
+	return result
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var result_for_attacker = ContactResult.new()
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
+	
+	match current_phase:
+		Phases.ACTIVE:
+			if context.attack_profile.parry_interaction == AttackProfile.ParryInteractionType.UNPARRYABLE:
+				return _handle_direct_hit(context)
+			
+			_change_phase(Phases.SUCCESS)
+			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
+			
+			_momentum_x = 0.0
+			
+			var focus_comp = owner_node.find_child("FocusComponent")
+			if focus_comp:
+				focus_comp.gain_focus(focus_comp.focus_gain_on_parry)
+			
+			if context.defender_poise_comp and current_profile:
+				context.defender_poise_comp.apply_shield_bonus(
+					current_profile.shield_bonus_on_success,
+					current_profile.bonus_duration
+				)
+				context.defender_poise_comp.apply_sword_bonus(
+					current_profile.sword_bonus_on_success,
+					current_profile.bonus_duration
+				)
+			
+			var force_magnitude = context.attack_profile.defender_knockback_on_parry
+			if force_magnitude > 0.0:
+				var diff = owner_node.global_position - context.attacker_node.global_position
+				diff.y = 0
+				var direction = diff.normalized()
+				if direction == Vector2.ZERO:
+					direction = Vector2(-owner_node.facing_sign, 0)
+				
+				_knockback_velocity = direction * force_magnitude
+							
+			result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.PARRIED
+			result_for_attacker.knockback_vector = ATTACKER_KNOCKBACK_ON_SUCCESS
+				
+			return result_for_attacker
+
+		Phases.SUCCESS:
+			return _resolve_default_contact(context)
+
+		Phases.RECOVERY:
+			return _resolve_default_contact(context)
+			
+	return null
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func get_poise_impact_contribution() -> float:
+	return 200.0
+
+func allow_reentry() -> bool:
+	return true
 </file>
 
 <file path="scripts/platform/simple_enemy.tscn">
@@ -8787,26 +8811,6 @@ func _update_facing_direction():
 func _exit_tree():
 	if GameManager.player_node == self:
 		GameManager.unregister_player()
-		
-func _process(_delta):
-	# Usamos a tecla "T" para printar o relatório de debug quando ocorrer o bug
-	if Input.is_key_pressed(KEY_T):
-		print("\n=== DEBUG REPORT ===")
-		print("1. Time Scale (Deve ser 1.0): ", Engine.time_scale)
-		
-		# Tenta pegar o nome do estado atual. Ajuste o caminho se necessário.
-		if has_node("StateMachine"):
-			var sm = get_node("StateMachine")
-			# Verifica se a variável current_state existe e é válida
-			if sm.get("current_state"):
-				print("2. Estado Atual: ", sm.current_state.name)
-			else:
-				print("2. Estado Atual: NULO ou não acessível")
-		
-		print("3. Velocidade (Velocity): ", velocity)
-		print("4. Is On Floor: ", is_on_floor())
-		print("5. Input X: ", Input.get_axis("move_left", "move_right")) # Confirma se o input está chegando
-		print("====================\n")
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")

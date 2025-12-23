@@ -20,6 +20,9 @@ var _ignore_air_control_this_frame: bool = false
 
 var _landed_connected: bool = false
 
+var _is_gravity_suspended: bool = false
+var _current_attack_has_hit: bool = false
+
 var _attack_executor: AttackExecutor
 var _air_combo_component: AirComboComponent
 var _is_initialized: bool = false
@@ -50,6 +53,9 @@ func enter(args: Dictionary = {}):
 	_released_this_frame = false
 	_last_jump_was_air = false
 	_ignore_air_control_this_frame = false
+	
+	_is_gravity_suspended = false
+	_current_attack_has_hit = false
 
 	if surface_contact_component and not _landed_connected:
 		surface_contact_component.connect("landed", Callable(self, "_on_landed"))
@@ -89,6 +95,9 @@ func exit():
 	_pending_initial_velocity = 0.0
 	_last_jump_was_air = false
 	_ignore_air_control_this_frame = false
+	
+	_is_gravity_suspended = false
+	_current_attack_has_hit = false
 
 
 func handle_attack_input(profile: AttackProfile) -> InputHandlerResult:
@@ -133,11 +142,14 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	else:
 		new_velocity.x = current_walk_direction * 200.0
 
-	new_velocity = physics_component.apply_gravity(new_velocity, delta)
+	if not _is_gravity_suspended:
+		new_velocity = physics_component.apply_gravity(new_velocity, delta)
 
-	if new_velocity.y > 0.0:
-		var extra_down_a := 1600 * max(2.2 - 1.0, 0.0)
-		new_velocity.y += extra_down_a * delta
+		if new_velocity.y > 0.0:
+			var extra_down_a := 1600 * max(2.2 - 1.0, 0.0)
+			new_velocity.y += extra_down_a * delta
+	else:
+		new_velocity.y = 0.0
 
 	_update_facing_sign(walk_direction)
 	_update_phase(new_velocity)
@@ -166,6 +178,8 @@ func _start_air_attack(profile: AttackProfile):
 			_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
 
 	current_sub_state = SubStates.ATTACKING
+	_current_attack_has_hit = false
+	
 	_attack_executor.attack_phase_changed.connect(_on_phase_changed)
 	_attack_executor.finished.connect(_on_air_attack_finished)
 	_attack_executor.execute(profile)
@@ -177,7 +191,8 @@ func _on_air_attack_finished():
 	if _attack_executor.is_connected("attack_phase_changed", Callable(self, "_on_phase_changed")):
 		_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
 	
-	current_sub_state = SubStates.NORMAL
+	if not _current_attack_has_hit:
+		_is_gravity_suspended = false
 	
 	var buffered_data = state_machine.query_buffered_action()
 	if buffered_data and buffered_data.action == BufferComponent.BufferedAction.ATTACK:
@@ -186,7 +201,18 @@ func _on_air_attack_finished():
 			_start_air_attack(next_profile)
 			return
 
+	current_sub_state = SubStates.NORMAL
+	_is_gravity_suspended = false
+	
 	_update_phase(owner_node.velocity)
+
+func handle_attack_outcome(outcome: ContactResult) -> void:
+	var result = outcome.attacker_outcome
+	
+	if result == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+		_is_gravity_suspended = true
+		_current_attack_has_hit = true
+		owner_node.velocity.y = 0.0
 
 func _on_phase_changed(phase_data: Dictionary):
 	state_machine.emit_phase_change(phase_data)

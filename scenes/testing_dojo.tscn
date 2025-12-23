@@ -413,8 +413,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-24.1223, -328.783)
-rotation = 0.376419
+position = Vector2(-14.3501, -331.326)
+rotation = 0.462588
 scale = Vector2(1, 1)
 
 [node name="Enemys" type="Node" parent="."]
@@ -501,6 +501,9 @@ position = Vector2(40, 0)
 
 [node name="RangedEnemy" parent="Enemys" instance=ExtResource("21_wuj60")]
 position = Vector2(8518, 221)
+
+[node name="FlyingEnemy2" parent="Enemys" instance=ExtResource("17_eguil")]
+position = Vector2(1463, 1018)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -624,6 +627,12 @@ position = Vector2(7211, 723)
 
 [node name="Token4" parent="Tokens" instance=ExtResource("16_hi14r")]
 position = Vector2(6923, 515)
+
+[node name="Token9" parent="Tokens" instance=ExtResource("16_hi14r")]
+position = Vector2(6560, 515)
+
+[node name="Token10" parent="Tokens" instance=ExtResource("16_hi14r")]
+position = Vector2(6371, 246)
 
 [node name="Token5" parent="Tokens" instance=ExtResource("16_hi14r")]
 position = Vector2(7224, 251)
