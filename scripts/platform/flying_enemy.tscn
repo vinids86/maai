@@ -13,6 +13,7 @@ radius = 50.0
 radius = 50.0
 
 [node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
+motion_mode = 1
 enemy_tint_color = Color(0.635062, 0.750033, 0.982451, 1)
 enemy_tint_intensity = 0.06
 
@@ -26,15 +27,12 @@ shape = SubResource("CircleShape2D_jkvbt")
 [node name="SimpleStateMachine" parent="." index="2"]
 initial_state_key = "SimplePatrolFlyState"
 
-[node name="SimpleStaggerState" parent="SimpleStateMachine" index="2"]
-knockback_multiplier = 0.001
-
 [node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="4"]
 script = ExtResource("2_f30pw")
 metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
 
 [node name="HealthComponent" parent="." index="5"]
-max_health = 5.0
+max_health = 3.0
 
 [node name="CollisionShape2D" parent="Hitbox" index="0"]
 position = Vector2(0, -50)

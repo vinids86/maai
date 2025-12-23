@@ -40,12 +40,21 @@ func process_physics(delta: float) -> Vector2:
 		_current_velocity = owner_node.velocity
 	else:
 		_is_first_frame = false
+	
+	var is_floating = false
+	if owner_node is CharacterBody2D:
+		is_floating = owner_node.motion_mode == CharacterBody2D.MOTION_MODE_FLOATING
 
-	if not owner_node.is_on_floor():
-		_current_velocity.y += 980.0 * delta
+	if is_floating:
 		_current_velocity.x = move_toward(_current_velocity.x, 0.0, air_friction * delta)
+		_current_velocity.y = move_toward(_current_velocity.y, 0.0, air_friction * delta)
 	else:
-		_current_velocity.x = move_toward(_current_velocity.x, 0.0, ground_friction * delta)
+		if not owner_node.is_on_floor():
+			var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
+			_current_velocity.y += gravity * delta
+			_current_velocity.x = move_toward(_current_velocity.x, 0.0, air_friction * delta)
+		else:
+			_current_velocity.x = move_toward(_current_velocity.x, 0.0, ground_friction * delta)
 	
 	return _current_velocity
 
