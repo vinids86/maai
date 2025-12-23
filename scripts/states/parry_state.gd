@@ -4,8 +4,17 @@ extends State
 const ATTACKER_KNOCKBACK_ON_SUCCESS = Vector2(30, 0)
 const KNOCKBACK_DECAY_RATE = 0.1
 
+## Fricção aplicada ao deslize quando o parry é ativado no chão.
+## Quanto maior, mais rápido ele para.
+@export var slide_friction_ground: float = 1200.0
+
+## Resistência do ar aplicada ao momentum quando o parry é ativado no ar.
+## Valores baixos mantêm o arco do pulo por mais tempo.
+@export var slide_friction_air: float = 1200.0
+
 var current_profile: ParryProfile
 var _knockback_velocity: Vector2 = Vector2.ZERO
+var _momentum_x: float = 0.0
 
 enum Phases { ACTIVE, SUCCESS, RECOVERY }
 var current_phase: Phases
@@ -20,10 +29,14 @@ func enter(args: Dictionary = {}):
 	
 	owner_node.facing_locked = true
 	_knockback_velocity = Vector2.ZERO
+	
+	_momentum_x = owner_node.velocity.x
+	
 	_change_phase(Phases.ACTIVE)
 
 func exit():
 	owner_node.facing_locked = false
+	_momentum_x = 0.0
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
@@ -34,8 +47,14 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 	if _knockback_velocity != Vector2.ZERO:
 		_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, KNOCKBACK_DECAY_RATE * delta)
 	
+	if _knockback_velocity.x == 0 and _momentum_x != 0:
+		var friction = slide_friction_ground if owner_node.is_on_floor() else slide_friction_air
+		_momentum_x = move_toward(_momentum_x, 0, friction * delta)
+	
+	var final_x_velocity = _knockback_velocity.x if _knockback_velocity.x != 0 else _momentum_x
+	
 	var current_vertical_velocity = owner_node.velocity.y
-	var target_velocity = Vector2(_knockback_velocity.x, current_vertical_velocity)
+	var target_velocity = Vector2(final_x_velocity, current_vertical_velocity)
 	
 	if time_left_in_phase <= 0:
 		var time_exceeded = -time_left_in_phase
@@ -128,6 +147,8 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 			
 			_change_phase(Phases.SUCCESS)
 			result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.PARRY_SUCCESS
+			
+			_momentum_x = 0.0
 			
 			var focus_comp = owner_node.find_child("FocusComponent")
 			if focus_comp:
