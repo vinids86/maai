@@ -106,6 +106,16 @@ func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHan
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+	
+func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
+	var executor_phase = _attack_executor.get_current_phase_name()
+	var in_recovery = executor_phase == "RECOVERY"
+	var in_link_or_recoil = _current_phase == InternalPhase.LINK or _current_phase == InternalPhase.RECOIL
+	
+	if in_recovery or in_link_or_recoil:
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_attack_outcome(result: ContactResult):
 	if result.attacker_outcome == ContactResult.AttackerOutcome.ATTACK_BLOCKED or result.attacker_outcome == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
@@ -187,6 +197,8 @@ func _on_attack_phase_changed(phase_data: Dictionary):
 	state_machine.emit_phase_change(phase_data)
 
 func _on_attack_finished():
+	_current_phase = InternalPhase.LINK
+	_time_left_in_phase = _current_profile.link_duration
 	if state_machine.buffer_component.has_buffer():
 		state_machine.on_current_state_finished()
 		return

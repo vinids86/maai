@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_y4vqf")
-speed = 500.0
-run_speed = 800.0
+speed = 300.0
+run_speed = 600.0
 acceleration = 2000.0
 friction = 1500.0
 poise_shield_contribution = 30.0

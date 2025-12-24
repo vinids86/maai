@@ -40,7 +40,7 @@ var _peek_timer: float = 0.0
 var _cinematic_layer: CanvasLayer
 var _top_bar: ColorRect
 var _bottom_bar: ColorRect
-const BAR_HEIGHT: int = 200
+const BAR_HEIGHT: int = 150
 
 func _ready():
 	_rng.randomize()
