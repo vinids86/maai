@@ -24,21 +24,17 @@ func enter(args: Dictionary = {}) -> void:
 	_current_profile = args.get("profile")
 	_reset_attack_state()
 	
-	if not _attack_executor.attack_phase_changed.is_connected(_on_phase_changed):
-		_attack_executor.attack_phase_changed.connect(_on_phase_changed)
-	if not _attack_executor.finished.is_connected(_on_attack_finished):
-		_attack_executor.finished.connect(_on_attack_finished)
-		
+	# Garante estado limpo ao iniciar o combo. 
+	# Isso deve resetar o índice do AirComboComponent para 0.
+	_attack_executor.stop()
+	
 	if _current_profile:
 		_execute_attack(_current_profile)
 
 func exit() -> void:
-	if _attack_executor.attack_phase_changed.is_connected(_on_phase_changed):
-		_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
-	if _attack_executor.finished.is_connected(_on_attack_finished):
-		_attack_executor.finished.disconnect(_on_attack_finished)
-	
+	_disconnect_signals()
 	_attack_executor.stop()
+	
 	_current_profile = null
 	_is_gravity_suspended = false
 	_current_attack_has_hit = false
@@ -52,28 +48,18 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 		new_velocity.y = 0.0
 	
 	if owner_node.is_on_floor():
-		# A StateMachine agora cuidará do reset_air_actions() ao processar isso
 		state_machine.on_current_state_finished()
 		return Vector2.ZERO
 		
 	return new_velocity
 
-func handle_attack_input(profile: AttackProfile) -> InputHandlerResult:
-	var phase = _attack_executor.get_current_phase_name()
-	# Lógica de Combo INTERNO:
-	# Se estamos em recovery, tentamos pagar o custo e executar aqui mesmo.
-	# Retornamos CONSUMED para que a StateMachine NÃO tente transitar.
-	if phase == "RECOVERY":
-		if state_machine.action_cost_validator.try_pay_costs(profile):
-			_execute_attack(profile)
-			return InputHandlerResult.new(InputHandlerResult.Status.CONSUMED)
-	
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	# Buffer: Rejeita o input para que a StateMachine o armazene.
+	# O próximo ataque será processado em _on_attack_finished.
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
-func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
+func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
 	var phase = _attack_executor.get_current_phase_name()
-	# Cancelamento de Pulo: Retornamos ACCEPTED.
-	# A StateMachine vai capturar isso e transitar para AirborneState.
 	if phase == "RECOVERY":
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
@@ -81,28 +67,66 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
 	var phase = _attack_executor.get_current_phase_name()
 	if phase == "RECOVERY":
-		# Se consumiu o dash, retornamos ACCEPTED para que a StateMachine
-		# possa transitar para o estado de Dash se necessário, ou processar o evento.
+		var targeting = owner_node.find_child("SmartTargetingComponent")
+		if targeting and targeting.current_target:
+			return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
 		if _air_mobility_component.try_consume_air_dash():
 			return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+			
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func _execute_attack(profile: AttackProfile) -> void:
+	# 1. Limpeza de conexões antigas
+	_disconnect_signals()
+	
 	_reset_attack_state()
 	_current_profile = profile
+	
+	# 2. Conectar sinais
+	_connect_signals()
+	
+	# 3. Executar o ataque
 	_attack_executor.execute(profile)
-	_air_combo_component.advance_combo()
-	print("profile: ", profile.active_sfx)
+	
+	# 4. Avançar o combo com segurança (Deferred)
+	# Usamos call_deferred para garantir que o AttackExecutor já tenha processado 
+	# o início da animação e esteja com status 'playing', caso o componente verifique isso.
+	call_deferred("_advance_combo_safe")
+
+func _advance_combo_safe() -> void:
+	# Verificação de segurança: só avança se ainda estivermos no estado e atacando
+	if _current_profile and state_machine.current_state == self:
+		_air_combo_component.advance_combo()
 
 func _reset_attack_state() -> void:
 	_current_attack_has_hit = false
 	_is_gravity_suspended = false
 
+func _connect_signals() -> void:
+	if not _attack_executor.attack_phase_changed.is_connected(_on_phase_changed):
+		_attack_executor.attack_phase_changed.connect(_on_phase_changed)
+	if not _attack_executor.finished.is_connected(_on_attack_finished):
+		_attack_executor.finished.connect(_on_attack_finished)
+
+func _disconnect_signals() -> void:
+	if _attack_executor.attack_phase_changed.is_connected(_on_phase_changed):
+		_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
+	if _attack_executor.finished.is_connected(_on_attack_finished):
+		_attack_executor.finished.disconnect(_on_attack_finished)
+
 func _on_attack_finished() -> void:
-	# Buffer Interno
+	_disconnect_signals()
+	
 	var buffered_data = state_machine.query_buffered_action()
 	if buffered_data and buffered_data.action == BufferComponent.BufferedAction.ATTACK:
+		# Pega o PRÓXIMO ataque da lista.
+		# Como avançamos o combo (via deferred), este getter deve retornar o próximo índice correto (2 ou 3).
 		var next_profile = _air_combo_component.get_next_attack_profile()
+		
+		if not next_profile:
+			next_profile = buffered_data.context.get("profile")
+
 		if next_profile and state_machine.action_cost_validator.try_pay_costs(next_profile):
 			_execute_attack(next_profile)
 			return

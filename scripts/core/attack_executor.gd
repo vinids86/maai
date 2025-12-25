@@ -63,7 +63,6 @@ func execute(profile: AttackProfile):
 		return
 	
 	self._current_profile = profile
-	
 	if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
 		_path_target.position = Vector2.ZERO
 		_path_follower_component.start_following(_path_target)
