@@ -206,6 +206,9 @@ func on_current_state_finished(reason: Dictionary = {}):
 	var outcome = reason.get("outcome")
 	if outcome:
 		match outcome:
+			"FELL_OFF":
+				owner_node.reset_air_actions()
+				transition_to("AirborneState", { "allow_coyote": true })
 			"WALL_CONTACT":
 				owner_node.reset_air_actions()
 				transition_to("WallSlideState", {"profile": owner_node.get_wall_slide_profile()})

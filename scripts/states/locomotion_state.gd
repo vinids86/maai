@@ -15,7 +15,7 @@ func enter(args: Dictionary = {}):
 
 func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
 	if not owner_node.is_on_floor():
-		state_machine.transition_to("AirborneState")
+		state_machine.on_current_state_finished({ "outcome": "FELL_OFF" })
 		return owner_node.velocity
 
 	var new_velocity = owner_node.velocity

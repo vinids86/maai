@@ -16,10 +16,7 @@ var _holding: bool = false
 var _hold_time: float = 0.0
 var _released_this_frame: bool = false
 var _wall_jump_lock_timer: float = 0.0
-
-# NOVO: Coyote Time gerenciado pelo Estado
 var _coyote_timer: float = 0.0
-
 var _is_gravity_suspended: bool = false
 var _current_attack_has_hit: bool = false
 var _attack_executor: AttackExecutor
@@ -52,8 +49,7 @@ func enter(args: Dictionary = {}):
 	_released_this_frame = false
 	_last_jump_was_air = false
 	_wall_jump_lock_timer = 0.0
-	_coyote_timer = 0.0 # Reseta o timer por padrão
-	
+	_coyote_timer = 0.0 
 	_is_gravity_suspended = false
 	_current_attack_has_hit = false
 
@@ -69,19 +65,8 @@ func enter(args: Dictionary = {}):
 		_holding = true
 		
 	else:
-		# Lógica de Queda (Falling)
-		# Se caímos SEM impulso (não foi pulo), ativamos o Coyote Time.
-		# A verificação extra (air_jumps_left == max) garante que não viemos de um ataque aéreo,
-		# pois se viemos de ataque/dash aéreo, já gastamos algo ou não estamos "saindo do chão".
-		if current_profile:
-			var has_full_resources = _air_mobility_component.air_jumps_left == current_profile.max_air_jumps
-			if has_full_resources:
-				_coyote_timer = current_profile.coyote_time
-			
-			# Fallback: Se não tem coyote, consome o pulo para não dar um extra
-			elif current_profile.max_air_jumps > 0:
-				# _air_mobility_component.try_consume_air_jump() # Opcional: penalidade por cair
-				pass
+		if current_profile and args.get("allow_coyote", false):
+			_coyote_timer = current_profile.coyote_time
 
 	_update_phase(owner_node.velocity)
 
@@ -98,6 +83,7 @@ func exit():
 	_pending_jump_impulse = false
 	_is_gravity_suspended = false
 	_current_attack_has_hit = false
+	_coyote_timer = 0.0
 
 func handle_attack_input(profile: AttackProfile) -> InputHandlerResult:
 	if current_sub_state == SubStates.ATTACKING:
@@ -108,7 +94,6 @@ func handle_attack_input(profile: AttackProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.CONSUMED)
 
 func process_physics(delta: float, walk_direction: float, _is_running: bool) -> Vector2:
-	# Atualiza Coyote Timer
 	if _coyote_timer > 0:
 		_coyote_timer -= delta
 
@@ -123,7 +108,7 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	if _pending_jump_impulse and current_profile:
 		new_velocity.y = -abs(_pending_initial_velocity)
 		_pending_jump_impulse = false
-		_coyote_timer = 0.0 # Cancela coyote ao pular
+		_coyote_timer = 0.0
 
 	if current_profile:
 		if _holding and _hold_time < current_profile.max_hold_time and new_velocity.y < 0.0:
@@ -181,7 +166,6 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 	if current_profile == null:
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
-	# Lógica 1: Coyote Time (Timer Local)
 	if _coyote_timer > 0.0:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
@@ -189,10 +173,9 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 		_hold_time = 0.0
 		_released_this_frame = false
 		_last_jump_was_air = false
-		_coyote_timer = 0.0 # Consome
+		_coyote_timer = 0.0
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
-	# Lógica 2: Pulo Aéreo (Multijump)
 	if _air_mobility_component.try_consume_air_jump():
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
@@ -204,8 +187,6 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-# --- Métodos auxiliares mantidos (Dash, Attack Start, etc) ---
 
 func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
 	var executor_phase_name = _attack_executor.get_current_phase_name()
@@ -251,6 +232,7 @@ func handle_attack_outcome(outcome: ContactResult) -> void:
 		owner_node.velocity.y = 0.0
 
 func _on_phase_changed(phase_data: Dictionary): state_machine.emit_phase_change(phase_data)
+
 func get_poise_shield_contribution() -> float:
 	if current_sub_state == SubStates.ATTACKING:
 		var executor_phase = _attack_executor.get_current_phase_name()
@@ -260,13 +242,16 @@ func get_poise_shield_contribution() -> float:
 				"ACTIVE": return profile.active_poise_shield
 				"RECOVERY": return profile.recovery_poise_shield
 	return 0.0
+
 func on_jump_released() -> void: _holding = false; _released_this_frame = true
 func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult: return InputHandlerResult.new(InputHandlerResult.Status.CONSUMED)
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult: return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
 func _update_facing_sign(direction: float) -> void:
 	if owner_node.facing_locked: return
 	if direction > 0.0: owner_node.facing_sign = 1
 	elif direction < 0.0: owner_node.facing_sign = -1
+
 func _update_phase(vel: Vector2 = Vector2.ZERO) -> void:
 	if current_sub_state == SubStates.ATTACKING: return
 	var vy: float = owner_node.velocity.y
@@ -275,6 +260,7 @@ func _update_phase(vel: Vector2 = Vector2.ZERO) -> void:
 	if new_phase != current_jump_phase:
 		current_jump_phase = new_phase
 		_emit_phase_signal()
+
 func _emit_phase_signal() -> void:
 	if not current_profile: return
 	var anim_to_play: StringName; var sfx_to_play: AudioStream
