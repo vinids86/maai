@@ -1,4 +1,4 @@
-[gd_scene load_steps=93 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=94 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_8txt3"]
@@ -76,6 +76,7 @@
 [ext_resource type="Script" uid="uid://lrni4bey3mio" path="res://scripts/states/counter_ready_state.gd" id="73_qjsmb"]
 [ext_resource type="Script" uid="uid://dwcab8okwt5u2" path="res://scripts/states/countered_vulnerable_state.gd" id="74_mwp2n"]
 [ext_resource type="Script" uid="uid://d28fgt1kpvll5" path="res://scripts/components/counter_executor_component.gd" id="75_mwp2n"]
+[ext_resource type="Script" uid="uid://c4isdgib4nmf7" path="res://scripts/states/air_attack_state.gd" id="77_jlll7"]
 
 [sub_resource type="Resource" id="Resource_2w11d"]
 script = ExtResource("43_2w11d")
@@ -319,6 +320,7 @@ z_index = 1
 collision_layer = 2
 collision_mask = 65
 script = ExtResource("1_4flbx")
+base_poise = null
 skill_x = SubResource("Resource_0yhus")
 skill_y = SubResource("Resource_6c3st")
 jump_profile = ExtResource("3_8svfe")
@@ -557,6 +559,10 @@ script = ExtResource("73_qjsmb")
 
 [node name="CounteredVulnerableState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("74_mwp2n")
+
+[node name="AirAttackState" type="Node" parent="Player/StateMachine"]
+script = ExtResource("77_jlll7")
+metadata/_custom_type_script = "uid://c4isdgib4nmf7"
 
 [node name="PathTarget" type="Node2D" parent="."]
 

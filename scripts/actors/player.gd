@@ -25,7 +25,7 @@ extends CharacterBody2D
 @onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
 @onready var path_target: Node2D = get_parent().get_node("PathTarget")
 @onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
-
+@onready var smart_targeting_component: SmartTargetingComponent = $SmartTargetingComponent
 @export_group("Combat Data")
 @export var base_poise: float
 
@@ -80,7 +80,7 @@ func _ready():
 		wall_detector,
 		counter_executor_component
 	)
-	air_mobility_component.setup(self, surface_contact_component)
+	air_mobility_component.setup(self, surface_contact_component, smart_targeting_component)
 	surface_contact_component.call_deferred("setup", self)
 
 	if hud:

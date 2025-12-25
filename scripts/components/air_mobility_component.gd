@@ -6,15 +6,17 @@ extends Node
 
 var _player: Node
 var _surface_contact_component: Node
+var _smart_targeting_component: SmartTargetingComponent
 
 # Estado atual
 var air_jumps_left: int = 0
 var air_dash_available: bool = true
 
 ## Configura as dependências do componente. Deve ser chamado no _ready do Player.
-func setup(player: Node, surface_contact: Node) -> void:
+func setup(player: Node, surface_contact: Node, smart_targeting_component: SmartTargetingComponent) -> void:
 	_player = player
 	_surface_contact_component = surface_contact
+	_smart_targeting_component = smart_targeting_component
 	
 	if _surface_contact_component:
 		if not _surface_contact_component.is_connected("landed", _on_landed):
@@ -30,6 +32,9 @@ func _on_landed() -> void:
 func reset_resources() -> void:
 	# Reseta o Dash
 	air_dash_available = true
+	
+	if _smart_targeting_component and _smart_targeting_component.has_method("reset_history"):
+		_smart_targeting_component.reset_history()
 	
 	# Reseta os Pulos lendo do perfil atual do player
 	if _player and _player.has_method("get_jump_profile"):

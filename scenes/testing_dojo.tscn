@@ -405,6 +405,7 @@ position = Vector2(28846, 858)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
+base_poise = null
 
 [node name="Camera2D" parent="PlayerEntity/Player" index="0"]
 position = Vector2(-101, 149)
@@ -413,8 +414,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-22.1404, -327.083)
-rotation = 0.410432
+position = Vector2(-15.228, -335.04)
+rotation = 0.444161
 scale = Vector2(1, 1)
 
 [node name="Enemys" type="Node" parent="."]
