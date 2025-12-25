@@ -4,6 +4,7 @@ extends CharacterBody2D
 @onready var state_machine: StateMachine = $StateMachine
 @onready var spine_sprite: SpineSprite = $SpineSprite
 @onready var animation_component: AnimationComponent = $AnimationComponent
+@onready var air_mobility_component: AirMobilityComponent = $AirMobilityComponent
 @onready var vfx_component: VFXComponent = $VFXComponent
 @onready var audio_component: AudioComponent = $AudioComponent
 @onready var health_component: HealthComponent = $HealthComponent
@@ -63,11 +64,6 @@ var is_running: bool = false
 var facing_sign: int = 1
 var facing_locked: bool = false
 
-var air_jumps_left: int = 0
-var air_dash_used: bool = false
-var has_locked_air_pool: bool = false
-var last_left_ground_ms: int = -1
-
 func _ready():
 	GameManager.player_node = self
 	
@@ -84,7 +80,7 @@ func _ready():
 		wall_detector,
 		counter_executor_component
 	)
-
+	air_mobility_component.setup(self, surface_contact_component)
 	surface_contact_component.call_deferred("setup", self)
 
 	if hud:
@@ -206,12 +202,9 @@ func _unhandled_input(event: InputEvent):
 
 	state_machine.process_input(event)
 
-func reset_air_actions():
-	if jump_profile:
-		air_jumps_left = jump_profile.max_air_jumps
-	air_dash_used = false
-	has_locked_air_pool = true
-
+func reset_air_actions() -> void:
+	air_mobility_component.reset_resources()
+	
 func _on_hold_input_timer_timeout():
 	if Input.is_action_pressed("dodge"):
 		is_running = true
@@ -220,7 +213,6 @@ func _on_run_cancel_timer_timeout():
 	is_running = false
 
 func _on_landed():
-	reset_air_actions()
 	if Input.is_action_pressed("dodge"):
 		if hold_input_timer.is_stopped():
 			hold_input_timer.start()

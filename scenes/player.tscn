@@ -1,4 +1,4 @@
-[gd_scene load_steps=92 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=93 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="2_8txt3"]
@@ -67,6 +67,7 @@
 [ext_resource type="Script" uid="uid://cjolmubu1vmxi" path="res://scripts/states/death_state.gd" id="52_sc3ue"]
 [ext_resource type="Script" uid="uid://cdtcv6tkc4hp1" path="res://scripts/components/focus_component.gd" id="53_lxlsd"]
 [ext_resource type="Script" uid="uid://bwxgsevlwe736" path="res://scripts/core/action_cost_validator.gd" id="54_ha2mi"]
+[ext_resource type="Script" uid="uid://bbcwxyp2qnnga" path="res://scripts/components/air_mobility_component.gd" id="55_0yhus"]
 [ext_resource type="Script" uid="uid://bv3cptq4miw0k" path="res://scripts/components/smart_targeting_component.gd" id="55_qjsmb"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="56_74r1k"]
 [ext_resource type="Script" uid="uid://btwtwfggg48eu" path="res://scripts/profiles/dash_profile.gd" id="56_mwp2n"]
@@ -477,6 +478,10 @@ script = ExtResource("44_51ujp")
 [node name="RayCast2D" type="RayCast2D" parent="Player/WallDetectorComponent"]
 visible = false
 target_position = Vector2(60, 0)
+
+[node name="AirMobilityComponent" type="Node" parent="Player"]
+script = ExtResource("55_0yhus")
+metadata/_custom_type_script = "uid://bbcwxyp2qnnga"
 
 [node name="SmartTargetingComponent" type="Node2D" parent="Player"]
 script = ExtResource("55_qjsmb")

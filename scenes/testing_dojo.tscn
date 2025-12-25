@@ -413,8 +413,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-23.1543, -327.357)
-rotation = 0.393775
+position = Vector2(-18.4089, -328.096)
+rotation = 0.454495
 scale = Vector2(1, 1)
 
 [node name="Enemys" type="Node" parent="."]
@@ -671,7 +671,7 @@ position = Vector2(9947, -583)
 rotation = 1.5708
 
 [node name="Spikes14" parent="Traps" instance=ExtResource("25_1woli")]
-position = Vector2(9947, -707)
+position = Vector2(9947, -665)
 rotation = 1.5708
 
 [node name="Spikes7" parent="Traps" instance=ExtResource("25_1woli")]

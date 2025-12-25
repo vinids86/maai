@@ -1,4 +1,4 @@
-[gd_scene load_steps=91 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=92 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -64,6 +64,7 @@
 [ext_resource type="Resource" uid="uid://cbaql87g71xyk" path="res://resources/enemy/attack/enemy_light_combo.tres" id="46_2qahx"]
 [ext_resource type="Resource" uid="uid://d1elwc0tip686" path="res://resources/player/attack/air_attack_set.tres" id="48_4c6tc"]
 [ext_resource type="Script" uid="uid://clhnftdn6qup" path="res://scripts/states/airborne_state.gd" id="48_sm4rh"]
+[ext_resource type="Script" uid="uid://bbcwxyp2qnnga" path="res://scripts/components/air_mobility_component.gd" id="49_4ceth"]
 [ext_resource type="Script" uid="uid://d28fgt1kpvll5" path="res://scripts/components/counter_executor_component.gd" id="50_4ceth"]
 [ext_resource type="Script" uid="uid://d18awpld4ar25" path="res://scripts/states/dash_state.gd" id="50_7w3jn"]
 [ext_resource type="Script" uid="uid://bupm1pvrvu681" path="res://scripts/components/vision_component.gd" id="54_4ceth"]
@@ -394,6 +395,10 @@ metadata/_custom_type_script = "uid://7awh4v6bsojt"
 script = ExtResource("34_5utat")
 attack_set = ExtResource("48_4c6tc")
 metadata/_custom_type_script = "uid://k7ywlbk605tf"
+
+[node name="AirMobilityComponent" type="Node" parent="Enemy"]
+script = ExtResource("49_4ceth")
+metadata/_custom_type_script = "uid://bbcwxyp2qnnga"
 
 [node name="SkillComboComponent" type="Node" parent="Enemy"]
 script = ExtResource("28_7v6cf")

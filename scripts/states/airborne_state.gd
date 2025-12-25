@@ -10,34 +10,29 @@ enum SubStates { NORMAL, ATTACKING }
 var current_sub_state: SubStates = SubStates.NORMAL
 
 var _last_jump_was_air: bool = false
-
 var _pending_jump_impulse: bool = false
 var _pending_initial_velocity: float = 0.0
 var _holding: bool = false
 var _hold_time: float = 0.0
 var _released_this_frame: bool = false
-
 var _wall_jump_lock_timer: float = 0.0
 
-var _landed_connected: bool = false
+# NOVO: Coyote Time gerenciado pelo Estado
+var _coyote_timer: float = 0.0
 
 var _is_gravity_suspended: bool = false
 var _current_attack_has_hit: bool = false
-
 var _attack_executor: AttackExecutor
 var _air_combo_component: AirComboComponent
+var _air_mobility_component: AirMobilityComponent
 var _is_initialized: bool = false
 
-
 func _initialize_references():
-	if _is_initialized:
-		return
+	if _is_initialized: return
 	_attack_executor = owner_node.find_child("AttackExecutor")
 	_air_combo_component = owner_node.find_child("AirComboComponent")
-	assert(_attack_executor != null, "AirborneState: Nó 'AttackExecutor' não encontrado.")
-	assert(_air_combo_component != null, "AirborneState: Nó 'AirComboComponent' não encontrado.")
+	_air_mobility_component = owner_node.find_child("AirMobilityComponent")
 	_is_initialized = true
-
 
 func enter(args: Dictionary = {}):
 	_initialize_references()
@@ -45,8 +40,11 @@ func enter(args: Dictionary = {}):
 
 	var apply_jump_impulse: bool = bool(args.get("apply_jump_impulse", false))
 	var is_wall_jump: bool = bool(args.get("is_wall_jump", false))
-	
 	current_profile = args.get("profile")
+	
+	if not current_profile and owner_node.has_method("get_jump_profile"):
+		current_profile = owner_node.get_jump_profile()
+	
 	_pending_jump_impulse = false
 	_pending_initial_velocity = 0.0
 	_holding = false
@@ -54,34 +52,38 @@ func enter(args: Dictionary = {}):
 	_released_this_frame = false
 	_last_jump_was_air = false
 	_wall_jump_lock_timer = 0.0
+	_coyote_timer = 0.0 # Reseta o timer por padrão
 	
 	_is_gravity_suspended = false
 	_current_attack_has_hit = false
-
-	if surface_contact_component and not _landed_connected:
-		surface_contact_component.connect("landed", Callable(self, "_on_landed"))
-		_landed_connected = true
 
 	if is_wall_jump and current_profile:
 		owner_node.velocity = current_profile.wall_jump_impulse * Vector2(-owner_node.facing_sign, 1)
 		_holding = true
 		_last_jump_was_air = true
-		
 		_wall_jump_lock_timer = current_profile.wall_jump_lock_duration
 		
 	elif apply_jump_impulse and current_profile:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
 		_holding = true
-		if not owner_node.has_locked_air_pool:
-			owner_node.air_jumps_left = current_profile.max_air_jumps
-			owner_node.has_locked_air_pool = true
+		
 	else:
-		if surface_contact_component.last_left_ground_ms != -1:
-			owner_node.last_left_ground_ms = surface_contact_component.last_left_ground_ms
+		# Lógica de Queda (Falling)
+		# Se caímos SEM impulso (não foi pulo), ativamos o Coyote Time.
+		# A verificação extra (air_jumps_left == max) garante que não viemos de um ataque aéreo,
+		# pois se viemos de ataque/dash aéreo, já gastamos algo ou não estamos "saindo do chão".
+		if current_profile:
+			var has_full_resources = _air_mobility_component.air_jumps_left == current_profile.max_air_jumps
+			if has_full_resources:
+				_coyote_timer = current_profile.coyote_time
+			
+			# Fallback: Se não tem coyote, consome o pulo para não dar um extra
+			elif current_profile.max_air_jumps > 0:
+				# _air_mobility_component.try_consume_air_jump() # Opcional: penalidade por cair
+				pass
 
 	_update_phase(owner_node.velocity)
-
 
 func exit():
 	if current_sub_state == SubStates.ATTACKING:
@@ -90,31 +92,26 @@ func exit():
 			_attack_executor.finished.disconnect(_on_air_attack_finished)
 		if _attack_executor.is_connected("attack_phase_changed", Callable(self, "_on_phase_changed")):
 			_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
-	
 	_holding = false
 	_hold_time = 0.0
 	_released_this_frame = false
 	_pending_jump_impulse = false
-	_pending_initial_velocity = 0.0
-	_last_jump_was_air = false
-	_wall_jump_lock_timer = 0.0
-	
 	_is_gravity_suspended = false
 	_current_attack_has_hit = false
-
 
 func handle_attack_input(profile: AttackProfile) -> InputHandlerResult:
 	if current_sub_state == SubStates.ATTACKING:
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
 	if not state_machine.action_cost_validator.try_pay_costs(profile):
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-	
 	_start_air_attack(profile)
 	return InputHandlerResult.new(InputHandlerResult.Status.CONSUMED)
 
-
 func process_physics(delta: float, walk_direction: float, _is_running: bool) -> Vector2:
+	# Atualiza Coyote Timer
+	if _coyote_timer > 0:
+		_coyote_timer -= delta
+
 	var new_velocity = owner_node.velocity
 	var current_walk_direction = walk_direction
 	
@@ -126,7 +123,7 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	if _pending_jump_impulse and current_profile:
 		new_velocity.y = -abs(_pending_initial_velocity)
 		_pending_jump_impulse = false
-		owner_node.last_left_ground_ms = -1
+		_coyote_timer = 0.0 # Cancela coyote ao pular
 
 	if current_profile:
 		if _holding and _hold_time < current_profile.max_hold_time and new_velocity.y < 0.0:
@@ -149,7 +146,6 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 
 	if not _is_gravity_suspended:
 		new_velocity = physics_component.apply_gravity(new_velocity, delta)
-
 		if new_velocity.y > 0.0:
 			var extra_down_a := 1600 * max(2.2 - 1.0, 0.0)
 			new_velocity.y += extra_down_a * delta
@@ -160,9 +156,8 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	_update_phase(new_velocity)
 
 	if owner_node.is_on_floor() and new_velocity.y >= 0.0:
-		_on_landed()
+		new_velocity.y = 0.0
 		state_machine.on_current_state_finished()
-		new_velocity.y = 0
 		return new_velocity
 
 	var is_falling = new_velocity.y > 0
@@ -175,68 +170,6 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 
 	return new_velocity
 
-func _start_air_attack(profile: AttackProfile):
-	if current_sub_state == SubStates.ATTACKING:
-		if _attack_executor.is_connected("finished", Callable(self, "_on_air_attack_finished")):
-			_attack_executor.finished.disconnect(_on_air_attack_finished)
-		if _attack_executor.is_connected("attack_phase_changed", Callable(self, "_on_phase_changed")):
-			_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
-
-	current_sub_state = SubStates.ATTACKING
-	_current_attack_has_hit = false
-	
-	_attack_executor.attack_phase_changed.connect(_on_phase_changed)
-	_attack_executor.finished.connect(_on_air_attack_finished)
-	_attack_executor.execute(profile)
-	_air_combo_component.advance_combo()
-
-func _on_air_attack_finished():
-	if _attack_executor.is_connected("finished", Callable(self, "_on_air_attack_finished")):
-		_attack_executor.finished.disconnect(_on_air_attack_finished)
-	if _attack_executor.is_connected("attack_phase_changed", Callable(self, "_on_phase_changed")):
-		_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
-	
-	if not _current_attack_has_hit:
-		_is_gravity_suspended = false
-	
-	var buffered_data = state_machine.query_buffered_action()
-	if buffered_data and buffered_data.action == BufferComponent.BufferedAction.ATTACK:
-		var next_profile = _air_combo_component.get_next_attack_profile()
-		if next_profile and state_machine.action_cost_validator.try_pay_costs(next_profile):
-			_start_air_attack(next_profile)
-			return
-
-	current_sub_state = SubStates.NORMAL
-	_is_gravity_suspended = false
-	
-	_update_phase(owner_node.velocity)
-
-func handle_attack_outcome(outcome: ContactResult) -> void:
-	var result = outcome.attacker_outcome
-	
-	if result == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
-		_is_gravity_suspended = true
-		_current_attack_has_hit = true
-		owner_node.velocity.y = 0.0
-
-func _on_phase_changed(phase_data: Dictionary):
-	state_machine.emit_phase_change(phase_data)
-	
-func get_poise_shield_contribution() -> float:
-	if current_sub_state == SubStates.ATTACKING:
-		var executor_phase = _attack_executor.get_current_phase_name()
-		var profile = _attack_executor.get_current_profile()
-		if profile:
-			match executor_phase:
-				"STARTUP": return profile.startup_poise_shield
-				"ACTIVE": return profile.active_poise_shield
-				"RECOVERY": return profile.recovery_poise_shield
-	return 0.0
-
-func on_jump_released() -> void:
-	_holding = false
-	_released_this_frame = true
-
 func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 	var executor_phase_name = _attack_executor.get_current_phase_name()
 	var can_cancel = (executor_phase_name == "RECOVERY")
@@ -248,117 +181,107 @@ func handle_jump_input(profile: JumpProfile) -> InputHandlerResult:
 	if current_profile == null:
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
-	var now_ms := Time.get_ticks_msec()
-	var coyote_ms := int(current_profile.coyote_time * 1000.0)
-	var in_coyote = (owner_node.last_left_ground_ms >= 0) and ((now_ms - owner_node.last_left_ground_ms) <= coyote_ms)
-
-	if in_coyote:
+	# Lógica 1: Coyote Time (Timer Local)
+	if _coyote_timer > 0.0:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
 		_holding = true
 		_hold_time = 0.0
 		_released_this_frame = false
 		_last_jump_was_air = false
-
-		if not owner_node.has_locked_air_pool:
-			owner_node.air_jumps_left = current_profile.max_air_jumps
-			owner_node.has_locked_air_pool = true
-
-		owner_node.last_left_ground_ms = -1
+		_coyote_timer = 0.0 # Consome
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
-	if not owner_node.has_locked_air_pool and current_profile.max_air_jumps > 0:
+	# Lógica 2: Pulo Aéreo (Multijump)
+	if _air_mobility_component.try_consume_air_jump():
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
 		_holding = true
 		_hold_time = 0.0
 		_released_this_frame = false
 		_last_jump_was_air = true
-
-		owner_node.has_locked_air_pool = true
-		owner_node.air_jumps_left = max(current_profile.max_air_jumps - 1, 0)
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
-	if owner_node.air_jumps_left > 0:
-		_pending_jump_impulse = true
-		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
-		_holding = true
-		_hold_time = 0.0
-		_released_this_frame = false
-		_last_jump_was_air = true
-
-		owner_node.air_jumps_left -= 1
+		_coyote_timer = 0.0
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
-func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.CONSUMED)
-	
-func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+# --- Métodos auxiliares mantidos (Dash, Attack Start, etc) ---
 
 func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
 	var executor_phase_name = _attack_executor.get_current_phase_name()
 	var can_cancel = (executor_phase_name == "RECOVERY")
-
 	if current_sub_state == SubStates.NORMAL or (current_sub_state == SubStates.ATTACKING and can_cancel):
-		
+		if owner_node.is_on_floor(): return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 		var targeting = owner_node.find_child("SmartTargetingComponent")
-		
-		if targeting and targeting.current_target:
-			return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
-		if not owner_node.air_dash_used:
-			owner_node.air_dash_used = true
-			return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-			
+		if targeting and targeting.current_target: return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+		if _air_mobility_component.try_consume_air_dash(): return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 		return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
-func _update_facing_sign(direction: float) -> void:
-	if owner_node.facing_locked:
-		return
-	if direction > 0.0:
-		owner_node.facing_sign = 1
-	elif direction < 0.0:
-		owner_node.facing_sign = -1
-
-func _update_phase(vel: Vector2 = Vector2.ZERO) -> void:
+func _start_air_attack(profile: AttackProfile):
 	if current_sub_state == SubStates.ATTACKING:
-		return
-		
+		if _attack_executor.is_connected("finished", Callable(self, "_on_air_attack_finished")): _attack_executor.finished.disconnect(_on_air_attack_finished)
+		if _attack_executor.is_connected("attack_phase_changed", Callable(self, "_on_phase_changed")): _attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
+	current_sub_state = SubStates.ATTACKING
+	_current_attack_has_hit = false
+	_attack_executor.attack_phase_changed.connect(_on_phase_changed)
+	_attack_executor.finished.connect(_on_air_attack_finished)
+	_attack_executor.execute(profile)
+	_air_combo_component.advance_combo()
+
+func _on_air_attack_finished():
+	if _attack_executor.is_connected("finished", Callable(self, "_on_air_attack_finished")): _attack_executor.finished.disconnect(_on_air_attack_finished)
+	if _attack_executor.is_connected("attack_phase_changed", Callable(self, "_on_phase_changed")): _attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
+	if not _current_attack_has_hit: _is_gravity_suspended = false
+	var buffered_data = state_machine.query_buffered_action()
+	if buffered_data and buffered_data.action == BufferComponent.BufferedAction.ATTACK:
+		var next_profile = _air_combo_component.get_next_attack_profile()
+		if next_profile and state_machine.action_cost_validator.try_pay_costs(next_profile):
+			_start_air_attack(next_profile)
+			return
+	current_sub_state = SubStates.NORMAL
+	_is_gravity_suspended = false
+	_update_phase(owner_node.velocity)
+
+func handle_attack_outcome(outcome: ContactResult) -> void:
+	var result = outcome.attacker_outcome
+	if result == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+		_is_gravity_suspended = true
+		_current_attack_has_hit = true
+		owner_node.velocity.y = 0.0
+
+func _on_phase_changed(phase_data: Dictionary): state_machine.emit_phase_change(phase_data)
+func get_poise_shield_contribution() -> float:
+	if current_sub_state == SubStates.ATTACKING:
+		var executor_phase = _attack_executor.get_current_phase_name()
+		var profile = _attack_executor.get_current_profile()
+		if profile: match executor_phase:
+				"STARTUP": return profile.startup_poise_shield
+				"ACTIVE": return profile.active_poise_shield
+				"RECOVERY": return profile.recovery_poise_shield
+	return 0.0
+func on_jump_released() -> void: _holding = false; _released_this_frame = true
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult: return InputHandlerResult.new(InputHandlerResult.Status.CONSUMED)
+func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult: return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+func _update_facing_sign(direction: float) -> void:
+	if owner_node.facing_locked: return
+	if direction > 0.0: owner_node.facing_sign = 1
+	elif direction < 0.0: owner_node.facing_sign = -1
+func _update_phase(vel: Vector2 = Vector2.ZERO) -> void:
+	if current_sub_state == SubStates.ATTACKING: return
 	var vy: float = owner_node.velocity.y
-	if vel != Vector2.ZERO:
-		vy = vel.y
+	if vel != Vector2.ZERO: vy = vel.y
 	var new_phase: JumpPhases = JumpPhases.RISING if vy < 0.0 else JumpPhases.FALLING
 	if new_phase != current_jump_phase:
 		current_jump_phase = new_phase
 		_emit_phase_signal()
-
 func _emit_phase_signal() -> void:
-	if not current_profile:
-		return
-	var anim_to_play: StringName
-	var sfx_to_play: AudioStream
+	if not current_profile: return
+	var anim_to_play: StringName; var sfx_to_play: AudioStream
 	if current_jump_phase == JumpPhases.RISING:
 		anim_to_play = current_profile.air_rising_animation if _last_jump_was_air and current_profile.air_rising_animation != StringName("") else current_profile.rising_animation
 		sfx_to_play = current_profile.air_jump_sfx if _last_jump_was_air and current_profile.air_jump_sfx else current_profile.jump_sfx
 	else:
 		anim_to_play = current_profile.falling_animation
 		sfx_to_play = current_profile.landing_sfx
-
-	var phase_data := {
-		"state_name": self.name,
-		"phase_name": JumpPhases.keys()[current_jump_phase],
-		"animation_to_play": anim_to_play,
-		"sfx_to_play": sfx_to_play
-	}
-	state_machine.emit_phase_change(phase_data)
-
-func _on_landed() -> void:
-	owner_node.air_dash_used = false
-	owner_node.air_jumps_left = 0
-	owner_node.has_locked_air_pool = false
-	owner_node.last_left_ground_ms = -1
+	state_machine.emit_phase_change({"state_name": self.name, "phase_name": JumpPhases.keys()[current_jump_phase], "animation_to_play": anim_to_play, "sfx_to_play": sfx_to_play})

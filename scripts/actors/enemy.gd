@@ -4,6 +4,7 @@ extends CharacterBody2D
 @onready var state_machine: StateMachine = $StateMachine
 @onready var spine_sprite: SpineSprite = $SpineSprite
 @onready var animation_component: AnimationComponent = $AnimationComponent
+@onready var air_mobility_component: AirMobilityComponent = $AirMobilityComponent
 @onready var audio_component: AudioComponent = $AudioComponent
 @onready var ai_controller: AIController = $AIController
 @onready var health_component: HealthComponent = $HealthComponent
@@ -64,7 +65,6 @@ var facing_locked: bool = false
 var air_jumps_left: int = 0
 var air_dash_used: bool = false
 var has_locked_air_pool: bool = false
-var last_left_ground_ms: int = -1
 var _target_detected: Node2D = null
 
 func _ready():
@@ -187,11 +187,8 @@ func get_wall_slide_profile() -> WallSlideProfile:
 func get_jump_profile() -> JumpProfile:
 	return jump_profile
 	
-func reset_air_actions():
-	if jump_profile:
-		air_jumps_left = jump_profile.max_air_jumps
-	air_dash_used = false
-	has_locked_air_pool = true
+func reset_air_actions() -> void:
+	air_mobility_component.reset_resources()
 
 func _apply_visual_tint():
 	if is_instance_valid(spine_sprite) and spine_sprite.normal_material:
