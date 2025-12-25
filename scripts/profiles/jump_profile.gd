@@ -18,6 +18,7 @@ extends Resource
 @export_group("Physics")
 @export var air_control_speed: float = 500.0
 @export var wall_jump_impulse: Vector2 = Vector2(800, -1150)
+@export var wall_jump_lock_duration: float = 0.2
 
 @export_group("Variable Jump")
 @export var min_jump_velocity: float = 1150.0

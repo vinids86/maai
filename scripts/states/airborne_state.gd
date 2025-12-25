@@ -16,7 +16,8 @@ var _pending_initial_velocity: float = 0.0
 var _holding: bool = false
 var _hold_time: float = 0.0
 var _released_this_frame: bool = false
-var _ignore_air_control_this_frame: bool = false
+
+var _wall_jump_lock_timer: float = 0.0
 
 var _landed_connected: bool = false
 
@@ -52,7 +53,7 @@ func enter(args: Dictionary = {}):
 	_hold_time = 0.0
 	_released_this_frame = false
 	_last_jump_was_air = false
-	_ignore_air_control_this_frame = false
+	_wall_jump_lock_timer = 0.0
 	
 	_is_gravity_suspended = false
 	_current_attack_has_hit = false
@@ -65,7 +66,9 @@ func enter(args: Dictionary = {}):
 		owner_node.velocity = current_profile.wall_jump_impulse * Vector2(-owner_node.facing_sign, 1)
 		_holding = true
 		_last_jump_was_air = true
-		_ignore_air_control_this_frame = true
+		
+		_wall_jump_lock_timer = current_profile.wall_jump_lock_duration
+		
 	elif apply_jump_impulse and current_profile:
 		_pending_jump_impulse = true
 		_pending_initial_velocity = abs(current_profile.min_jump_velocity)
@@ -94,7 +97,7 @@ func exit():
 	_pending_jump_impulse = false
 	_pending_initial_velocity = 0.0
 	_last_jump_was_air = false
-	_ignore_air_control_this_frame = false
+	_wall_jump_lock_timer = 0.0
 	
 	_is_gravity_suspended = false
 	_current_attack_has_hit = false
@@ -113,11 +116,12 @@ func handle_attack_input(profile: AttackProfile) -> InputHandlerResult:
 
 func process_physics(delta: float, walk_direction: float, _is_running: bool) -> Vector2:
 	var new_velocity = owner_node.velocity
-	
 	var current_walk_direction = walk_direction
-	if _ignore_air_control_this_frame:
-		current_walk_direction = 0.0
-		_ignore_air_control_this_frame = false
+	
+	var is_control_locked = false
+	if _wall_jump_lock_timer > 0.0:
+		_wall_jump_lock_timer -= delta
+		is_control_locked = true
 
 	if _pending_jump_impulse and current_profile:
 		new_velocity.y = -abs(_pending_initial_velocity)
@@ -137,10 +141,11 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 		if _holding and _hold_time < 0.12 and new_velocity.y < 0.0:
 			_hold_time += delta
 
-	if current_profile:
-		new_velocity.x = current_walk_direction * current_profile.air_control_speed
-	else:
-		new_velocity.x = current_walk_direction * 200.0
+	if not is_control_locked:
+		if current_profile:
+			new_velocity.x = current_walk_direction * current_profile.air_control_speed
+		else:
+			new_velocity.x = current_walk_direction * 200.0
 
 	if not _is_gravity_suspended:
 		new_velocity = physics_component.apply_gravity(new_velocity, delta)

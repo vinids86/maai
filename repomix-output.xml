@@ -702,6 +702,243 @@ func _ready():
 	hud.update_stamina(stamina_component.current_stamina, stamina_component.max_stamina)
 </file>
 
+<file path="scripts/states/guard_broken_state.gd">
+class_name GuardBrokenState
+extends State
+
+var current_profile: GuardBrokenProfile
+
+var time_left_in_phase: float = 0.0
+var _knockback_velocity: Vector2
+
+func enter(args: Dictionary = {}):
+	self.current_profile = args.get("profile")
+
+	if not current_profile:
+		push_warning("GuardBrokenState: Não recebeu um GuardBrokenProfile. A abortar.")
+		state_machine.on_current_state_finished()
+		return
+
+	time_left_in_phase = current_profile.duration
+	
+	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
+	_knockback_velocity = knockback
+	if knockback.x != 0:
+		_knockback_velocity.x *= -owner_node.facing_sign
+		
+	_emit_phase_signal()
+
+
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	if not current_profile:
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+
+	time_left_in_phase -= delta
+	if time_left_in_phase <= 0:
+		state_machine.on_current_state_finished()
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+		
+	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
+	
+	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
+	
+	return final_velocity
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var finisher_profile = owner_node.get_finisher_profile()
+	if finisher_profile:
+		context.defender_health_comp.take_damage(finisher_profile.attack_profile.damage)
+	
+	context.defender_stamina_comp.restore_to_full()
+	
+	var reason = {"outcome": "FINISHER_HIT"}
+
+	if context.attack_profile.impact_sfx != null:
+		reason["override_sfx"] = context.attack_profile.impact_sfx
+
+	state_machine.on_current_state_finished(reason)
+	
+	var result_for_attacker = ContactResult.new()
+	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.FINISHER_SUCCESS
+	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.FINISHER_HIT
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
+	return result_for_attacker
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func _emit_phase_signal():
+	var phase_data = {
+		"state_name": self.name,
+		"phase_name": "GUARD_BROKEN",
+		"profile": current_profile,
+		"animation_to_play": current_profile.animation_name,
+		"sfx_to_play": current_profile.enter_sfx
+	}
+	state_machine.emit_phase_change(phase_data)
+</file>
+
+<file path="scripts/states/parried_state.gd">
+class_name ParriedState
+extends State
+
+var current_profile: ParriedProfile
+
+enum Phases { RECOIL, REACTIVE }
+var _current_internal_phase: Phases
+
+var time_left_in_phase: float = 0.0
+var _knockback_velocity: Vector2
+
+func enter(args: Dictionary = {}):
+	self.current_profile = args.get("profile")
+	
+	if not current_profile:
+		state_machine.on_current_state_finished()
+		return
+
+	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
+	_knockback_velocity = knockback
+	if knockback.x != 0:
+		_knockback_velocity.x *= -owner_node.facing_sign
+
+	_change_phase(Phases.RECOIL)
+
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	if not current_profile:
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+
+	time_left_in_phase -= delta
+
+	while time_left_in_phase <= 0:
+		var time_exceeded = -time_left_in_phase
+		
+		if _current_internal_phase == Phases.RECOIL:
+			_change_phase(Phases.REACTIVE)
+			time_left_in_phase -= time_exceeded
+		else:
+			state_machine.on_current_state_finished()
+			return physics_component.apply_gravity(Vector2.ZERO, delta)
+	
+	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
+	
+	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
+	
+	return final_velocity
+
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
+	if _current_internal_phase == Phases.REACTIVE:
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	if _current_internal_phase == Phases.REACTIVE:
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	return _resolve_default_contact(context)
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func allow_reentry() -> bool:
+	return true
+
+func _change_phase(new_phase: Phases):
+	_current_internal_phase = new_phase
+	
+	var sfx_to_play: AudioStream
+	match _current_internal_phase:
+		Phases.RECOIL:
+			time_left_in_phase = current_profile.recoil_duration
+			sfx_to_play = current_profile.sfx
+		Phases.REACTIVE:
+			time_left_in_phase = current_profile.reactive_duration
+	
+	var phase_data = {
+		"state_name": self.name,
+		"phase_name": Phases.keys()[_current_internal_phase],
+		"profile": current_profile,
+		"sfx_to_play": sfx_to_play
+	}
+
+	if _current_internal_phase == Phases.RECOIL:
+		phase_data["animation_to_play"] = current_profile.animation_name
+	
+	state_machine.emit_phase_change(phase_data)
+</file>
+
+<file path="scripts/states/stagger_state.gd">
+class_name StaggerState
+extends State
+
+var current_profile: StaggerProfile
+
+var time_left_in_phase: float = 0.0
+var _knockback_velocity: Vector2
+
+func enter(args: Dictionary = {}):
+	self.current_profile = args.get("profile")
+
+	if not current_profile:
+		state_machine.on_current_state_finished()
+		return
+
+	time_left_in_phase = current_profile.duration
+	
+	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
+	_knockback_velocity = knockback
+	if knockback.x != 0:
+		_knockback_velocity.x *= -owner_node.facing_sign
+
+	var sfx_to_play = args.get("override_sfx", current_profile.enter_sfx)
+
+	var phase_data := {
+		"state_name": self.name,
+		"phase_name": "STUN",
+		"profile": current_profile,
+		"sfx_to_play": sfx_to_play,
+		"animation_to_play": current_profile.animation_name
+	}
+	state_machine.emit_phase_change(phase_data)
+
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	if not current_profile:
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+
+	time_left_in_phase -= delta
+	if time_left_in_phase <= 0.0:
+		state_machine.on_current_state_finished()
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+	
+	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
+	
+	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
+	
+	return final_velocity
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	return _resolve_default_contact(context)
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func allow_reentry() -> bool:
+	return true
+</file>
+
 <file path="scripts/ui/enemy_status_ui.gd">
 class_name EnemyStatusUI
 extends Control
@@ -1257,6 +1494,75 @@ func _ready() -> void:
 func _on_hitbox_area_entered(area: Area2D) -> void:
 	# Handler mantido para não alterar o fluxo; sem logs.
 	pass
+</file>
+
+<file path="scripts/components/path_follower_component.gd">
+class_name PathFollowerComponent
+extends Node
+
+var owner_node: CharacterBody2D
+var _target: Node2D
+var _last_target_local_position: Vector2
+var _is_active: bool = false
+
+func _ready():
+	owner_node = get_parent() as CharacterBody2D
+	assert(owner_node != null, "PathFollowerComponent must be a child of a CharacterBody2D.")
+
+func start_following(target: Node2D):
+	if not is_instance_valid(target):
+		push_warning("PathFollowerComponent: Invalid target node provided.")
+		_is_active = false
+		return
+	
+	_target = target
+	_last_target_local_position = target.position
+	_is_active = true
+
+func stop_following():
+	_is_active = false
+	_target = null
+	_last_target_local_position = Vector2.ZERO
+
+func calculate_target_velocity(delta: float) -> Vector2:
+	if not _is_active or not is_instance_valid(_target):
+		return Vector2.ZERO
+
+	if delta == 0:
+		return Vector2.ZERO
+
+	var current_target_local_position = _target.position
+	
+	var local_displacement = current_target_local_position - _last_target_local_position
+	
+	var world_displacement = Vector2(local_displacement.x * owner_node.facing_sign, local_displacement.y)
+
+	var calculated_velocity = world_displacement / delta
+	
+	_last_target_local_position = current_target_local_position
+	
+	return calculated_velocity
+
+func is_active() -> bool:
+	return _is_active
+</file>
+
+<file path="scripts/components/physics_component.gd">
+class_name PhysicsComponent
+extends Node
+
+var owner_node: CharacterBody2D
+
+func _ready():
+	owner_node = get_parent() as CharacterBody2D
+	assert(owner_node != null, "PhysicsComponent deve ser filho de um CharacterBody2D.")
+
+func apply_gravity(current_velocity: Vector2, delta: float) -> Vector2:
+	var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
+	var new_velocity = current_velocity
+	
+	new_velocity.y += gravity * delta
+	return new_velocity
 </file>
 
 <file path="scripts/components/smart_targeting_component.gd">
@@ -2223,66 +2529,6 @@ func _ready() -> void:
 		hitbox.attack_profile = attack_profile
 </file>
 
-<file path="scripts/platform/spikes.tscn">
-[gd_scene load_steps=7 format=3 uid="uid://bx6f2vpef7lk4"]
-
-[ext_resource type="Script" uid="uid://dcfds3jqlilhj" path="res://scripts/platform/spikes.gd" id="1_ffmaa"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_jeruf"]
-[ext_resource type="Texture2D" uid="uid://7hrtcp7xev2f" path="res://assets/world/foregound/spikes02.png" id="3_vst2j"]
-[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="4_ysxx2"]
-
-[sub_resource type="Resource" id="Resource_0kghd"]
-script = ExtResource("2_jeruf")
-startup_duration = 0.3
-active_duration = 0.1
-block_recoil_duration = 0.55
-recovery_duration = 0.45
-link_duration = 0.6
-animation_name = &""
-hitbox_size = Vector2(160, 140)
-hitbox_position = Vector2(100, -30)
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 0
-stamina_damage = 10.0
-poise_impact_contribution = 10000.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(500, -800)
-defender_knockback_on_parry = 120.0
-parry_interaction = 1
-unparryable_type = 0
-movement_type = 0
-startup_movement_velocity = Vector2(0, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_yj7u6"]
-size = Vector2(106, 30)
-
-[node name="Spikes" type="Node2D" groups=["Environment"]]
-script = ExtResource("1_ffmaa")
-attack_profile = SubResource("Resource_0kghd")
-
-[node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("3_vst2j")
-
-[node name="Hitbox" type="Area2D" parent="."]
-collision_layer = 16
-collision_mask = 32
-script = ExtResource("4_ysxx2")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(-1, 36)
-shape = SubResource("RectangleShape2D_yj7u6")
-</file>
-
 <file path="scripts/profiles/counter_execution_profile.gd">
 class_name CounterExecutionProfile
 extends Resource
@@ -2422,32 +2668,43 @@ func has_next_step() -> bool:
 	return true
 </file>
 
-<file path="scripts/states/guard_broken_state.gd">
-class_name GuardBrokenState
+<file path="scripts/states/finisher_ready_state.gd">
+class_name FinisherReadyState
 extends State
 
-var current_profile: GuardBrokenProfile
-
+var current_profile: FinisherProfile
 var time_left_in_phase: float = 0.0
-var _knockback_velocity: Vector2
 
 func enter(args: Dictionary = {}):
+	# 1. Limpa o buffer de input ("atropelamento")
+	# Isso força o jogador a pressionar o botão de ataque NOVAMENTE.
+	if state_machine and state_machine.buffer_component:
+		state_machine.buffer_component.clear()
+
+	# 2. Atribui o profile (Corrigindo o crash 'Nil')
 	self.current_profile = args.get("profile")
 
+	# 3. Checagem de segurança do profile
 	if not current_profile:
-		push_warning("GuardBrokenState: Não recebeu um GuardBrokenProfile. A abortar.")
 		state_machine.on_current_state_finished()
 		return
 
-	time_left_in_phase = current_profile.duration
+	# 4. Lógica de virar (Corrigindo o 'has_meta' anterior)
+	var target = args.get("target")
 	
-	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
-	_knockback_velocity = knockback
-	if knockback.x != 0:
-		_knockback_velocity.x *= -owner_node.facing_sign
+	# Apenas checamos se o alvo é válido.
+	if is_instance_valid(target): 
+		var direction_x = target.global_position.x - owner_node.global_position.x
 		
-	_emit_phase_signal()
+		if direction_x != 0:
+			# Ao definir 'facing_sign', o 'setter' em player.gd
+			# será chamado automaticamente, que por sua vez
+			# chama _update_facing_direction().
+			owner_node.facing_sign = sign(direction_x) 
 
+	# 5. Define o tempo da janela de oportunidade
+	time_left_in_phase = current_profile.ready_duration
+	_emit_phase_signal()
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	if not current_profile:
@@ -2458,205 +2715,94 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 		state_machine.on_current_state_finished()
 		return physics_component.apply_gravity(Vector2.ZERO, delta)
 		
-	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
-	
-	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
-	
-	return final_velocity
+	return physics_component.apply_gravity(Vector2.ZERO, delta)
+
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	var finisher_attack_profile = owner_node.get_finisher_attack_profile()
+
+	if finisher_attack_profile:
+		var context = { "override_profile": finisher_attack_profile }
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED, context)
+
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func resolve_contact(context: ContactContext) -> ContactResult:
-	var finisher_profile = owner_node.get_finisher_profile()
-	if finisher_profile:
-		context.defender_health_comp.take_damage(finisher_profile.attack_profile.damage)
-	
-	context.defender_stamina_comp.restore_to_full()
-	
-	var reason = {"outcome": "FINISHER_HIT"}
-
-	if context.attack_profile.impact_sfx != null:
-		reason["override_sfx"] = context.attack_profile.impact_sfx
-
-	state_machine.on_current_state_finished(reason)
-	
-	var result_for_attacker = ContactResult.new()
-	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.FINISHER_SUCCESS
-	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.FINISHER_HIT
-	result_for_attacker.attacker_node = context.attacker_node
-	result_for_attacker.defender_node = context.defender_node
-	result_for_attacker.attack_profile = context.attack_profile
-	return result_for_attacker
+	return _resolve_default_contact(context)
 
 func get_poise_shield_contribution() -> float:
 	if not current_profile:
 		return 0.0
 	return current_profile.poise_shield_contribution
+
+func get_poise_impact_contribution() -> float:
+	return 0.0
 
 func _emit_phase_signal():
 	var phase_data = {
 		"state_name": self.name,
-		"phase_name": "GUARD_BROKEN",
+		"phase_name": "FINISHER_READY",
 		"profile": current_profile,
 		"animation_to_play": current_profile.animation_name,
-		"sfx_to_play": current_profile.enter_sfx
+		"sfx_to_play": current_profile.sfx
 	}
 	state_machine.emit_phase_change(phase_data)
 </file>
 
-<file path="scripts/states/parried_state.gd">
-class_name ParriedState
-extends State
+<file path="scripts/ui/hud_controller.gd">
+class_name HUDController
+extends CanvasLayer
 
-var current_profile: ParriedProfile
+@onready var health_bar: TextureProgressBar = %HealthBar
+@onready var stamina_bar: TextureProgressBar = %StaminaBar
+@onready var focus_bar: TextureProgressBar = %FocusBar
+@onready var focus_segments_container: HBoxContainer = $FocusSegmentsContainer
 
-enum Phases { RECOIL, REACTIVE }
-var _current_internal_phase: Phases
+@export var segment_incomplete_color: Color = Color(0.5, 0.5, 0.5)
+@export var segment_complete_color: Color = Color(0.2, 0.8, 1.0)
 
-var time_left_in_phase: float = 0.0
-var _knockback_velocity: Vector2
 
-func enter(args: Dictionary = {}):
-	self.current_profile = args.get("profile")
+func initialize_hud(player_node: Node):
+	var health_component = player_node.find_child("HealthComponent")
+	var stamina_component = player_node.find_child("StaminaComponent")
+	var focus_component = player_node.find_child("FocusComponent")
 	
-	if not current_profile:
-		state_machine.on_current_state_finished()
-		return
+	if health_component:
+		health_component.health_changed.connect(update_health)
 
-	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
-	_knockback_velocity = knockback
-	if knockback.x != 0:
-		_knockback_velocity.x *= -owner_node.facing_sign
+		update_health(health_component.current_health, health_component.max_health)
+	
+	if stamina_component:
+		stamina_component.stamina_changed.connect(update_stamina)
 
-	_change_phase(Phases.RECOIL)
+		update_stamina(stamina_component.current_stamina, stamina_component.max_stamina)
 
-func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
-	if not current_profile:
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
+	if focus_component:
+		focus_component.focus_changed.connect(_on_focus_changed)
+		focus_component.segment_completed.connect(_on_segment_completed)
 
-	time_left_in_phase -= delta
+		_on_focus_changed(focus_component.current_focus, focus_component.max_focus)
+		_on_segment_completed(0)
 
-	while time_left_in_phase <= 0:
-		var time_exceeded = -time_left_in_phase
-		
-		if _current_internal_phase == Phases.RECOIL:
-			_change_phase(Phases.REACTIVE)
-			time_left_in_phase -= time_exceeded
+
+func update_health(current_health: float, max_health: float):
+	health_bar.max_value = max_health
+	health_bar.value = current_health
+
+func update_stamina(current_stamina: float, max_stamina: float):
+	stamina_bar.max_value = max_stamina
+	stamina_bar.value = current_stamina
+
+func _on_focus_changed(current_focus: int, max_focus: int):
+	focus_bar.max_value = max_focus
+	focus_bar.value = current_focus
+
+func _on_segment_completed(completed_segments: int):
+	var segments = focus_segments_container.get_children()
+	for i in range(segments.size()):
+		if i < completed_segments:
+			segments[i].color = segment_complete_color
 		else:
-			state_machine.on_current_state_finished()
-			return physics_component.apply_gravity(Vector2.ZERO, delta)
-	
-	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
-	
-	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
-	
-	return final_velocity
-
-func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
-	if _current_internal_phase == Phases.REACTIVE:
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	if _current_internal_phase == Phases.REACTIVE:
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	return _resolve_default_contact(context)
-
-func get_poise_shield_contribution() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.poise_shield_contribution
-
-func allow_reentry() -> bool:
-	return true
-
-func _change_phase(new_phase: Phases):
-	_current_internal_phase = new_phase
-	
-	var sfx_to_play: AudioStream
-	match _current_internal_phase:
-		Phases.RECOIL:
-			time_left_in_phase = current_profile.recoil_duration
-			sfx_to_play = current_profile.sfx
-		Phases.REACTIVE:
-			time_left_in_phase = current_profile.reactive_duration
-	
-	var phase_data = {
-		"state_name": self.name,
-		"phase_name": Phases.keys()[_current_internal_phase],
-		"profile": current_profile,
-		"sfx_to_play": sfx_to_play
-	}
-
-	if _current_internal_phase == Phases.RECOIL:
-		phase_data["animation_to_play"] = current_profile.animation_name
-	
-	state_machine.emit_phase_change(phase_data)
-</file>
-
-<file path="scripts/states/stagger_state.gd">
-class_name StaggerState
-extends State
-
-var current_profile: StaggerProfile
-
-var time_left_in_phase: float = 0.0
-var _knockback_velocity: Vector2
-
-func enter(args: Dictionary = {}):
-	self.current_profile = args.get("profile")
-
-	if not current_profile:
-		state_machine.on_current_state_finished()
-		return
-
-	time_left_in_phase = current_profile.duration
-	
-	var knockback: Vector2 = args.get("knockback_vector", Vector2.ZERO)
-	_knockback_velocity = knockback
-	if knockback.x != 0:
-		_knockback_velocity.x *= -owner_node.facing_sign
-
-	var sfx_to_play = args.get("override_sfx", current_profile.enter_sfx)
-
-	var phase_data := {
-		"state_name": self.name,
-		"phase_name": "STUN",
-		"profile": current_profile,
-		"sfx_to_play": sfx_to_play,
-		"animation_to_play": current_profile.animation_name
-	}
-	state_machine.emit_phase_change(phase_data)
-
-func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
-	if not current_profile:
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-
-	time_left_in_phase -= delta
-	if time_left_in_phase <= 0.0:
-		state_machine.on_current_state_finished()
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-	
-	_knockback_velocity = _knockback_velocity.lerp(Vector2.ZERO, 0.1)
-	
-	var final_velocity = physics_component.apply_gravity(_knockback_velocity, delta)
-	
-	return final_velocity
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	return _resolve_default_contact(context)
-
-func get_poise_shield_contribution() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.poise_shield_contribution
-
-func allow_reentry() -> bool:
-	return true
+			segments[i].color = segment_incomplete_color
 </file>
 
 <file path="scripts/world/rain_emitter.gd">
@@ -3002,24 +3148,6 @@ func apply(duration: float, slow_scale: float = 0.01) -> void:
 		_end_time = 0.0
 </file>
 
-<file path="scripts/components/physics_component.gd">
-class_name PhysicsComponent
-extends Node
-
-var owner_node: CharacterBody2D
-
-func _ready():
-	owner_node = get_parent() as CharacterBody2D
-	assert(owner_node != null, "PhysicsComponent deve ser filho de um CharacterBody2D.")
-
-func apply_gravity(current_velocity: Vector2, delta: float) -> Vector2:
-	var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
-	var new_velocity = current_velocity
-	
-	new_velocity.y += gravity * delta
-	return new_velocity
-</file>
-
 <file path="scripts/core/contact_context.gd">
 class_name ContactContext
 extends Resource
@@ -3286,61 +3414,88 @@ func _flip_owner(dir_sign: float):
 		owner_node.set_facing_direction(dir_sign)
 </file>
 
-<file path="scripts/platform/simple_stagger_state.gd">
-class_name SimpleStaggerState
-extends SimpleState
+<file path="scripts/platform/spikes.tscn">
+[gd_scene load_steps=7 format=3 uid="uid://bx6f2vpef7lk4"]
 
-@export var stagger_duration: float = 0.6
-@export var audio: AudioStream
+[ext_resource type="Script" uid="uid://dcfds3jqlilhj" path="res://scripts/platform/spikes.gd" id="1_ffmaa"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_jeruf"]
+[ext_resource type="Texture2D" uid="uid://7hrtcp7xev2f" path="res://assets/world/foregound/spikes02.png" id="3_vst2j"]
+[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="4_ysxx2"]
 
-@export var ground_friction: float = 2500.0 
-@export var air_friction: float = 400.0 
+[sub_resource type="Resource" id="Resource_0kghd"]
+script = ExtResource("2_jeruf")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10000.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(500, -800)
+defender_knockback_on_parry = 120.0
+parry_interaction = 1
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
-@export_range(0.0, 1.0) var knockback_multiplier: float = 0.5 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yj7u6"]
+size = Vector2(106, 30)
 
-var _timer: float = 0.0
-var _current_velocity: Vector2 = Vector2.ZERO
-var _is_first_frame: bool = false
+[node name="Spikes" type="Node2D" groups=["Environment"]]
+script = ExtResource("1_ffmaa")
+attack_profile = SubResource("Resource_0kghd")
 
-func enter(args: Dictionary = {}):
-	owner_node.set_hitbox_enabled(false)
-	
-	var raw_knockback = args.get("knockback_vector", Vector2.ZERO)
-	
-	_current_velocity = raw_knockback * knockback_multiplier
-	
-	_timer = stagger_duration
-	_is_first_frame = true
-	
-	state_machine.emit_phase_change({
-		"state": "SimpleStaggerState",
-		"phase": "hurt",
-		"sfx_to_play": audio,
-		"animation_to_play": "hit"
-	})
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("3_vst2j")
 
-func process_physics(delta: float) -> Vector2:
-	_timer -= delta
-	if _timer <= 0.0:
-		state_machine.on_current_state_finished()
-		return Vector2.ZERO
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 32
+script = ExtResource("4_ysxx2")
 
-	if not _is_first_frame:
-		_current_velocity = owner_node.velocity
-	else:
-		_is_first_frame = false
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(-1, 36)
+shape = SubResource("RectangleShape2D_yj7u6")
+</file>
 
-	if not owner_node.is_on_floor():
-		_current_velocity.y += 980.0 * delta
-		_current_velocity.x = move_toward(_current_velocity.x, 0.0, air_friction * delta)
-	else:
-		_current_velocity.x = move_toward(_current_velocity.x, 0.0, ground_friction * delta)
-	
-	return _current_velocity
+<file path="scripts/profiles/dodge_profile.gd">
+class_name DodgeProfile
+extends Resource
 
-func exit():
-	owner_node.set_hitbox_enabled(true)
-	owner_node.velocity = Vector2.ZERO
+@export_group("Phases")
+@export var active_duration: float = 0.2
+@export var recovery_duration: float = 0.1
+
+@export_group("Movement")
+@export var active_movement_velocity: Vector2 = Vector2.ZERO
+@export var recovery_movement_velocity: Vector2 = Vector2.ZERO
+
+@export_group("Mechanics")
+@export var stamina_cost: float = 15.0
+@export var focus_cost: float = 0.0
+@export var poise_shield_contribution: float = 50.0
+@export var counter_execution_profile: CounterExecutionProfile
+
+@export_group("Presentation")
+@export var animation_name: StringName
+@export var active_sfx: AudioStream
+@export var recovery_sfx: AudioStream
 </file>
 
 <file path="scripts/states/countered_vulnerable_state.gd">
@@ -3431,84 +3586,80 @@ func resolve_contact(context: ContactContext) -> ContactResult:
 	return result_for_attacker
 </file>
 
-<file path="scripts/states/finisher_ready_state.gd">
-class_name FinisherReadyState
+<file path="scripts/states/death_state.gd">
+class_name DeathState
 extends State
 
-var current_profile: FinisherProfile
-var time_left_in_phase: float = 0.0
+var current_profile: DeathProfile
 
 func enter(args: Dictionary = {}):
-	# 1. Limpa o buffer de input ("atropelamento")
-	# Isso força o jogador a pressionar o botão de ataque NOVAMENTE.
-	if state_machine and state_machine.buffer_component:
-		state_machine.buffer_component.clear()
-
-	# 2. Atribui o profile (Corrigindo o crash 'Nil')
-	self.current_profile = args.get("profile")
-
-	# 3. Checagem de segurança do profile
-	if not current_profile:
-		state_machine.on_current_state_finished()
-		return
-
-	# 4. Lógica de virar (Corrigindo o 'has_meta' anterior)
-	var target = args.get("target")
+	current_profile = args.get("profile")
 	
-	# Apenas checamos se o alvo é válido.
-	if is_instance_valid(target): 
-		var direction_x = target.global_position.x - owner_node.global_position.x
-		
-		if direction_x != 0:
-			# Ao definir 'facing_sign', o 'setter' em player.gd
-			# será chamado automaticamente, que por sua vez
-			# chama _update_facing_direction().
-			owner_node.facing_sign = sign(direction_x) 
+	owner_node.collision_layer = 0
+	owner_node.collision_mask = 1 
+	owner_node.velocity.x = 0 
+	
+	if "ai_controller" in owner_node and owner_node.ai_controller:
+		owner_node.ai_controller.set_physics_process(false)
+		owner_node.ai_controller.set_process(false)
 
-	# 5. Define o tempo da janela de oportunidade
-	time_left_in_phase = current_profile.ready_duration
+	if "detection_area" in owner_node and owner_node.detection_area:
+		owner_node.detection_area.set_deferred("monitoring", false)
+		owner_node.detection_area.set_deferred("monitorable", false)
+	
+	var facing_comp = owner_node.find_child("FacingComponent")
+	if facing_comp and facing_comp.has_method("disable"):
+		facing_comp.disable()
+		
+	if "_target_detected" in owner_node:
+		owner_node._target_detected = null
+
+	if "status_ui" in owner_node and owner_node.status_ui:
+		owner_node.status_ui.hide()
+
+	get_tree().call_group("MainCamera", "unregister_enemy_aggro", owner_node)
 	_emit_phase_signal()
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
-	if not current_profile:
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-
-	time_left_in_phase -= delta
-	if time_left_in_phase <= 0:
-		state_machine.on_current_state_finished()
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-		
-	return physics_component.apply_gravity(Vector2.ZERO, delta)
-
-func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
-	var finisher_attack_profile = owner_node.get_finisher_attack_profile()
-
-	if finisher_attack_profile:
-		var context = { "override_profile": finisher_attack_profile }
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED, context)
-
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	return _resolve_default_contact(context)
-
-func get_poise_shield_contribution() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.poise_shield_contribution
-
-func get_poise_impact_contribution() -> float:
-	return 0.0
+	var new_velocity = owner_node.velocity
+	
+	new_velocity = physics_component.apply_gravity(new_velocity, delta)
+	new_velocity.x = move_toward(new_velocity.x, 0, 2000.0 * delta)
+	
+	return new_velocity
 
 func _emit_phase_signal():
+	if not current_profile:
+		return
+	
 	var phase_data = {
 		"state_name": self.name,
-		"phase_name": "FINISHER_READY",
-		"profile": current_profile,
 		"animation_to_play": current_profile.animation_name,
 		"sfx_to_play": current_profile.sfx
 	}
+	
 	state_machine.emit_phase_change(phase_data)
+
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+
+func get_poise_shield_contribution() -> float:
+	return 0.0
 </file>
 
 <file path="scripts/vfx/spark_controller.gd">
@@ -3732,57 +3883,6 @@ layout_mode = 2
 layout_mode = 2
 </file>
 
-<file path="scripts/components/path_follower_component.gd">
-class_name PathFollowerComponent
-extends Node
-
-var owner_node: CharacterBody2D
-var _target: Node2D
-var _last_target_local_position: Vector2
-var _is_active: bool = false
-
-func _ready():
-	owner_node = get_parent() as CharacterBody2D
-	assert(owner_node != null, "PathFollowerComponent must be a child of a CharacterBody2D.")
-
-func start_following(target: Node2D):
-	if not is_instance_valid(target):
-		push_warning("PathFollowerComponent: Invalid target node provided.")
-		_is_active = false
-		return
-	
-	_target = target
-	_last_target_local_position = target.position
-	_is_active = true
-
-func stop_following():
-	_is_active = false
-	_target = null
-	_last_target_local_position = Vector2.ZERO
-
-func calculate_target_velocity(delta: float) -> Vector2:
-	if not _is_active or not is_instance_valid(_target):
-		return Vector2.ZERO
-
-	if delta == 0:
-		return Vector2.ZERO
-
-	var current_target_local_position = _target.position
-	
-	var local_displacement = current_target_local_position - _last_target_local_position
-	
-	var world_displacement = Vector2(local_displacement.x * owner_node.facing_sign, local_displacement.y)
-
-	var calculated_velocity = world_displacement / delta
-	
-	_last_target_local_position = current_target_local_position
-	
-	return calculated_velocity
-
-func is_active() -> bool:
-	return _is_active
-</file>
-
 <file path="scripts/components/wall_detector_component.gd">
 class_name WallDetectorComponent
 extends Node2D
@@ -3809,6 +3909,215 @@ func has_floor_ahead(facing_direction: int) -> bool:
 	floor_detector.force_raycast_update()
 	
 	return floor_detector.is_colliding()
+</file>
+
+<file path="scripts/core/attack_executor.gd">
+class_name AttackExecutor
+extends Node
+
+signal attack_phase_changed(phase_data: Dictionary)
+signal finished
+
+var _owner_node: Node
+var _hitbox: Area2D
+var _hitbox_shape: CollisionShape2D
+var _projectile_spawn_point: Marker2D # Novo ponto de origem opcional
+var _current_profile: AttackProfile
+var _path_follower_component: PathFollowerComponent
+var _path_target: Node2D
+
+enum Phases { STARTUP, ACTIVE, RECOVERY, NONE }
+var _current_phase: Phases = Phases.NONE
+var _time_left_in_phase: float = 0.0
+
+func _ready():
+	set_physics_process(false)
+
+func setup(owner: Node):
+	self._owner_node = owner
+	_hitbox = owner.find_child("AttackHitbox") as Area2D
+	if _hitbox:
+		_hitbox_shape = _hitbox.find_child("CollisionShape2D") as CollisionShape2D
+	
+	# Busca opcional por um ponto de spawn de projéteis
+	_projectile_spawn_point = owner.find_child("ProjectileSpawnPoint") as Marker2D
+	
+	_path_follower_component = owner.find_child("PathFollowerComponent")
+	_path_target = owner.get_parent().get_node("PathTarget")
+	
+	assert(_hitbox != null, "AttackExecutor: Nó 'AttackHitbox' não encontrado.")
+	assert(_hitbox_shape != null, "AttackExecutor: Nó 'CollisionShape2D' não encontrado.")
+	assert(_path_follower_component != null, "AttackExecutor: Nó 'PathFollowerComponent' não encontrado.")
+	assert(_path_target != null, "AttackExecutor: Nó 'PathTarget' não encontrado como irmão do owner.")
+
+
+func _physics_process(delta: float):
+	if _current_phase == Phases.NONE:
+		return
+
+	_time_left_in_phase -= delta
+	
+	if _time_left_in_phase <= 0.0:
+		var time_exceeded: float = -_time_left_in_phase
+		match _current_phase:
+			Phases.STARTUP:
+				_change_phase(Phases.ACTIVE)
+				_time_left_in_phase -= time_exceeded
+			Phases.ACTIVE:
+				_change_phase(Phases.RECOVERY)
+				_time_left_in_phase -= time_exceeded
+			Phases.RECOVERY:
+				_stop_execution()
+				emit_signal("finished")
+				return
+
+func execute(profile: AttackProfile):
+	if not is_instance_valid(profile):
+		push_warning("AttackExecutor: Tentou executar um AttackProfile inválido.")
+		return
+	
+	self._current_profile = profile
+	
+	if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
+		_path_target.position = Vector2.ZERO
+		_path_follower_component.start_following(_path_target)
+		
+	set_physics_process(true)
+	_change_phase(Phases.STARTUP)
+
+func stop():
+	_stop_execution()
+
+func get_current_profile() -> AttackProfile:
+	return _current_profile
+
+func get_current_phase_name() -> String:
+	return Phases.keys()[_current_phase].to_upper()
+
+func get_physics_movement_velocity() -> Vector2:
+	if _current_phase == Phases.NONE or not _current_profile or _current_profile.movement_type != AttackProfile.MovementType.PHYSICS:
+		return Vector2.ZERO
+		
+	var move_vel = Vector2.ZERO
+	match _current_phase:
+		Phases.STARTUP:
+			move_vel = _current_profile.startup_movement_velocity
+		Phases.ACTIVE:
+			move_vel = _current_profile.active_movement_velocity
+		Phases.RECOVERY:
+			move_vel = _current_profile.recovery_movement_velocity
+	
+	var final_velocity = Vector2.ZERO
+	if "facing_sign" in _owner_node:
+		final_velocity.x = move_vel.x * _owner_node.facing_sign
+	else:
+		final_velocity.x = move_vel.x # Fallback seguro
+		
+	final_velocity.y = move_vel.y
+	return final_velocity
+
+func _stop_execution():
+	if _current_profile and _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
+		if _path_follower_component:
+			_path_follower_component.stop_following()
+
+	set_physics_process(false)
+	_current_phase = Phases.NONE
+	_current_profile = null
+	if _hitbox_shape and is_instance_valid(_hitbox_shape):
+		_hitbox_shape.set_deferred("disabled", true)
+		_hitbox_shape.shape = null
+	
+	if is_instance_valid(_hitbox):
+		_hitbox.position = Vector2.ZERO
+		_hitbox.scale = Vector2.ONE
+		_hitbox.source_node = null # Limpa a referência
+
+func _change_phase(new_phase: Phases):
+	_current_phase = new_phase
+	
+	var sfx_to_play: AudioStream
+	match _current_phase:
+		Phases.STARTUP:
+			_time_left_in_phase = _current_profile.startup_duration
+			sfx_to_play = _current_profile.startup_sfx
+		Phases.ACTIVE:
+			_time_left_in_phase = _current_profile.active_duration
+			sfx_to_play = _current_profile.active_sfx
+			
+			# LÓGICA DE DECISÃO: Ranged vs Melee
+			if _current_profile.projectile_scene:
+				_spawn_projectile()
+			else:
+				_update_and_enable_hitbox()
+				
+		Phases.RECOVERY:
+			_time_left_in_phase = _current_profile.recovery_duration
+			sfx_to_play = _current_profile.recovery_sfx
+			if _hitbox_shape:
+				_hitbox_shape.set_deferred("disabled", true)
+				_hitbox_shape.shape = null
+	
+	var phase_data: Dictionary = {
+		"state_name": _owner_node.state_machine.current_state.name if "state_machine" in _owner_node else "Unknown",
+		"phase_name": get_current_phase_name(),
+		"profile": _current_profile,
+		"sfx_to_play": sfx_to_play
+	}
+	
+	if _current_phase == Phases.STARTUP:
+		phase_data["animation_to_play"] = _current_profile.animation_name
+	
+	emit_signal("attack_phase_changed", phase_data)
+
+func _spawn_projectile() -> void:
+	var scene = _current_profile.projectile_scene
+	var projectile = scene.instantiate() as Projectile
+	
+	if not projectile:
+		push_error("AttackExecutor: Cena configurada não é um Projectile válido.")
+		return
+
+	# Calcula posição de spawn
+	var spawn_pos = _owner_node.global_position
+	if _projectile_spawn_point:
+		spawn_pos = _projectile_spawn_point.global_position
+	# Fallback: Se não tiver marker, usa o offset do AttackProfile (ajustado para o lado)
+	else:
+		var offset = _current_profile.hitbox_position
+		if "facing_sign" in _owner_node:
+			offset.x *= _owner_node.facing_sign
+		spawn_pos += offset
+
+	# Calcula direção baseada no facing do owner
+	var shoot_dir = Vector2.RIGHT
+	if "facing_sign" in _owner_node:
+		shoot_dir.x = _owner_node.facing_sign
+
+	# Adiciona na cena raiz para desacoplar movimento
+	get_tree().current_scene.add_child(projectile)
+	projectile.global_position = spawn_pos
+	
+	# Configura o projétil (Isso define o source_node interno dele como self)
+	projectile.setup(_owner_node, _current_profile, shoot_dir)
+
+func _update_and_enable_hitbox():
+	_hitbox.attack_profile = _current_profile
+	
+	# No Melee, a fonte física é o próprio Owner
+	_hitbox.source_node = _owner_node 
+	
+	var shape: RectangleShape2D = RectangleShape2D.new()
+	shape.size = _current_profile.hitbox_size
+	
+	_hitbox_shape.shape = shape
+	
+	_hitbox.position = _current_profile.hitbox_position
+	if "facing_sign" in _owner_node:
+		_hitbox.position.x *= _owner_node.facing_sign
+		_hitbox.scale.x = _owner_node.facing_sign
+	
+	_hitbox_shape.set_deferred("disabled", false)
 </file>
 
 <file path="scripts/core/impact_resolver.gd">
@@ -3873,28 +4182,155 @@ func resolve_contact(hitbox: Hitbox, hurtbox: Hurtbox):
 		emit_signal("impact_resolved", result_for_attacker)
 </file>
 
-<file path="scripts/profiles/dodge_profile.gd">
-class_name DodgeProfile
-extends Resource
+<file path="scripts/platform/simple_stagger_state.gd">
+class_name SimpleStaggerState
+extends SimpleState
 
-@export_group("Phases")
-@export var active_duration: float = 0.2
-@export var recovery_duration: float = 0.1
+@export var stagger_duration: float = 0.6
+@export var audio: AudioStream
 
-@export_group("Movement")
-@export var active_movement_velocity: Vector2 = Vector2.ZERO
-@export var recovery_movement_velocity: Vector2 = Vector2.ZERO
+@export var ground_friction: float = 2500.0 
+@export var air_friction: float = 400.0 
 
-@export_group("Mechanics")
-@export var stamina_cost: float = 15.0
-@export var focus_cost: float = 0.0
-@export var poise_shield_contribution: float = 50.0
-@export var counter_execution_profile: CounterExecutionProfile
+@export_range(0.0, 1.0) var knockback_multiplier: float = 0.5 
 
-@export_group("Presentation")
-@export var animation_name: StringName
-@export var active_sfx: AudioStream
-@export var recovery_sfx: AudioStream
+var _timer: float = 0.0
+var _current_velocity: Vector2 = Vector2.ZERO
+var _is_first_frame: bool = false
+
+func enter(args: Dictionary = {}):
+	owner_node.set_hitbox_enabled(false)
+	
+	var raw_knockback = args.get("knockback_vector", Vector2.ZERO)
+	
+	_current_velocity = raw_knockback * knockback_multiplier
+	
+	_timer = stagger_duration
+	_is_first_frame = true
+	
+	state_machine.emit_phase_change({
+		"state": "SimpleStaggerState",
+		"phase": "hurt",
+		"sfx_to_play": audio,
+		"animation_to_play": "hit"
+	})
+
+func process_physics(delta: float) -> Vector2:
+	_timer -= delta
+	if _timer <= 0.0:
+		state_machine.on_current_state_finished()
+		return Vector2.ZERO
+
+	if not _is_first_frame:
+		_current_velocity = owner_node.velocity
+	else:
+		_is_first_frame = false
+	
+	var is_floating = false
+	if owner_node is CharacterBody2D:
+		is_floating = owner_node.motion_mode == CharacterBody2D.MOTION_MODE_FLOATING
+
+	if is_floating:
+		_current_velocity.x = move_toward(_current_velocity.x, 0.0, air_friction * delta)
+		_current_velocity.y = move_toward(_current_velocity.y, 0.0, air_friction * delta)
+	else:
+		if not owner_node.is_on_floor():
+			var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
+			_current_velocity.y += gravity * delta
+			_current_velocity.x = move_toward(_current_velocity.x, 0.0, air_friction * delta)
+		else:
+			_current_velocity.x = move_toward(_current_velocity.x, 0.0, ground_friction * delta)
+	
+	return _current_velocity
+
+func exit():
+	owner_node.set_hitbox_enabled(true)
+	owner_node.velocity = Vector2.ZERO
+</file>
+
+<file path="scripts/states/block_stun_state.gd">
+extends State
+class_name BlockStunState
+
+var current_profile: BlockStunProfile
+var time_left_in_phase: float = 0.0
+var _recoil_velocity: Vector2
+
+# --- Adição: Variável para controlar a ordem dos sons ---
+var _current_sfx_index: int = 0
+# ------------------------------------------------------
+
+# ✅ Precarrega as 4 variações só uma vez
+const BLOCK_SFX = [
+	preload("res://audio/clash.ogg"),
+	preload("res://audio/clash1.ogg"),
+	preload("res://audio/clash2.ogg"),
+	preload("res://audio/clash3.ogg"),
+	preload("res://audio/clash4.ogg"),
+	preload("res://audio/clash5.ogg"),
+	preload("res://audio/clash6.ogg"),
+	preload("res://audio/clash7.ogg"),
+	preload("res://audio/clash8.ogg"),
+]
+
+func enter(args: Dictionary = {}):
+	self.current_profile = args.get("profile")
+	if not current_profile:
+		state_machine.on_current_state_finished()
+		return
+
+	time_left_in_phase = current_profile.duration
+
+	var recoil: Vector2 = args.get("knockback_vector", Vector2.ZERO)
+	_recoil_velocity = recoil
+	if recoil.x != 0:
+		_recoil_velocity.x *= -owner_node.facing_sign
+
+	_emit_phase_signal()
+
+func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
+	if not current_profile:
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+
+	time_left_in_phase -= delta
+	if time_left_in_phase <= 0:
+		state_machine.on_current_state_finished()
+		return physics_component.apply_gravity(Vector2.ZERO, delta)
+
+	_recoil_velocity = _recoil_velocity.lerp(Vector2.ZERO, 0.15)
+	var final_velocity = physics_component.apply_gravity(_recoil_velocity, delta)
+	return final_velocity
+
+func resolve_contact(context: ContactContext) -> ContactResult:
+	return _resolve_default_contact(context)
+
+func get_poise_shield_contribution() -> float:
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func allow_reentry() -> bool:
+	return true
+
+func _emit_phase_signal():
+	# ✅ Seleciona sequencialmente usando o índice atual
+	var sfx_to_play: AudioStream = BLOCK_SFX[_current_sfx_index % BLOCK_SFX.size()]
+	
+	# Incrementa para o próximo hit (cicla infinitamente)
+	_current_sfx_index += 1
+
+	var phase_data = {
+		"state_name": self.name,
+		"phase_name": "BLOCK_STUN",
+		"profile": current_profile,
+		"animation_to_play": current_profile.animation_name,
+		# ✅ passa a variação sequencial
+		"sfx_to_play": sfx_to_play,
+	}
+	state_machine.emit_phase_change(phase_data)
+
+func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 </file>
 
 <file path="scripts/states/counter_ready_state.gd">
@@ -3996,80 +4432,128 @@ func _change_phase(new_phase: Phases):
 	state_machine.emit_phase_change(phase_data)
 </file>
 
-<file path="scripts/states/death_state.gd">
-class_name DeathState
+<file path="scripts/states/locomotion_state.gd">
+class_name LocomotionState
 extends State
 
-var current_profile: DeathProfile
+var current_profile: LocomotionProfile
+
+enum Phases { IDLE, WALK, RUN }
+var current_phase: Phases = Phases.IDLE
 
 func enter(args: Dictionary = {}):
-	current_profile = args.get("profile")
-	
-	owner_node.collision_layer = 0
-	owner_node.collision_mask = 1 
-	owner_node.velocity.x = 0 
-	
-	if "ai_controller" in owner_node and owner_node.ai_controller:
-		owner_node.ai_controller.set_physics_process(false)
-		owner_node.ai_controller.set_process(false)
+	self.current_profile = args.get("profile")
+	if not current_profile:
+		push_warning("LocomotionState: Não recebeu um LocomotionProfile. A abortar.")
+		return	
+	_change_phase(Phases.IDLE)
 
-	if "detection_area" in owner_node and owner_node.detection_area:
-		owner_node.detection_area.set_deferred("monitoring", false)
-		owner_node.detection_area.set_deferred("monitorable", false)
-	
-	var facing_comp = owner_node.find_child("FacingComponent")
-	if facing_comp and facing_comp.has_method("disable"):
-		facing_comp.disable()
-		
-	if "_target_detected" in owner_node:
-		owner_node._target_detected = null
+func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
+	if not owner_node.is_on_floor():
+		state_machine.transition_to("AirborneState")
+		return owner_node.velocity
 
-	if "status_ui" in owner_node and owner_node.status_ui:
-		owner_node.status_ui.hide()
-
-	get_tree().call_group("MainCamera", "unregister_enemy_aggro", owner_node)
-	_emit_phase_signal()
-
-func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	var new_velocity = owner_node.velocity
-	
 	new_velocity = physics_component.apply_gravity(new_velocity, delta)
-	new_velocity.x = move_toward(new_velocity.x, 0, 2000.0 * delta)
+
+	if not current_profile:
+		return new_velocity
+
+	_update_facing_sign(walk_direction)
+	
+	var target_speed = current_profile.speed
+	if is_running:
+		target_speed = current_profile.run_speed
+	
+	
+	if walk_direction != 0:
+		var is_turning = sign(walk_direction) != sign(new_velocity.x) and abs(new_velocity.x) > 10.0
+		
+		if is_turning:
+			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.friction * 2.0 * delta)
+		else:
+			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.acceleration * delta)
+			
+	else:
+		new_velocity.x = move_toward(new_velocity.x, 0, current_profile.friction * delta)
+		
+	_update_and_emit_phase(walk_direction, is_running)
 	
 	return new_velocity
 
-func _emit_phase_signal():
-	if not current_profile:
-		return
-	
-	var phase_data = {
-		"state_name": self.name,
-		"animation_to_play": current_profile.animation_name,
-		"sfx_to_play": current_profile.sfx
-	}
-	
-	state_machine.emit_phase_change(phase_data)
-
-func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
 func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
 func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 
+func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
+	if owner_node.is_on_floor():
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+	
 func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
+	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+
+func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
+	if owner_node.is_on_floor():
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
+	if owner_node.is_on_floor():
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func get_poise_shield_contribution() -> float:
-	return 0.0
+	if not current_profile:
+		return 0.0
+	return current_profile.poise_shield_contribution
+
+func _update_facing_sign(direction: float):
+	if owner_node.facing_locked:
+		return
+		
+	if direction > 0:
+		owner_node.facing_sign = 1
+	elif direction < 0:
+		owner_node.facing_sign = -1
+
+func _update_and_emit_phase(walk_direction: float, is_running: bool):
+	var new_phase: Phases
+	
+	# Consideramos IDLE apenas se a velocidade for quase zero E não houver input
+	# Isso permite tocar animação de Walk/Run enquanto desacelera (slide curto)
+	if walk_direction == 0 and is_zero_approx(owner_node.velocity.x):
+		new_phase = Phases.IDLE
+	elif is_running:
+		new_phase = Phases.RUN
+	else:
+		new_phase = Phases.WALK
+		
+	if new_phase != current_phase:
+		_change_phase(new_phase)
+
+func _change_phase(new_phase: Phases):
+	current_phase = new_phase
+	
+	var anim_to_play: StringName
+	match current_phase:
+		Phases.IDLE:
+			anim_to_play = current_profile.idle_animation
+		Phases.WALK:
+			anim_to_play = current_profile.walk_animation
+		Phases.RUN:
+			anim_to_play = current_profile.run_animation
+	
+	var phase_data = {
+		"state_name": self.name,
+		"phase_name": Phases.keys()[current_phase],
+		"profile": current_profile,
+		"animation_to_play": anim_to_play
+	}
+	
+	state_machine.emit_phase_change(phase_data)
 </file>
 
 <file path="scripts/states/wall_slide_state.gd">
@@ -4140,63 +4624,6 @@ func _emit_phase_signal():
 		phase_data["sfx_to_play"] = current_profile.sfx
 	
 	state_machine.emit_phase_change(phase_data)
-</file>
-
-<file path="scripts/ui/hud_controller.gd">
-class_name HUDController
-extends CanvasLayer
-
-@onready var health_bar: TextureProgressBar = %HealthBar
-@onready var stamina_bar: TextureProgressBar = %StaminaBar
-@onready var focus_bar: TextureProgressBar = %FocusBar
-@onready var focus_segments_container: HBoxContainer = $FocusSegmentsContainer
-
-@export var segment_incomplete_color: Color = Color(0.5, 0.5, 0.5)
-@export var segment_complete_color: Color = Color(0.2, 0.8, 1.0)
-
-
-func initialize_hud(player_node: Node):
-	var health_component = player_node.find_child("HealthComponent")
-	var stamina_component = player_node.find_child("StaminaComponent")
-	var focus_component = player_node.find_child("FocusComponent")
-	
-	if health_component:
-		health_component.health_changed.connect(update_health)
-
-		update_health(health_component.current_health, health_component.max_health)
-	
-	if stamina_component:
-		stamina_component.stamina_changed.connect(update_stamina)
-
-		update_stamina(stamina_component.current_stamina, stamina_component.max_stamina)
-
-	if focus_component:
-		focus_component.focus_changed.connect(_on_focus_changed)
-		focus_component.segment_completed.connect(_on_segment_completed)
-
-		_on_focus_changed(focus_component.current_focus, focus_component.max_focus)
-		_on_segment_completed(0)
-
-
-func update_health(current_health: float, max_health: float):
-	health_bar.max_value = max_health
-	health_bar.value = current_health
-
-func update_stamina(current_stamina: float, max_stamina: float):
-	stamina_bar.max_value = max_stamina
-	stamina_bar.value = current_stamina
-
-func _on_focus_changed(current_focus: int, max_focus: int):
-	focus_bar.max_value = max_focus
-	focus_bar.value = current_focus
-
-func _on_segment_completed(completed_segments: int):
-	var segments = focus_segments_container.get_children()
-	for i in range(segments.size()):
-		if i < completed_segments:
-			segments[i].color = segment_complete_color
-		else:
-			segments[i].color = segment_incomplete_color
 </file>
 
 <file path="scenes/clash_spark.tscn">
@@ -4467,215 +4894,6 @@ func spawn_vfx(vfx_name: String, spawn_position: Vector2, direction: Vector2, pa
 	vfx_instance.emitting = true
 	
 	vfx_instance.finished.connect(vfx_instance.queue_free.bind())
-</file>
-
-<file path="scripts/core/attack_executor.gd">
-class_name AttackExecutor
-extends Node
-
-signal attack_phase_changed(phase_data: Dictionary)
-signal finished
-
-var _owner_node: Node
-var _hitbox: Area2D
-var _hitbox_shape: CollisionShape2D
-var _projectile_spawn_point: Marker2D # Novo ponto de origem opcional
-var _current_profile: AttackProfile
-var _path_follower_component: PathFollowerComponent
-var _path_target: Node2D
-
-enum Phases { STARTUP, ACTIVE, RECOVERY, NONE }
-var _current_phase: Phases = Phases.NONE
-var _time_left_in_phase: float = 0.0
-
-func _ready():
-	set_physics_process(false)
-
-func setup(owner: Node):
-	self._owner_node = owner
-	_hitbox = owner.find_child("AttackHitbox") as Area2D
-	if _hitbox:
-		_hitbox_shape = _hitbox.find_child("CollisionShape2D") as CollisionShape2D
-	
-	# Busca opcional por um ponto de spawn de projéteis
-	_projectile_spawn_point = owner.find_child("ProjectileSpawnPoint") as Marker2D
-	
-	_path_follower_component = owner.find_child("PathFollowerComponent")
-	_path_target = owner.get_parent().get_node("PathTarget")
-	
-	assert(_hitbox != null, "AttackExecutor: Nó 'AttackHitbox' não encontrado.")
-	assert(_hitbox_shape != null, "AttackExecutor: Nó 'CollisionShape2D' não encontrado.")
-	assert(_path_follower_component != null, "AttackExecutor: Nó 'PathFollowerComponent' não encontrado.")
-	assert(_path_target != null, "AttackExecutor: Nó 'PathTarget' não encontrado como irmão do owner.")
-
-
-func _physics_process(delta: float):
-	if _current_phase == Phases.NONE:
-		return
-
-	_time_left_in_phase -= delta
-	
-	if _time_left_in_phase <= 0.0:
-		var time_exceeded: float = -_time_left_in_phase
-		match _current_phase:
-			Phases.STARTUP:
-				_change_phase(Phases.ACTIVE)
-				_time_left_in_phase -= time_exceeded
-			Phases.ACTIVE:
-				_change_phase(Phases.RECOVERY)
-				_time_left_in_phase -= time_exceeded
-			Phases.RECOVERY:
-				_stop_execution()
-				emit_signal("finished")
-				return
-
-func execute(profile: AttackProfile):
-	if not is_instance_valid(profile):
-		push_warning("AttackExecutor: Tentou executar um AttackProfile inválido.")
-		return
-	
-	self._current_profile = profile
-	
-	if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
-		_path_target.position = Vector2.ZERO
-		_path_follower_component.start_following(_path_target)
-		
-	set_physics_process(true)
-	_change_phase(Phases.STARTUP)
-
-func stop():
-	_stop_execution()
-
-func get_current_profile() -> AttackProfile:
-	return _current_profile
-
-func get_current_phase_name() -> String:
-	return Phases.keys()[_current_phase].to_upper()
-
-func get_physics_movement_velocity() -> Vector2:
-	if _current_phase == Phases.NONE or not _current_profile or _current_profile.movement_type != AttackProfile.MovementType.PHYSICS:
-		return Vector2.ZERO
-		
-	var move_vel = Vector2.ZERO
-	match _current_phase:
-		Phases.STARTUP:
-			move_vel = _current_profile.startup_movement_velocity
-		Phases.ACTIVE:
-			move_vel = _current_profile.active_movement_velocity
-		Phases.RECOVERY:
-			move_vel = _current_profile.recovery_movement_velocity
-	
-	var final_velocity = Vector2.ZERO
-	if "facing_sign" in _owner_node:
-		final_velocity.x = move_vel.x * _owner_node.facing_sign
-	else:
-		final_velocity.x = move_vel.x # Fallback seguro
-		
-	final_velocity.y = move_vel.y
-	return final_velocity
-
-func _stop_execution():
-	if _current_profile and _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
-		if _path_follower_component:
-			_path_follower_component.stop_following()
-
-	set_physics_process(false)
-	_current_phase = Phases.NONE
-	_current_profile = null
-	if _hitbox_shape and is_instance_valid(_hitbox_shape):
-		_hitbox_shape.set_deferred("disabled", true)
-		_hitbox_shape.shape = null
-	
-	if is_instance_valid(_hitbox):
-		_hitbox.position = Vector2.ZERO
-		_hitbox.scale = Vector2.ONE
-		_hitbox.source_node = null # Limpa a referência
-
-func _change_phase(new_phase: Phases):
-	_current_phase = new_phase
-	
-	var sfx_to_play: AudioStream
-	match _current_phase:
-		Phases.STARTUP:
-			_time_left_in_phase = _current_profile.startup_duration
-			sfx_to_play = _current_profile.startup_sfx
-		Phases.ACTIVE:
-			_time_left_in_phase = _current_profile.active_duration
-			sfx_to_play = _current_profile.active_sfx
-			
-			# LÓGICA DE DECISÃO: Ranged vs Melee
-			if _current_profile.projectile_scene:
-				_spawn_projectile()
-			else:
-				_update_and_enable_hitbox()
-				
-		Phases.RECOVERY:
-			_time_left_in_phase = _current_profile.recovery_duration
-			sfx_to_play = _current_profile.recovery_sfx
-			if _hitbox_shape:
-				_hitbox_shape.set_deferred("disabled", true)
-				_hitbox_shape.shape = null
-	
-	var phase_data: Dictionary = {
-		"state_name": _owner_node.state_machine.current_state.name if "state_machine" in _owner_node else "Unknown",
-		"phase_name": get_current_phase_name(),
-		"profile": _current_profile,
-		"sfx_to_play": sfx_to_play
-	}
-	
-	if _current_phase == Phases.STARTUP:
-		phase_data["animation_to_play"] = _current_profile.animation_name
-	
-	emit_signal("attack_phase_changed", phase_data)
-
-func _spawn_projectile() -> void:
-	var scene = _current_profile.projectile_scene
-	var projectile = scene.instantiate() as Projectile
-	
-	if not projectile:
-		push_error("AttackExecutor: Cena configurada não é um Projectile válido.")
-		return
-
-	# Calcula posição de spawn
-	var spawn_pos = _owner_node.global_position
-	if _projectile_spawn_point:
-		spawn_pos = _projectile_spawn_point.global_position
-	# Fallback: Se não tiver marker, usa o offset do AttackProfile (ajustado para o lado)
-	else:
-		var offset = _current_profile.hitbox_position
-		if "facing_sign" in _owner_node:
-			offset.x *= _owner_node.facing_sign
-		spawn_pos += offset
-
-	# Calcula direção baseada no facing do owner
-	var shoot_dir = Vector2.RIGHT
-	if "facing_sign" in _owner_node:
-		shoot_dir.x = _owner_node.facing_sign
-
-	# Adiciona na cena raiz para desacoplar movimento
-	get_tree().current_scene.add_child(projectile)
-	projectile.global_position = spawn_pos
-	
-	# Configura o projétil (Isso define o source_node interno dele como self)
-	projectile.setup(_owner_node, _current_profile, shoot_dir)
-
-func _update_and_enable_hitbox():
-	_hitbox.attack_profile = _current_profile
-	
-	# No Melee, a fonte física é o próprio Owner
-	_hitbox.source_node = _owner_node 
-	
-	var shape: RectangleShape2D = RectangleShape2D.new()
-	shape.size = _current_profile.hitbox_size
-	
-	_hitbox_shape.shape = shape
-	
-	_hitbox.position = _current_profile.hitbox_position
-	if "facing_sign" in _owner_node:
-		_hitbox.position.x *= _owner_node.facing_sign
-		_hitbox.scale.x = _owner_node.facing_sign
-	
-	_hitbox_shape.set_deferred("disabled", false)
 </file>
 
 <file path="scripts/debug/player_debug_hud.gd">
@@ -4987,91 +5205,6 @@ class_name DashProfile
 @export var stamina_cost: float = 10.0
 </file>
 
-<file path="scripts/states/block_stun_state.gd">
-extends State
-class_name BlockStunState
-
-var current_profile: BlockStunProfile
-var time_left_in_phase: float = 0.0
-var _recoil_velocity: Vector2
-
-# --- Adição: Variável para controlar a ordem dos sons ---
-var _current_sfx_index: int = 0
-# ------------------------------------------------------
-
-# ✅ Precarrega as 4 variações só uma vez
-const BLOCK_SFX = [
-	preload("res://audio/clash.ogg"),
-	preload("res://audio/clash1.ogg"),
-	preload("res://audio/clash2.ogg"),
-	preload("res://audio/clash3.ogg"),
-	preload("res://audio/clash4.ogg"),
-	preload("res://audio/clash5.ogg"),
-	preload("res://audio/clash6.ogg"),
-	preload("res://audio/clash7.ogg"),
-	preload("res://audio/clash8.ogg"),
-]
-
-func enter(args: Dictionary = {}):
-	self.current_profile = args.get("profile")
-	if not current_profile:
-		state_machine.on_current_state_finished()
-		return
-
-	time_left_in_phase = current_profile.duration
-
-	var recoil: Vector2 = args.get("knockback_vector", Vector2.ZERO)
-	_recoil_velocity = recoil
-	if recoil.x != 0:
-		_recoil_velocity.x *= -owner_node.facing_sign
-
-	_emit_phase_signal()
-
-func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
-	if not current_profile:
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-
-	time_left_in_phase -= delta
-	if time_left_in_phase <= 0:
-		state_machine.on_current_state_finished()
-		return physics_component.apply_gravity(Vector2.ZERO, delta)
-
-	_recoil_velocity = _recoil_velocity.lerp(Vector2.ZERO, 0.15)
-	var final_velocity = physics_component.apply_gravity(_recoil_velocity, delta)
-	return final_velocity
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	return _resolve_default_contact(context)
-
-func get_poise_shield_contribution() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.poise_shield_contribution
-
-func allow_reentry() -> bool:
-	return true
-
-func _emit_phase_signal():
-	# ✅ Seleciona sequencialmente usando o índice atual
-	var sfx_to_play: AudioStream = BLOCK_SFX[_current_sfx_index % BLOCK_SFX.size()]
-	
-	# Incrementa para o próximo hit (cicla infinitamente)
-	_current_sfx_index += 1
-
-	var phase_data = {
-		"state_name": self.name,
-		"phase_name": "BLOCK_STUN",
-		"profile": current_profile,
-		"animation_to_play": current_profile.animation_name,
-		# ✅ passa a variação sequencial
-		"sfx_to_play": sfx_to_play,
-	}
-	state_machine.emit_phase_change(phase_data)
-
-func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-</file>
-
 <file path="scripts/states/dash_state.gd">
 class_name DashState
 extends State
@@ -5316,130 +5449,6 @@ func _on_attack_finished():
 	state_machine.on_current_state_finished()
 </file>
 
-<file path="scripts/states/locomotion_state.gd">
-class_name LocomotionState
-extends State
-
-var current_profile: LocomotionProfile
-
-enum Phases { IDLE, WALK, RUN }
-var current_phase: Phases = Phases.IDLE
-
-func enter(args: Dictionary = {}):
-	self.current_profile = args.get("profile")
-	if not current_profile:
-		push_warning("LocomotionState: Não recebeu um LocomotionProfile. A abortar.")
-		return	
-	_change_phase(Phases.IDLE)
-
-func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
-	if not owner_node.is_on_floor():
-		state_machine.transition_to("AirborneState")
-		return owner_node.velocity
-
-	var new_velocity = owner_node.velocity
-	new_velocity = physics_component.apply_gravity(new_velocity, delta)
-
-	if not current_profile:
-		return new_velocity
-
-	_update_facing_sign(walk_direction)
-	
-	var target_speed = current_profile.speed
-	if is_running:
-		target_speed = current_profile.run_speed
-	
-	
-	if walk_direction != 0:
-		var is_turning = sign(walk_direction) != sign(new_velocity.x) and abs(new_velocity.x) > 10.0
-		
-		if is_turning:
-			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.friction * 2.0 * delta)
-		else:
-			new_velocity.x = move_toward(new_velocity.x, walk_direction * target_speed, current_profile.acceleration * delta)
-			
-	else:
-		new_velocity.x = move_toward(new_velocity.x, 0, current_profile.friction * delta)
-		
-	_update_and_emit_phase(walk_direction, is_running)
-	
-	return new_velocity
-
-func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
-func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
-func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
-	if owner_node.is_on_floor():
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-	
-func handle_parry_input(_profile: ParryProfile) -> InputHandlerResult:
-	return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-
-func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
-	if owner_node.is_on_floor():
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
-	if owner_node.is_on_floor():
-		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
-	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
-
-func get_poise_shield_contribution() -> float:
-	if not current_profile:
-		return 0.0
-	return current_profile.poise_shield_contribution
-
-func _update_facing_sign(direction: float):
-	if owner_node.facing_locked:
-		return
-		
-	if direction > 0:
-		owner_node.facing_sign = 1
-	elif direction < 0:
-		owner_node.facing_sign = -1
-
-func _update_and_emit_phase(walk_direction: float, is_running: bool):
-	var new_phase: Phases
-	
-	# Consideramos IDLE apenas se a velocidade for quase zero E não houver input
-	# Isso permite tocar animação de Walk/Run enquanto desacelera (slide curto)
-	if walk_direction == 0 and is_zero_approx(owner_node.velocity.x):
-		new_phase = Phases.IDLE
-	elif is_running:
-		new_phase = Phases.RUN
-	else:
-		new_phase = Phases.WALK
-		
-	if new_phase != current_phase:
-		_change_phase(new_phase)
-
-func _change_phase(new_phase: Phases):
-	current_phase = new_phase
-	
-	var anim_to_play: StringName
-	match current_phase:
-		Phases.IDLE:
-			anim_to_play = current_profile.idle_animation
-		Phases.WALK:
-			anim_to_play = current_profile.walk_animation
-		Phases.RUN:
-			anim_to_play = current_profile.run_animation
-	
-	var phase_data = {
-		"state_name": self.name,
-		"phase_name": Phases.keys()[current_phase],
-		"profile": current_profile,
-		"animation_to_play": anim_to_play
-	}
-	
-	state_machine.emit_phase_change(phase_data)
-</file>
-
 <file path="README.md">
 # Resumo Técnico do Projeto "Maai"
 
@@ -5583,95 +5592,6 @@ func _play_sound_instance(sound_stream: AudioStream):
 	player.play()
 </file>
 
-<file path="scripts/platform/ranged_enemy.tscn">
-[gd_scene load_steps=9 format=3 uid="uid://bs1683iw0jpyk"]
-
-[ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="1_u4pjs"]
-[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="2_uypep"]
-[ext_resource type="PackedScene" uid="uid://d3hx8uvp1ayyb" path="res://scenes/projectile.tscn" id="3_uk1qy"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="4_dwehw"]
-
-[sub_resource type="Resource" id="Resource_2u8hu"]
-script = ExtResource("4_dwehw")
-startup_duration = 0.3
-active_duration = 0.1
-block_recoil_duration = 0.55
-recovery_duration = 0.45
-link_duration = 0.6
-animation_name = &"jump"
-active_sfx = ExtResource("2_uypep")
-hitbox_size = Vector2(160, 140)
-hitbox_position = Vector2(100, -30)
-projectile_scene = ExtResource("3_uk1qy")
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 0
-stamina_damage = 10.0
-poise_impact_contribution = 10.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(1000, 0)
-defender_knockback_on_parry = 120.0
-parry_interaction = 0
-unparryable_type = 0
-movement_type = 0
-startup_movement_velocity = Vector2(0, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_2u8hu"]
-radius = 50.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_uypep"]
-radius = 50.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_uk1qy"]
-radius = 50.0
-
-[node name="RangedEnemy" instance=ExtResource("1_u4pjs")]
-attack_profile = SubResource("Resource_2u8hu")
-enemy_tint_color = Color(5.76471, 0.682353, 0.772549, 1)
-
-[node name="SpineSprite" parent="." index="0"]
-scale = Vector2(0.28, 0.28)
-
-[node name="CollisionShape2D" parent="." index="1"]
-visible = false
-position = Vector2(0, -50)
-shape = SubResource("CircleShape2D_2u8hu")
-
-[node name="SimpleStateMachine" parent="." index="2"]
-attack_range = 1000.0
-attack_cooldown = 0.06
-immune_to_stagger = false
-
-[node name="SimpleAttackState" parent="SimpleStateMachine" index="10" node_paths=PackedStringArray("projectile_spawn_point")]
-projectile_spawn_point = NodePath("../../ProjectileSpawnPoint")
-
-[node name="HealthComponent" parent="." index="5"]
-max_health = 3.0
-
-[node name="Hitbox" parent="." index="9"]
-visible = false
-
-[node name="CollisionShape2D" parent="Hitbox" index="0"]
-position = Vector2(0, -50)
-shape = SubResource("CircleShape2D_uypep")
-
-[node name="CollisionShape2D" parent="Hurtbox" index="0"]
-position = Vector2(0, -50)
-shape = SubResource("CircleShape2D_uk1qy")
-
-[node name="ProjectileSpawnPoint" type="Marker2D" parent="." index="11"]
-position = Vector2(73, -58)
-</file>
-
 <file path="scripts/platform/simple_enemy.gd">
 class_name SimpleEnemy
 extends CharacterBody2D
@@ -5769,576 +5689,6 @@ func _apply_visual_tint():
 		if mat:
 			mat.set_shader_parameter("tint_color", enemy_tint_color)
 			mat.set_shader_parameter("tint_intensity", enemy_tint_intensity)
-</file>
-
-<file path="scenes/enemy_adv.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://dyl8nbamfbxsl"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_8dky6"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_8dky6")]
-
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.592157, 0.478431, 0.658824, 1)
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 5
-</file>
-
-<file path="scenes/enemy_boss.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://lm36r7o518ao"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_5xr4n"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_5xr4n")]
-
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.00392157, 0.00392157, 0.376471, 1)
-</file>
-
-<file path="scenes/enemy_elt.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://dojo2btvv2tj0"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_o8g13"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_o8g13")]
-
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.690196, 0.701961, 0.870588, 1)
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 7
-</file>
-
-<file path="scenes/enemy_mid.tscn">
-[gd_scene load_steps=2 format=3 uid="uid://chqlqywn2ey2v"]
-
-[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_owgr6"]
-
-[node name="EnemyEntity2" instance=ExtResource("1_owgr6")]
-
-[node name="Enemy" parent="." index="0"]
-enemy_tint_color = Color(0.372549, 0.541176, 0.117647, 1)
-
-[node name="HealthComponent" parent="Enemy" index="11"]
-max_health = 25.0
-
-[node name="StaminaComponent" parent="Enemy" index="12"]
-max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 3
-</file>
-
-<file path="scripts/components/camera_2d.gd">
-class_name GameCamera2D
-extends Camera2D
-
-enum ShakePreset { LEVE, MEDIO, FORTE }
-
-@export var preset: ShakePreset = ShakePreset.MEDIO : set = set_preset
-
-@export var max_offset: float = 10.0
-@export var frequency: float = 25.0
-@export var decay_rate: float = 2.5
-@export var resting_offset: Vector2 = Vector2(250, -400)
-
-var trauma: float = 0.0
-var _rng := RandomNumberGenerator.new()
-var _shake_offset := Vector2.ZERO 
-var _time_accum := 0.0
-
-@export_group("Dynamic Zoom")
-@export var exploration_zoom: Vector2 = Vector2(0.65, 0.65)
-@export var combat_zoom: Vector2 = Vector2(1.0, 1.0)
-@export var zoom_speed: float = 2.0
-@export var combat_cooldown: float = 3.0
-
-var _combat_timer: float = 0.0
-var _is_in_combat_mode: bool = false : set = _set_combat_mode
-var _enemies_in_combat: Array[Node] = []
-var _force_exploration_timer: float = 0.0
-
-@export_group("Manual Peek Control")
-@export var max_peek_offset: float = 500.0 
-@export var peek_delay: float = 0.4
-@export var peek_smooth_speed: float = 3.0 
-@export var input_deadzone: float = 0.3
-
-var _peek_offset: Vector2 = Vector2.ZERO
-var _peek_timer: float = 0.0
-
-var _cinematic_layer: CanvasLayer
-var _top_bar: ColorRect
-var _bottom_bar: ColorRect
-const BAR_HEIGHT: int = 200
-
-func _ready():
-	_rng.randomize()
-	apply_preset()
-	offset = resting_offset
-	
-	add_to_group("MainCamera")
-	zoom = exploration_zoom
-	
-	_setup_cinematic_bars()
-
-func set_preset(value):
-	preset = value
-	apply_preset()
-
-func apply_preset():
-	match preset:
-		ShakePreset.LEVE:
-			max_offset = 8.0
-			decay_rate = 3.0
-			frequency = 25.0
-		ShakePreset.MEDIO:
-			max_offset = 15.0
-			decay_rate = 2.3
-			frequency = 30.0
-		ShakePreset.FORTE:
-			max_offset = 25.0
-			decay_rate = 1.8
-			frequency = 35.0
-
-func add_trauma(amount: float = 0.35) -> void:
-	trauma = clamp(trauma + amount, 0.0, 1.0)
-
-func _process(delta: float) -> void:	
-	_update_combat_state(delta)
-	_update_zoom(delta)
-	_process_manual_peek(delta)
-
-	if trauma > 0.0001:
-		_time_accum += delta
-		var interval = 1.0 / max(frequency, 1.0)
-
-		if _time_accum >= interval:
-			_time_accum = 0.0
-			var dir := Vector2(
-				_rng.randf_range(-1.0, 1.0),
-				_rng.randf_range(-1.0, 1.0)
-			).normalized()
-			
-			var target_shake_offset = dir * (trauma * max_offset)
-			_shake_offset = _shake_offset.lerp(target_shake_offset, 0.45)
-
-		trauma = max(trauma - decay_rate * delta, 0.0)
-	else:
-		_shake_offset = _shake_offset.lerp(Vector2.ZERO, 0.15)
-		trauma = 0.0
-		
-	offset = resting_offset + _shake_offset + _peek_offset
-
-func _process_manual_peek(delta: float) -> void:
-	var input_vector = Input.get_vector("camera_look_left", "camera_look_right", "camera_look_up", "camera_look_down")
-	
-	if input_vector.length() < input_deadzone:
-		_peek_timer = 0.0
-		_peek_offset = _peek_offset.lerp(Vector2.ZERO, peek_smooth_speed * delta)
-		return
-
-	_peek_timer += delta
-	
-	if _peek_timer >= peek_delay:
-		var target_peek = input_vector.normalized() * max_peek_offset
-		_peek_offset = _peek_offset.lerp(target_peek, peek_smooth_speed * delta)
-
-func _update_combat_state(delta: float) -> void:
-	if _force_exploration_timer > 0:
-		_force_exploration_timer -= delta
-
-	for i in range(_enemies_in_combat.size() - 1, -1, -1):
-		if not is_instance_valid(_enemies_in_combat[i]):
-			_enemies_in_combat.remove_at(i)
-
-	if _enemies_in_combat.size() > 0 and _force_exploration_timer <= 0:
-		_is_in_combat_mode = true
-		_combat_timer = combat_cooldown
-	else:
-		if _combat_timer > 0 and _force_exploration_timer <= 0:
-			_combat_timer -= delta
-		else:
-			_is_in_combat_mode = false
-
-func _update_zoom(delta: float) -> void:
-	var target_zoom = exploration_zoom
-	if _is_in_combat_mode:
-		target_zoom = combat_zoom
-		
-	var current_zoom_speed = zoom_speed
-	if _force_exploration_timer > 0:
-		current_zoom_speed = zoom_speed * 2.5
-		
-	zoom = zoom.lerp(target_zoom, current_zoom_speed * delta)
-
-func register_enemy_aggro(enemy: Node) -> void:
-	if not _enemies_in_combat.has(enemy):
-		_enemies_in_combat.append(enemy)
-		if _force_exploration_timer <= 0:
-			_is_in_combat_mode = true
-			_combat_timer = combat_cooldown
-
-func unregister_enemy_aggro(enemy: Node) -> void:
-	if _enemies_in_combat.has(enemy):
-		_enemies_in_combat.erase(enemy)
-
-func force_combat_mode(duration: float = 5.0) -> void:
-	_is_in_combat_mode = true
-	_combat_timer = max(_combat_timer, duration)
-
-func on_enemy_death_zoom_out(duration: float = 1.5) -> void:
-	_force_exploration_timer = duration
-	_combat_timer = 0
-	
-func _setup_cinematic_bars() -> void:
-	# Cria o CanvasLayer (UI) via código
-	_cinematic_layer = CanvasLayer.new()
-	_cinematic_layer.layer = 90 # Fica abaixo do HUD principal, mas acima do jogo
-	add_child(_cinematic_layer)
-	
-	# Cria a Barra Superior
-	_top_bar = ColorRect.new()
-	_top_bar.color = Color.BLACK
-	_top_bar.size = Vector2(get_viewport_rect().size.x, BAR_HEIGHT)
-	_top_bar.position.y = -BAR_HEIGHT # Escondida pra cima
-	_top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_cinematic_layer.add_child(_top_bar)
-	
-	# Cria a Barra Inferior
-	_bottom_bar = ColorRect.new()
-	_bottom_bar.color = Color.BLACK
-	_bottom_bar.size = Vector2(get_viewport_rect().size.x, BAR_HEIGHT)
-	_bottom_bar.position.y = get_viewport_rect().size.y # Escondida pra baixo
-	_bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	_cinematic_layer.add_child(_bottom_bar)
-
-func _set_combat_mode(value: bool) -> void:
-	# Evita rodar a lógica se o valor não mudou
-	if _is_in_combat_mode == value:
-		return
-		
-	_is_in_combat_mode = value
-	
-	# Se o jogo ainda não estiver pronto (no _init), não tenta animar
-	if not is_inside_tree(): return
-
-	# Animação das Barras
-	var vp_size = get_viewport_rect().size
-	var tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	
-	if _is_in_combat_mode:
-		# Entrou em combate: Barras aparecem
-		tween.tween_property(_top_bar, "position:y", 0.0, 0.5)
-		tween.tween_property(_bottom_bar, "position:y", vp_size.y - BAR_HEIGHT, 0.5)
-	else:
-		# Saiu de combate: Barras somem
-		tween.tween_property(_top_bar, "position:y", -BAR_HEIGHT, 0.5)
-		tween.tween_property(_bottom_bar, "position:y", vp_size.y, 0.5)
-</file>
-
-<file path="scripts/platform/aggressive_enemy.tscn">
-[gd_scene load_steps=11 format=3 uid="uid://b4uo35lo3wukl"]
-
-[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_6h87l"]
-[ext_resource type="Script" uid="uid://co6k05df3ffqv" path="res://scripts/platform/aggressive_state_machine.gd" id="2_6iwo7"]
-[ext_resource type="AudioStream" uid="uid://snkhhvuv11sl" path="res://audio/attack_1.wav" id="2_r2vcs"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_u6f6r"]
-[ext_resource type="Script" uid="uid://b300sb85dsb48" path="res://scripts/platform/simple_chase_state.gd" id="3_6iwo7"]
-[ext_resource type="Script" uid="uid://c84mr4ehwdq1i" path="res://scripts/platform/simple_parried_state.gd" id="7_52h12"]
-
-[sub_resource type="Resource" id="Resource_r2vcs"]
-script = ExtResource("2_u6f6r")
-startup_duration = 0.3
-active_duration = 0.1
-block_recoil_duration = 0.55
-recovery_duration = 0.45
-link_duration = 0.6
-animation_name = &"jump"
-active_sfx = ExtResource("2_r2vcs")
-hitbox_size = Vector2(160, 140)
-hitbox_position = Vector2(100, -30)
-damage = 1.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 0
-stamina_damage = 10.0
-poise_impact_contribution = 10.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(1000, 0)
-defender_knockback_on_parry = 500.0
-parry_interaction = 0
-unparryable_type = 0
-movement_type = 0
-startup_movement_velocity = Vector2(-100, 0)
-active_movement_velocity = Vector2(3600, 0)
-recovery_movement_velocity = Vector2(70, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_iml81"]
-radius = 72.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_r2vcs"]
-radius = 72.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_52h12"]
-radius = 72.0
-
-[node name="AggressiveEnemy" instance=ExtResource("1_6h87l")]
-attack_profile = SubResource("Resource_r2vcs")
-enemy_tint_color = Color(10, 0, 0, 1)
-enemy_tint_intensity = 0.04
-
-[node name="SpineSprite" parent="." index="0"]
-scale = Vector2(0.4, 0.4)
-
-[node name="CollisionShape2D" parent="." index="1"]
-position = Vector2(0, -72)
-shape = SubResource("CircleShape2D_iml81")
-
-[node name="SimpleStateMachine" parent="." index="2"]
-script = ExtResource("2_6iwo7")
-detection_range = 1000.0
-attack_range = 300.0
-attack_cooldown = 1.0
-chase_state_name = "SimpleChaseState"
-attack_state_name = "SimpleAttackState"
-recoil_state_name = "SimpleRecoilState"
-stagger_state_name = "SimpleStaggerState"
-immune_to_stagger = true
-parries_required_for_groggy = 5
-
-[node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
-script = ExtResource("3_6iwo7")
-metadata/_custom_type_script = "uid://b300sb85dsb48"
-
-[node name="SimpleParriedState" type="Node" parent="SimpleStateMachine" index="6"]
-script = ExtResource("7_52h12")
-metadata/_custom_type_script = "uid://c84mr4ehwdq1i"
-
-[node name="HealthComponent" parent="." index="5"]
-max_health = 10.0
-
-[node name="RayCast2D" parent="WallDetectorComponent" index="0"]
-target_position = Vector2(100, 0)
-
-[node name="FloorDetector" parent="WallDetectorComponent" index="1"]
-position = Vector2(100, 0)
-
-[node name="CollisionShape2D" parent="Hitbox" index="0"]
-position = Vector2(0, -72)
-shape = SubResource("CircleShape2D_r2vcs")
-
-[node name="CollisionShape2D" parent="Hurtbox" index="0"]
-position = Vector2(0, -72)
-shape = SubResource("CircleShape2D_52h12")
-</file>
-
-<file path="scripts/platform/base_simple_state_machine.gd">
-class_name BaseSimpleStateMachine
-extends Node
-
-signal phase_changed(phase_data: Dictionary)
-signal transitioned(from_state: SimpleState, to_state: SimpleState)
-
-@export_group("State Configuration")
-@export var initial_state_key: String = ""
-## Nome do nó na cena que representa o estado de Groggy (vulnerável).
-@export var groggy_state_name: String = "SimpleGroggyState"
-## Nome do nó na cena que representa o estado de Parried (interrupção leve).
-@export var parried_state_name: String = "SimpleParriedState"
-
-@export_group("Mechanics")
-@export var parries_required_for_groggy: int = 1
-
-var _current_parry_count: int = 0
-var states: Dictionary = {}
-var current_state: SimpleState
-var owner_node: Node
-var physics_component: Node
-var wall_detector: WallDetectorComponent
-var surface_contact_component: SurfaceContactComponent 
-
-var _groggy_timer: float = 0.0
-
-func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
-	owner_node = p_owner_node
-	physics_component = p_physics_comp
-	surface_contact_component = p_surface_contact_comp
-	wall_detector = p_wall_detector
-	
-	assert(owner_node != null, "BaseSimpleStateMachine: owner_node não pode ser nulo.")
-	assert(physics_component != null, "BaseSimpleStateMachine: physics_component não pode ser nulo.")
-
-	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
-
-	for child in get_children():
-		if child is SimpleState:
-			states[child.name] = child
-			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
-	
-	_current_parry_count = 0
-	_start_initial_state()
-
-func _start_initial_state():
-	if not initial_state_key.is_empty() and states.has(initial_state_key):
-		current_state = states[initial_state_key]
-		current_state.enter({})
-	elif not initial_state_key.is_empty():
-		push_error("BaseSimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
-
-func process_physics(delta: float) -> Vector2:
-	if _groggy_timer > 0:
-		_groggy_timer -= delta
-		if _groggy_timer <= 0 and current_state.name == groggy_state_name:
-			on_current_state_finished({"outcome": "GROGGY_FINISHED"})
-
-	if not current_state:
-		return Vector2.ZERO
-	return current_state.process_physics(delta)
-
-## Aciona o estado de atordoamento ou interrupção.
-## [param duration]: Tempo que o inimigo fica groggy.
-## [param hit_source]: (Opcional) A origem do impacto para calcular a direção do recuo.
-func trigger_groggy(duration: float, hit_source: Node = null):
-	_current_parry_count += 1
-	if _current_parry_count < parries_required_for_groggy:
-		var push_dir = Vector2.ZERO
-		
-		# Prioridade: Usar a fonte exata do hit (ex: quem deu o parry ou disparou o tiro)
-		if is_instance_valid(hit_source):
-			push_dir = (owner_node.global_position - hit_source.global_position).normalized()
-		# Fallback: Usar o Player global (comportamento legado para segurança)
-		elif is_instance_valid(GameManager.player_node):
-			push_dir = (owner_node.global_position - GameManager.player_node.global_position).normalized()
-			
-		push_dir.y = 0
-		
-		if states.has(parried_state_name):
-			transition_to(parried_state_name, {"direction": push_dir})
-		return
-		
-	_current_parry_count = 0
-	_groggy_timer = duration
-	
-	if current_state.name != groggy_state_name and states.has(groggy_state_name):
-		transition_to(groggy_state_name)
-
-func emit_phase_change(data: Dictionary):
-	emit_signal("phase_changed", data)
-	
-func get_current_state() -> SimpleState:
-	return current_state
-
-func _on_impact_resolved(result: ContactResult):
-	if result.attacker_node == owner_node:
-		if current_state:
-			# Nota: Se desejado, você pode atualizar handle_attack_outcome no SimpleState
-			# para passar result.defender_node ao chamar trigger_groggy.
-			current_state.handle_attack_outcome(result)
-
-func on_current_state_finished(reason: Dictionary = {}):
-	
-	if current_state.name == "SimpleDeathState":
-		return
-		
-	var outcome = reason.get("outcome")
-	if outcome == "HIT" or outcome == "ATTACK_CONNECTED":
-		_decide_next_state(reason)
-		return
-		
-	if _groggy_timer > 0:
-		if current_state.name != groggy_state_name:
-			if states.has(groggy_state_name):
-				transition_to(groggy_state_name)
-				return
-
-	_decide_next_state(reason)
-
-# Função abstrata para filhos implementarem
-func _decide_next_state(_reason: Dictionary):
-	pass
-
-func transition_to(new_state_key: String, args: Dictionary = {}):
-	if not states.has(new_state_key):
-		push_error("BaseSimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
-		return
-
-	var new_state = states[new_state_key]
-	var previous_state = current_state
-	
-	if previous_state:
-		previous_state.exit()
-
-	current_state = new_state
-	current_state.enter(args)
-	emit_signal("transitioned", previous_state, current_state)
-</file>
-
-<file path="scripts/platform/flying_enemy.tscn">
-[gd_scene load_steps=6 format=3 uid="uid://dhjvjsjvv2gir"]
-
-[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_rqvq3"]
-[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_f30pw"]
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_jkvbt"]
-radius = 50.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_rqvq3"]
-radius = 50.0
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_f30pw"]
-radius = 50.0
-
-[node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
-enemy_tint_color = Color(0.635062, 0.750033, 0.982451, 1)
-enemy_tint_intensity = 0.06
-
-[node name="SpineSprite" parent="." index="0"]
-scale = Vector2(0.3, 0.3)
-
-[node name="CollisionShape2D" parent="." index="1"]
-position = Vector2(0, -50)
-shape = SubResource("CircleShape2D_jkvbt")
-
-[node name="SimpleStateMachine" parent="." index="2"]
-initial_state_key = "SimplePatrolFlyState"
-
-[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="4"]
-script = ExtResource("2_f30pw")
-metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
-
-[node name="HealthComponent" parent="." index="5"]
-max_health = 2.0
-
-[node name="CollisionShape2D" parent="Hitbox" index="0"]
-position = Vector2(0, -50)
-shape = SubResource("CircleShape2D_rqvq3")
-
-[node name="Hurtbox" parent="." index="10"]
-visible = true
-
-[node name="CollisionShape2D" parent="Hurtbox" index="0"]
-position = Vector2(0, -50)
-shape = SubResource("CircleShape2D_f30pw")
 </file>
 
 <file path="scripts/states/dodge_state.gd">
@@ -6692,6 +6042,307 @@ func handle_attacker_parried(_result: ContactResult) -> bool:
 	return false
 </file>
 
+<file path="scenes/enemy_adv.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://dyl8nbamfbxsl"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_8dky6"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_8dky6")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.592157, 0.478431, 0.658824, 1)
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 50.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 5
+</file>
+
+<file path="scenes/enemy_boss.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://lm36r7o518ao"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_5xr4n"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_5xr4n")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.00392157, 0.00392157, 0.376471, 1)
+</file>
+
+<file path="scenes/enemy_elt.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://dojo2btvv2tj0"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_o8g13"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_o8g13")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.690196, 0.701961, 0.870588, 1)
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 50.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 7
+</file>
+
+<file path="scenes/enemy_mid.tscn">
+[gd_scene load_steps=2 format=3 uid="uid://chqlqywn2ey2v"]
+
+[ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_owgr6"]
+
+[node name="EnemyEntity2" instance=ExtResource("1_owgr6")]
+
+[node name="Enemy" parent="." index="0"]
+enemy_tint_color = Color(0.372549, 0.541176, 0.117647, 1)
+
+[node name="HealthComponent" parent="Enemy" index="11"]
+max_health = 25.0
+
+[node name="StaminaComponent" parent="Enemy" index="12"]
+max_stamina = 50.0
+
+[node name="AIController" parent="Enemy" index="13"]
+behavior_id = 3
+</file>
+
+<file path="scripts/platform/base_simple_state_machine.gd">
+class_name BaseSimpleStateMachine
+extends Node
+
+signal phase_changed(phase_data: Dictionary)
+signal transitioned(from_state: SimpleState, to_state: SimpleState)
+
+@export_group("State Configuration")
+@export var initial_state_key: String = ""
+## Nome do nó na cena que representa o estado de Groggy (vulnerável).
+@export var groggy_state_name: String = "SimpleGroggyState"
+## Nome do nó na cena que representa o estado de Parried (interrupção leve).
+@export var parried_state_name: String = "SimpleParriedState"
+
+@export_group("Mechanics")
+@export var parries_required_for_groggy: int = 1
+
+var _current_parry_count: int = 0
+var states: Dictionary = {}
+var current_state: SimpleState
+var owner_node: Node
+var physics_component: Node
+var wall_detector: WallDetectorComponent
+var surface_contact_component: SurfaceContactComponent 
+
+var _groggy_timer: float = 0.0
+
+func setup(p_owner_node: Node, p_physics_comp: Node, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+	owner_node = p_owner_node
+	physics_component = p_physics_comp
+	surface_contact_component = p_surface_contact_comp
+	wall_detector = p_wall_detector
+	
+	assert(owner_node != null, "BaseSimpleStateMachine: owner_node não pode ser nulo.")
+	assert(physics_component != null, "BaseSimpleStateMachine: physics_component não pode ser nulo.")
+
+	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
+
+	for child in get_children():
+		if child is SimpleState:
+			states[child.name] = child
+			child.initialize(self, owner_node, physics_component, surface_contact_component, wall_detector)
+	
+	_current_parry_count = 0
+	_start_initial_state()
+
+func _start_initial_state():
+	if not initial_state_key.is_empty() and states.has(initial_state_key):
+		current_state = states[initial_state_key]
+		current_state.enter({})
+	elif not initial_state_key.is_empty():
+		push_error("BaseSimpleStateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
+
+func process_physics(delta: float) -> Vector2:
+	if _groggy_timer > 0:
+		_groggy_timer -= delta
+		if _groggy_timer <= 0 and current_state.name == groggy_state_name:
+			on_current_state_finished({"outcome": "GROGGY_FINISHED"})
+
+	if not current_state:
+		return Vector2.ZERO
+	return current_state.process_physics(delta)
+
+## Aciona o estado de atordoamento ou interrupção.
+## [param duration]: Tempo que o inimigo fica groggy.
+## [param hit_source]: (Opcional) A origem do impacto para calcular a direção do recuo.
+func trigger_groggy(duration: float, hit_source: Node = null):
+	_current_parry_count += 1
+	if _current_parry_count < parries_required_for_groggy:
+		var push_dir = Vector2.ZERO
+		
+		# Prioridade: Usar a fonte exata do hit (ex: quem deu o parry ou disparou o tiro)
+		if is_instance_valid(hit_source):
+			push_dir = (owner_node.global_position - hit_source.global_position).normalized()
+		# Fallback: Usar o Player global (comportamento legado para segurança)
+		elif is_instance_valid(GameManager.player_node):
+			push_dir = (owner_node.global_position - GameManager.player_node.global_position).normalized()
+			
+		push_dir.y = 0
+		
+		if states.has(parried_state_name):
+			transition_to(parried_state_name, {"direction": push_dir})
+		return
+		
+	_current_parry_count = 0
+	_groggy_timer = duration
+	
+	if current_state.name != groggy_state_name and states.has(groggy_state_name):
+		transition_to(groggy_state_name)
+
+func emit_phase_change(data: Dictionary):
+	emit_signal("phase_changed", data)
+	
+func get_current_state() -> SimpleState:
+	return current_state
+
+func _on_impact_resolved(result: ContactResult):
+	if result.attacker_node == owner_node:
+		if current_state:
+			# Nota: Se desejado, você pode atualizar handle_attack_outcome no SimpleState
+			# para passar result.defender_node ao chamar trigger_groggy.
+			current_state.handle_attack_outcome(result)
+
+func on_current_state_finished(reason: Dictionary = {}):
+	
+	if current_state.name == "SimpleDeathState":
+		return
+		
+	var outcome = reason.get("outcome")
+	if outcome == "HIT" or outcome == "ATTACK_CONNECTED":
+		_decide_next_state(reason)
+		return
+		
+	if _groggy_timer > 0:
+		if current_state.name != groggy_state_name:
+			if states.has(groggy_state_name):
+				transition_to(groggy_state_name)
+				return
+
+	_decide_next_state(reason)
+
+# Função abstrata para filhos implementarem
+func _decide_next_state(_reason: Dictionary):
+	pass
+
+func transition_to(new_state_key: String, args: Dictionary = {}):
+	if not states.has(new_state_key):
+		push_error("BaseSimpleStateMachine Error: Estado '%s' não existe." % new_state_key)
+		return
+
+	var new_state = states[new_state_key]
+	var previous_state = current_state
+	
+	if previous_state:
+		previous_state.exit()
+
+	current_state = new_state
+	current_state.enter(args)
+	emit_signal("transitioned", previous_state, current_state)
+</file>
+
+<file path="scripts/platform/ranged_enemy.tscn">
+[gd_scene load_steps=9 format=3 uid="uid://bs1683iw0jpyk"]
+
+[ext_resource type="PackedScene" uid="uid://b4uo35lo3wukl" path="res://scripts/platform/aggressive_enemy.tscn" id="1_u4pjs"]
+[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="2_uypep"]
+[ext_resource type="PackedScene" uid="uid://d3hx8uvp1ayyb" path="res://scenes/projectile.tscn" id="3_uk1qy"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="4_dwehw"]
+
+[sub_resource type="Resource" id="Resource_2u8hu"]
+script = ExtResource("4_dwehw")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &"jump"
+active_sfx = ExtResource("2_uypep")
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+projectile_scene = ExtResource("3_uk1qy")
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(1000, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_2u8hu"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_uypep"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_uk1qy"]
+radius = 50.0
+
+[node name="RangedEnemy" instance=ExtResource("1_u4pjs")]
+attack_profile = SubResource("Resource_2u8hu")
+enemy_tint_color = Color(5.76471, 0.682353, 0.772549, 1)
+
+[node name="SpineSprite" parent="." index="0"]
+scale = Vector2(0.28, 0.28)
+
+[node name="CollisionShape2D" parent="." index="1"]
+visible = false
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_2u8hu")
+
+[node name="SimpleStateMachine" parent="." index="2"]
+attack_range = 1000.0
+attack_cooldown = 0.06
+immune_to_stagger = false
+
+[node name="SimpleAttackState" parent="SimpleStateMachine" index="10" node_paths=PackedStringArray("projectile_spawn_point")]
+projectile_spawn_point = NodePath("../../ProjectileSpawnPoint")
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 3.0
+
+[node name="Hitbox" parent="." index="9"]
+visible = false
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_uypep")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_uk1qy")
+
+[node name="ProjectileSpawnPoint" type="Marker2D" parent="." index="11"]
+position = Vector2(73, -58)
+</file>
+
 <file path="scripts/components/player_feedback_component.gd">
 extends Node
 # PlayerFeedbackComponent.gd
@@ -6950,6 +6601,362 @@ max_stamina = 10.0
 behavior_id = 10
 </file>
 
+<file path="scripts/components/camera_2d.gd">
+class_name GameCamera2D
+extends Camera2D
+
+enum ShakePreset { LEVE, MEDIO, FORTE }
+
+@export var preset: ShakePreset = ShakePreset.MEDIO : set = set_preset
+
+@export var max_offset: float = 10.0
+@export var frequency: float = 25.0
+@export var decay_rate: float = 2.5
+@export var resting_offset: Vector2 = Vector2(250, -400)
+
+var trauma: float = 0.0
+var _rng := RandomNumberGenerator.new()
+var _shake_offset := Vector2.ZERO 
+var _time_accum := 0.0
+
+@export_group("Dynamic Zoom")
+@export var exploration_zoom: Vector2 = Vector2(0.65, 0.65)
+@export var combat_zoom: Vector2 = Vector2(1.0, 1.0)
+@export var zoom_speed: float = 2.0
+@export var combat_cooldown: float = 3.0
+
+var _combat_timer: float = 0.0
+var _is_in_combat_mode: bool = false : set = _set_combat_mode
+var _enemies_in_combat: Array[Node] = []
+
+var _override_zoom_target: Vector2
+var _override_timer: float = 0.0
+
+@export_group("Manual Peek Control")
+@export var max_peek_offset: float = 500.0 
+@export var peek_delay: float = 0.4
+@export var peek_smooth_speed: float = 3.0 
+@export var input_deadzone: float = 0.3
+
+var _peek_offset: Vector2 = Vector2.ZERO
+var _peek_timer: float = 0.0
+
+var _cinematic_layer: CanvasLayer
+var _top_bar: ColorRect
+var _bottom_bar: ColorRect
+const BAR_HEIGHT: int = 150
+
+func _ready():
+	_rng.randomize()
+	apply_preset()
+	offset = resting_offset
+	
+	add_to_group("MainCamera")
+	zoom = exploration_zoom
+	
+	_setup_cinematic_bars()
+
+func set_preset(value):
+	preset = value
+	apply_preset()
+
+func apply_preset():
+	match preset:
+		ShakePreset.LEVE:
+			max_offset = 8.0
+			decay_rate = 3.0
+			frequency = 25.0
+		ShakePreset.MEDIO:
+			max_offset = 15.0
+			decay_rate = 2.3
+			frequency = 30.0
+		ShakePreset.FORTE:
+			max_offset = 25.0
+			decay_rate = 1.8
+			frequency = 35.0
+
+func add_trauma(amount: float = 0.35) -> void:
+	trauma = clamp(trauma + amount, 0.0, 1.0)
+
+func _process(delta: float) -> void:    
+	_update_combat_state(delta)
+	_update_zoom(delta)
+	_process_manual_peek(delta)
+
+	if trauma > 0.0001:
+		_time_accum += delta
+		var interval = 1.0 / max(frequency, 1.0)
+
+		if _time_accum >= interval:
+			_time_accum = 0.0
+			var dir := Vector2(
+				_rng.randf_range(-1.0, 1.0),
+				_rng.randf_range(-1.0, 1.0)
+			).normalized()
+			
+			var target_shake_offset = dir * (trauma * max_offset)
+			_shake_offset = _shake_offset.lerp(target_shake_offset, 0.45)
+
+		trauma = max(trauma - decay_rate * delta, 0.0)
+	else:
+		_shake_offset = _shake_offset.lerp(Vector2.ZERO, 0.15)
+		trauma = 0.0
+		
+	offset = resting_offset + _shake_offset + _peek_offset
+
+func _process_manual_peek(delta: float) -> void:
+	var input_vector = Input.get_vector("camera_look_left", "camera_look_right", "camera_look_up", "camera_look_down")
+	
+	if input_vector.length() < input_deadzone:
+		_peek_timer = 0.0
+		_peek_offset = _peek_offset.lerp(Vector2.ZERO, peek_smooth_speed * delta)
+		return
+
+	_peek_timer += delta
+	
+	if _peek_timer >= peek_delay:
+		var target_peek = input_vector.normalized() * max_peek_offset
+		_peek_offset = _peek_offset.lerp(target_peek, peek_smooth_speed * delta)
+
+func _update_combat_state(delta: float) -> void:
+	for i in range(_enemies_in_combat.size() - 1, -1, -1):
+		if not is_instance_valid(_enemies_in_combat[i]):
+			_enemies_in_combat.remove_at(i)
+
+	if _enemies_in_combat.size() > 0:
+		_is_in_combat_mode = true
+		_combat_timer = combat_cooldown
+	else:
+		if _combat_timer > 0:
+			_combat_timer -= delta
+		else:
+			_is_in_combat_mode = false
+
+func _update_zoom(delta: float) -> void:
+	var target_zoom: Vector2
+	var current_speed = zoom_speed
+	
+	if _override_timer > 0:
+		_override_timer -= delta
+		target_zoom = _override_zoom_target
+		current_speed = zoom_speed * 2.0
+	elif _is_in_combat_mode:
+		target_zoom = combat_zoom
+	else:
+		target_zoom = exploration_zoom
+		
+	zoom = zoom.lerp(target_zoom, current_speed * delta)
+
+func register_enemy_aggro(enemy: Node) -> void:
+	if not _enemies_in_combat.has(enemy):
+		_enemies_in_combat.append(enemy)
+		_is_in_combat_mode = true
+		_combat_timer = combat_cooldown
+
+func unregister_enemy_aggro(enemy: Node) -> void:
+	if _enemies_in_combat.has(enemy):
+		_enemies_in_combat.erase(enemy)
+
+func force_combat_mode(duration: float = 5.0) -> void:
+	_is_in_combat_mode = true
+	_combat_timer = max(_combat_timer, duration)
+
+func request_zoom_override(zoom_value: Vector2, duration: float) -> void:
+	_override_zoom_target = zoom_value
+	_override_timer = duration
+
+func on_enemy_death_zoom_out(duration: float = 1.5) -> void:
+	request_zoom_override(exploration_zoom, duration)
+
+func _setup_cinematic_bars() -> void:
+	_cinematic_layer = CanvasLayer.new()
+	_cinematic_layer.layer = 90
+	add_child(_cinematic_layer)
+	
+	_top_bar = ColorRect.new()
+	_top_bar.color = Color.BLACK
+	_top_bar.size = Vector2(get_viewport_rect().size.x, BAR_HEIGHT)
+	_top_bar.position.y = -BAR_HEIGHT
+	_top_bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_cinematic_layer.add_child(_top_bar)
+	
+	_bottom_bar = ColorRect.new()
+	_bottom_bar.color = Color.BLACK
+	_bottom_bar.size = Vector2(get_viewport_rect().size.x, BAR_HEIGHT)
+	_bottom_bar.position.y = get_viewport_rect().size.y 
+	_bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_cinematic_layer.add_child(_bottom_bar)
+
+func _set_combat_mode(value: bool) -> void:
+	if _is_in_combat_mode == value:
+		return
+		
+	_is_in_combat_mode = value
+	
+	if not is_inside_tree(): return
+
+	var vp_size = get_viewport_rect().size
+	var tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	
+	if _is_in_combat_mode:
+		tween.tween_property(_top_bar, "position:y", 0.0, 0.5)
+		tween.tween_property(_bottom_bar, "position:y", vp_size.y - BAR_HEIGHT, 0.5)
+	else:
+		tween.tween_property(_top_bar, "position:y", -BAR_HEIGHT, 0.5)
+		tween.tween_property(_bottom_bar, "position:y", vp_size.y, 0.5)
+</file>
+
+<file path="scripts/platform/aggressive_enemy.tscn">
+[gd_scene load_steps=11 format=3 uid="uid://b4uo35lo3wukl"]
+
+[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_6h87l"]
+[ext_resource type="Script" uid="uid://co6k05df3ffqv" path="res://scripts/platform/aggressive_state_machine.gd" id="2_6iwo7"]
+[ext_resource type="AudioStream" uid="uid://snkhhvuv11sl" path="res://audio/attack_1.wav" id="2_r2vcs"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_u6f6r"]
+[ext_resource type="Script" uid="uid://b300sb85dsb48" path="res://scripts/platform/simple_chase_state.gd" id="3_6iwo7"]
+[ext_resource type="Script" uid="uid://c84mr4ehwdq1i" path="res://scripts/platform/simple_parried_state.gd" id="7_52h12"]
+
+[sub_resource type="Resource" id="Resource_r2vcs"]
+script = ExtResource("2_u6f6r")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &"jump"
+active_sfx = ExtResource("2_r2vcs")
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 1.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(1000, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(-100, 0)
+active_movement_velocity = Vector2(3600, 0)
+recovery_movement_velocity = Vector2(70, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_iml81"]
+radius = 72.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_r2vcs"]
+radius = 72.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_52h12"]
+radius = 72.0
+
+[node name="AggressiveEnemy" instance=ExtResource("1_6h87l")]
+attack_profile = SubResource("Resource_r2vcs")
+enemy_tint_color = Color(10, 0, 0, 1)
+enemy_tint_intensity = 0.04
+
+[node name="SpineSprite" parent="." index="0"]
+scale = Vector2(0.4, 0.4)
+
+[node name="CollisionShape2D" parent="." index="1"]
+position = Vector2(0, -72)
+shape = SubResource("CircleShape2D_iml81")
+
+[node name="SimpleStateMachine" parent="." index="2"]
+script = ExtResource("2_6iwo7")
+detection_range = 1000.0
+attack_range = 300.0
+attack_cooldown = 1.0
+chase_state_name = "SimpleChaseState"
+attack_state_name = "SimpleAttackState"
+recoil_state_name = "SimpleRecoilState"
+stagger_state_name = "SimpleStaggerState"
+immune_to_stagger = true
+parries_required_for_groggy = 5
+
+[node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
+script = ExtResource("3_6iwo7")
+metadata/_custom_type_script = "uid://b300sb85dsb48"
+
+[node name="SimpleParriedState" type="Node" parent="SimpleStateMachine" index="6"]
+script = ExtResource("7_52h12")
+metadata/_custom_type_script = "uid://c84mr4ehwdq1i"
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 10.0
+
+[node name="RayCast2D" parent="WallDetectorComponent" index="0"]
+target_position = Vector2(100, 0)
+
+[node name="FloorDetector" parent="WallDetectorComponent" index="1"]
+position = Vector2(100, 0)
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -72)
+shape = SubResource("CircleShape2D_r2vcs")
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -72)
+shape = SubResource("CircleShape2D_52h12")
+</file>
+
+<file path="scripts/platform/flying_enemy.tscn">
+[gd_scene load_steps=6 format=3 uid="uid://dhjvjsjvv2gir"]
+
+[ext_resource type="PackedScene" uid="uid://def1lykxj4wss" path="res://scripts/platform/simple_enemy.tscn" id="1_rqvq3"]
+[ext_resource type="Script" uid="uid://c7wk7u7twwnhd" path="res://scripts/platform/simple_patrol_fly_state.gd" id="2_f30pw"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_jkvbt"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_rqvq3"]
+radius = 50.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_f30pw"]
+radius = 50.0
+
+[node name="FlyingEnemy" instance=ExtResource("1_rqvq3")]
+motion_mode = 1
+enemy_tint_color = Color(0.635062, 0.750033, 0.982451, 1)
+enemy_tint_intensity = 0.06
+
+[node name="SpineSprite" parent="." index="0"]
+scale = Vector2(0.3, 0.3)
+
+[node name="CollisionShape2D" parent="." index="1"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_jkvbt")
+
+[node name="SimpleStateMachine" parent="." index="2"]
+initial_state_key = "SimplePatrolFlyState"
+
+[node name="SimplePatrolFlyState" type="Node" parent="SimpleStateMachine" index="4"]
+script = ExtResource("2_f30pw")
+metadata/_custom_type_script = "uid://c7wk7u7twwnhd"
+
+[node name="HealthComponent" parent="." index="5"]
+max_health = 3.0
+
+[node name="CollisionShape2D" parent="Hitbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_rqvq3")
+
+[node name="Hurtbox" parent="." index="10"]
+visible = true
+
+[node name="CollisionShape2D" parent="Hurtbox" index="0"]
+position = Vector2(0, -50)
+shape = SubResource("CircleShape2D_f30pw")
+</file>
+
 <file path="scripts/profiles/jump_profile.gd">
 class_name JumpProfile
 extends Resource
@@ -7089,6 +7096,16 @@ func handle_dodge_input(_direction: Vector2, _profile: DodgeProfile) -> InputHan
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
 	
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
+	
+func handle_dash_input(_profile: DashProfile) -> InputHandlerResult:
+	var executor_phase = _attack_executor.get_current_phase_name()
+	var in_recovery = executor_phase == "RECOVERY"
+	var in_link_or_recoil = _current_phase == InternalPhase.LINK or _current_phase == InternalPhase.RECOIL
+	
+	if in_recovery or in_link_or_recoil:
+		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)
+	
+	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
 func handle_attack_outcome(result: ContactResult):
 	if result.attacker_outcome == ContactResult.AttackerOutcome.ATTACK_BLOCKED or result.attacker_outcome == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
@@ -7170,6 +7187,8 @@ func _on_attack_phase_changed(phase_data: Dictionary):
 	state_machine.emit_phase_change(phase_data)
 
 func _on_attack_finished():
+	_current_phase = InternalPhase.LINK
+	_time_left_in_phase = _current_profile.link_duration
 	if state_machine.buffer_component.has_buffer():
 		state_machine.on_current_state_finished()
 		return
@@ -7288,159 +7307,6 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.GUARD_BROKEN
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 	
-	return result_for_attacker
-</file>
-
-<file path="scripts/profiles/attack_profile.gd">
-class_name AttackProfile
-extends Resource
-
-enum ParryInteractionType {
-	STANDARD,
-	UNPARRYABLE
-}
-
-enum UnparryableType {
-	NONE,
-	THRUST,
-	SWEEP
-}
-
-enum MovementType {
-	PHYSICS,
-	PATH_TARGET
-}
-
-@export_group("Phases")
-@export var startup_duration: float = 0.3
-@export var active_duration: float = 0.1
-@export var block_recoil_duration: float = 0.55
-@export var recovery_duration: float = 0.45
-@export var link_duration: float = 0.6
-
-@export_group("Presentation")
-@export var animation_name: StringName
-@export var startup_sfx: AudioStream
-@export var active_sfx: AudioStream
-@export var recovery_sfx: AudioStream
-@export var impact_sfx: AudioStream
-
-@export_group("Hitbox")
-@export var hitbox_size: Vector2 = Vector2(160, 140)
-@export var hitbox_position: Vector2 = Vector2(100, -30)
-
-@export_group("Projectile")
-@export var projectile_scene: PackedScene
-
-@export_group("Mechanics")
-@export var damage: float = 1.0
-@export var stamina_cost: float = 0.0
-@export var focus_cost: int = 0
-@export var focus_gain_on_hit: int = 0
-@export var stamina_damage: float = 10.0
-@export var poise_impact_contribution: float = 10.0
-@export var poise_momentum_gain: float = 0.0
-@export var poise_momentum_duration: float = 1.5
-@export var knockback_vector: Vector2 = Vector2(1000, 0)
-@export var defender_knockback_on_parry: float = 120.0
-@export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
-@export var unparryable_type: UnparryableType = UnparryableType.NONE
-
-@export_group("Movement")
-@export var movement_type: MovementType = MovementType.PHYSICS
-@export var startup_movement_velocity: Vector2 = Vector2.ZERO
-@export var active_movement_velocity: Vector2 = Vector2.ZERO
-@export var recovery_movement_velocity: Vector2 = Vector2.ZERO
-@export var link_movement_velocity: Vector2 = Vector2.ZERO
-
-@export_group("Poise Contributions per Phase (Defensivo)")
-@export var startup_poise_shield: float = 10.0
-@export var active_poise_shield: float = 10.0
-@export var recovery_poise_shield: float = 300.0
-</file>
-
-<file path="scripts/platform/simple_state.gd">
-class_name SimpleState
-extends Node
-
-var state_machine: BaseSimpleStateMachine
-var owner_node: Node
-var physics_component: Node
-var surface_contact_component: SurfaceContactComponent
-var wall_detector: WallDetectorComponent
-
-func initialize(sm: BaseSimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
-	self.state_machine = sm
-	self.owner_node = owner
-	self.physics_component = physics_comp
-	self.surface_contact_component = surface_contact_comp
-	self.wall_detector = p_wall_detector
-
-func enter(_args: Dictionary = {}):
-	pass
-
-func exit():
-	pass
-
-func process_physics(_delta: float) -> Vector2:
-	return Vector2.ZERO
-
-func handle_attack_outcome(result: ContactResult):
-	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT or result.attacker_outcome == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
-		if result.source_node != owner_node:
-			return 
-
-		var target_pos = Vector2.ZERO
-		if is_instance_valid(result.defender_node):
-			target_pos = result.defender_node.global_position
-			
-		var reason = {
-			"outcome": "ATTACK_CONNECTED",
-			"target_position": target_pos
-		}
-		state_machine.on_current_state_finished(reason)
-		
-	elif result.attacker_outcome == ContactResult.AttackerOutcome.PARRIED:
-		if result.source_node != owner_node:
-			return
-			
-		state_machine.trigger_groggy(3.0)
-		
-		var knockback = result.knockback_vector
-		
-		var reason = {
-			"outcome": "HIT",
-			"knockback_vector": knockback
-		}
-		state_machine.on_current_state_finished(reason)
-
-func resolve_contact(context: ContactContext) -> ContactResult:
-	var result_for_attacker = ContactResult.new()
-	result_for_attacker.attacker_node = context.attacker_node
-	result_for_attacker.defender_node = context.defender_node
-	result_for_attacker.attack_profile = context.attack_profile
-
-	if context.defender_health_comp:
-		context.defender_health_comp.take_damage(context.attack_profile.damage)
-		
-		if not context.defender_health_comp.is_dead():
-			var source_pos = context.source_node.global_position if context.source_node else context.attacker_node.global_position
-			var direction = (context.defender_node.global_position - source_pos).normalized()
-			var push_force = 350.0 
-			
-			if context.attack_profile.knockback_vector != Vector2.ZERO:
-				push_force = abs(context.attack_profile.knockback_vector.x)
-			
-			var knockback = direction * push_force
-			
-			knockback.y = -150.0 
-			
-			var reason = { "outcome": "HIT", "knockback_vector": knockback }
-			state_machine.on_current_state_finished(reason)
-
-	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
-	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY
-
 	return result_for_attacker
 </file>
 
@@ -7646,222 +7512,157 @@ func allow_reentry() -> bool:
 	return true
 </file>
 
-<file path="scripts/platform/simple_enemy.tscn">
-[gd_scene load_steps=36 format=3 uid="uid://def1lykxj4wss"]
+<file path="scripts/platform/simple_state.gd">
+class_name SimpleState
+extends Node
 
-[ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
-[ext_resource type="Script" uid="uid://m6k761rpsw2b" path="res://scripts/profiles/locomotion_profile.gd" id="3_yyhko"]
-[ext_resource type="SpineAtlasResource" uid="uid://cyq1lt0qmhd5o" path="res://assets/enemy/platform/alien-pma.atlas" id="4_pm6ks"]
-[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
-[ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
-[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
-[ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
-[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="8_dct62"]
-[ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
-[ext_resource type="Script" uid="uid://bthf74x16lurg" path="res://scripts/platform/goomba_state_machine.gd" id="9_a8aot"]
-[ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="9_ir8sv"]
-[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
-[ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
-[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
-[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
-[ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
-[ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
-[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
-[ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
-[ext_resource type="Script" uid="uid://7cvdf53tkds2" path="res://scripts/platform/simple_recoil_state.gd" id="14_ir8sv"]
-[ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
-[ext_resource type="Script" uid="uid://ch6kcihci323o" path="res://scripts/platform/simple_groggy_state.gd" id="15_a8aot"]
-[ext_resource type="Script" uid="uid://ebh4v2paogrs" path="res://scripts/platform/flying_chase_state.gd" id="16_kttm4"]
-[ext_resource type="Script" uid="uid://vt6ench6q7cm" path="res://scripts/platform/flying_attack_state.gd" id="17_lh40x"]
-[ext_resource type="Script" uid="uid://dnreygx8olxx3" path="res://scripts/platform/simple_grounded_state.gd" id="18_r4g4d"]
-[ext_resource type="Script" uid="uid://dsf43ffjw15we" path="res://scripts/platform/simple_attack_state.gd" id="19_yf6nf"]
+var state_machine: BaseSimpleStateMachine
+var owner_node: Node
+var physics_component: Node
+var surface_contact_component: SurfaceContactComponent
+var wall_detector: WallDetectorComponent
 
-[sub_resource type="Resource" id="Resource_tvabn"]
-script = ExtResource("2_5vwvj")
-startup_duration = 0.3
-active_duration = 0.1
-block_recoil_duration = 0.55
-recovery_duration = 0.45
-link_duration = 0.6
-animation_name = &""
-hitbox_size = Vector2(160, 140)
-hitbox_position = Vector2(100, -30)
-damage = 10.0
-stamina_cost = 0.0
-focus_cost = 0
-focus_gain_on_hit = 0
-stamina_damage = 10.0
-poise_impact_contribution = 10.0
-poise_momentum_gain = 0.0
-poise_momentum_duration = 1.5
-knockback_vector = Vector2(400, 0)
-defender_knockback_on_parry = 120.0
-parry_interaction = 0
-unparryable_type = 0
-movement_type = 0
-startup_movement_velocity = Vector2(0, 0)
-active_movement_velocity = Vector2(0, 0)
-recovery_movement_velocity = Vector2(0, 0)
-link_movement_velocity = Vector2(0, 0)
-startup_poise_shield = 10.0
-active_poise_shield = 10.0
-recovery_poise_shield = 300.0
-metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+func initialize(sm: BaseSimpleStateMachine, owner: Node, physics_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent):
+	self.state_machine = sm
+	self.owner_node = owner
+	self.physics_component = physics_comp
+	self.surface_contact_component = surface_contact_comp
+	self.wall_detector = p_wall_detector
 
-[sub_resource type="Resource" id="Resource_omdno"]
-script = ExtResource("3_yyhko")
-speed = 300.0
-run_speed = 500.0
-acceleration = 2000.0
-friction = 1500.0
-poise_shield_contribution = 30.0
-idle_animation = &""
-walk_animation = &"run"
-run_animation = &""
-metadata/_custom_type_script = "uid://m6k761rpsw2b"
+func enter(_args: Dictionary = {}):
+	pass
 
-[sub_resource type="Resource" id="Resource_2wo0y"]
-script = ExtResource("4_yyhko")
-animation_name = &"death"
-sfx = ExtResource("5_pm6ks")
-metadata/_custom_type_script = "uid://b761fppfyuqaa"
+func exit():
+	pass
 
-[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_fik6p"]
-atlas_res = ExtResource("4_pm6ks")
-skeleton_file_res = ExtResource("5_2wo0y")
+func process_physics(_delta: float) -> Vector2:
+	return Vector2.ZERO
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_wfdv6"]
-shader = ExtResource("8_dct62")
-shader_parameter/flash_color = Color(1, 1, 1, 1)
-shader_parameter/flash_modifier = 0.0
-shader_parameter/tint_color = Color(1, 0, 0, 1)
-shader_parameter/tint_intensity = 0.0
+func handle_attack_outcome(result: ContactResult):
+	if result.attacker_outcome == ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT or result.attacker_outcome == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+		if result.source_node != owner_node:
+			return 
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
-radius = 38.0
+		var target_pos = Vector2.ZERO
+		if is_instance_valid(result.defender_node):
+			target_pos = result.defender_node.global_position
+			
+		var reason = {
+			"outcome": "ATTACK_CONNECTED",
+			"target_position": target_pos
+		}
+		state_machine.on_current_state_finished(reason)
+		
+	elif result.attacker_outcome == ContactResult.AttackerOutcome.PARRIED:
+		if result.source_node != owner_node:
+			return
+			
+		state_machine.trigger_groggy(3.0)
+		
+		var knockback = result.knockback_vector
+		
+		var reason = {
+			"outcome": "HIT",
+			"knockback_vector": knockback
+		}
+		state_machine.on_current_state_finished(reason)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
-radius = 40.0
+func resolve_contact(context: ContactContext) -> ContactResult:
+	var result_for_attacker = ContactResult.new()
+	result_for_attacker.attacker_node = context.attacker_node
+	result_for_attacker.defender_node = context.defender_node
+	result_for_attacker.attack_profile = context.attack_profile
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
-radius = 38.0
+	if context.defender_health_comp:
+		context.defender_health_comp.take_damage(context.attack_profile.damage)
+		
+		if not context.defender_health_comp.is_dead():
+			var source_pos = context.source_node.global_position if context.source_node else context.attacker_node.global_position
+			var direction = (context.defender_node.global_position - source_pos).normalized()
+			var push_force = 350.0 
+			
+			if context.attack_profile.knockback_vector != Vector2.ZERO:
+				push_force = abs(context.attack_profile.knockback_vector.x)
+			
+			var knockback = direction * push_force
+			
+			knockback.y = -150.0 
+			
+			var reason = { "outcome": "HIT", "knockback_vector": knockback }
+			state_machine.on_current_state_finished(reason)
 
-[node name="SimpleEnemy" type="CharacterBody2D"]
-collision_layer = 64
-script = ExtResource("1_m6jwr")
-attack_profile = SubResource("Resource_tvabn")
-locomotion_profile = SubResource("Resource_omdno")
-death_profile = SubResource("Resource_2wo0y")
+	result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
+	result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY
 
-[node name="SpineSprite" type="SpineSprite" parent="."]
-skeleton_data_res = SubResource("SpineSkeletonDataResource_fik6p")
-normal_material = SubResource("ShaderMaterial_wfdv6")
-preview_skin = "Default"
-preview_animation = "run"
-preview_frame = false
-preview_time = 0.0
-scale = Vector2(0.2, 0.2)
+	return result_for_attacker
+</file>
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_ikhq6")
+<file path="scripts/profiles/attack_profile.gd">
+class_name AttackProfile
+extends Resource
 
-[node name="SimpleStateMachine" type="Node" parent="."]
-script = ExtResource("9_a8aot")
-initial_state_key = "SimplePatrolState"
-metadata/_custom_type_script = "uid://rl2jebk5cpgg"
+enum ParryInteractionType {
+	STANDARD,
+	UNPARRYABLE
+}
 
-[node name="SimplePatrolState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("7_wfdv6")
-metadata/_custom_type_script = "uid://j6611u6es7ei"
+enum UnparryableType {
+	NONE,
+	THRUST,
+	SWEEP
+}
 
-[node name="SimpleDeathState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("10_pm6ks")
-metadata/_custom_type_script = "uid://nkr7lri0t1dn"
+enum MovementType {
+	PHYSICS,
+	PATH_TARGET
+}
 
-[node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("12_wfdv6")
-audio = ExtResource("13_skhkn")
-knockback_multiplier = 0.35
-metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
+@export_group("Phases")
+@export var startup_duration: float = 0.3
+@export var active_duration: float = 0.1
+@export var block_recoil_duration: float = 0.55
+@export var recovery_duration: float = 0.2
+@export var link_duration: float = 0.6
 
-[node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("14_ir8sv")
-metadata/_custom_type_script = "uid://7cvdf53tkds2"
+@export_group("Presentation")
+@export var animation_name: StringName
+@export var startup_sfx: AudioStream
+@export var active_sfx: AudioStream
+@export var recovery_sfx: AudioStream
+@export var impact_sfx: AudioStream
 
-[node name="SimpleGroggyState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("15_a8aot")
-metadata/_custom_type_script = "uid://ch6kcihci323o"
+@export_group("Hitbox")
+@export var hitbox_size: Vector2 = Vector2(160, 140)
+@export var hitbox_position: Vector2 = Vector2(100, -30)
 
-[node name="FlyingChaseState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("16_kttm4")
-metadata/_custom_type_script = "uid://ebh4v2paogrs"
+@export_group("Projectile")
+@export var projectile_scene: PackedScene
 
-[node name="FlyingAttackState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("17_lh40x")
-metadata/_custom_type_script = "uid://vt6ench6q7cm"
+@export_group("Mechanics")
+@export var damage: float = 1.0
+@export var stamina_cost: float = 0.0
+@export var focus_cost: int = 0
+@export var focus_gain_on_hit: int = 0
+@export var stamina_damage: float = 10.0
+@export var poise_impact_contribution: float = 10.0
+@export var poise_momentum_gain: float = 0.0
+@export var poise_momentum_duration: float = 1.5
+@export var knockback_vector: Vector2 = Vector2(1000, 0)
+@export var defender_knockback_on_parry: float = 120.0
+@export var parry_interaction: ParryInteractionType = ParryInteractionType.STANDARD
+@export var unparryable_type: UnparryableType = UnparryableType.NONE
 
-[node name="SimpleGroundedState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("18_r4g4d")
-metadata/_custom_type_script = "uid://dnreygx8olxx3"
+@export_group("Movement")
+@export var movement_type: MovementType = MovementType.PHYSICS
+@export var startup_movement_velocity: Vector2 = Vector2.ZERO
+@export var active_movement_velocity: Vector2 = Vector2.ZERO
+@export var recovery_movement_velocity: Vector2 = Vector2.ZERO
+@export var link_movement_velocity: Vector2 = Vector2.ZERO
 
-[node name="SimpleAttackState" type="Node" parent="SimpleStateMachine"]
-script = ExtResource("19_yf6nf")
-metadata/_custom_type_script = "uid://dsf43ffjw15we"
-
-[node name="AnimationComponent" type="Node" parent="."]
-script = ExtResource("8_skhkn")
-metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
-
-[node name="AudioComponent" type="Node" parent="." node_paths=PackedStringArray("e_simple_state_machine")]
-script = ExtResource("12_2wo0y")
-e_simple_state_machine = NodePath("../SimpleStateMachine")
-metadata/_custom_type_script = "uid://nl1a7e12lrfa"
-
-[node name="HealthComponent" type="Node" parent="."]
-script = ExtResource("9_ir8sv")
-max_health = 1.0
-metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
-
-[node name="PhysicsComponent" type="Node" parent="."]
-script = ExtResource("10_a8aot")
-metadata/_custom_type_script = "uid://bjvp3kd6bmkho"
-
-[node name="SurfaceContactComponent" type="Node" parent="."]
-script = ExtResource("11_kttm4")
-metadata/_custom_type_script = "uid://dhdu4hixec0wa"
-
-[node name="WallDetectorComponent" type="Node2D" parent="."]
-script = ExtResource("12_lh40x")
-metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
-
-[node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
-position = Vector2(0, -38)
-target_position = Vector2(50, 0)
-
-[node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
-position = Vector2(40, 0)
-target_position = Vector2(0, 21)
-
-[node name="Hitbox" type="Area2D" parent="."]
-collision_layer = 16
-collision_mask = 32
-script = ExtResource("13_r4g4d")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(0, -40)
-shape = SubResource("CircleShape2D_yo2nc")
-
-[node name="Hurtbox" type="Area2D" parent="."]
-visible = false
-collision_layer = 8
-collision_mask = 4
-script = ExtResource("14_yf6nf")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
-position = Vector2(0, -38)
-shape = SubResource("CircleShape2D_3xv3x")
+@export_group("Poise Contributions per Phase (Defensivo)")
+@export var startup_poise_shield: float = 10.0
+@export var active_poise_shield: float = 10.0
+@export var recovery_poise_shield: float = 300.0
 </file>
 
 <file path="scripts/actors/enemy.gd">
@@ -8369,6 +8170,224 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 	emit_signal("transitioned", previous_state, current_state)
 </file>
 
+<file path="scripts/platform/simple_enemy.tscn">
+[gd_scene load_steps=36 format=3 uid="uid://def1lykxj4wss"]
+
+[ext_resource type="Script" uid="uid://b3kin4w2fg1sp" path="res://scripts/platform/simple_enemy.gd" id="1_m6jwr"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="2_5vwvj"]
+[ext_resource type="Script" uid="uid://m6k761rpsw2b" path="res://scripts/profiles/locomotion_profile.gd" id="3_yyhko"]
+[ext_resource type="SpineAtlasResource" uid="uid://cyq1lt0qmhd5o" path="res://assets/enemy/platform/alien-pma.atlas" id="4_pm6ks"]
+[ext_resource type="Script" uid="uid://b761fppfyuqaa" path="res://scripts/profiles/death_profile.gd" id="4_yyhko"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://cxb1egtwgvpr5" path="res://assets/enemy/platform/alien-pro.skel" id="5_2wo0y"]
+[ext_resource type="AudioStream" uid="uid://cr2fjp7lgqmy8" path="res://audio/Explosion.wav" id="5_pm6ks"]
+[ext_resource type="Script" uid="uid://j6611u6es7ei" path="res://scripts/platform/simple_patrol_state.gd" id="7_wfdv6"]
+[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="8_dct62"]
+[ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="8_skhkn"]
+[ext_resource type="Script" uid="uid://bthf74x16lurg" path="res://scripts/platform/goomba_state_machine.gd" id="9_a8aot"]
+[ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="9_ir8sv"]
+[ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="10_a8aot"]
+[ext_resource type="Script" uid="uid://nkr7lri0t1dn" path="res://scripts/platform/simple_death_state.gd" id="10_pm6ks"]
+[ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="11_kttm4"]
+[ext_resource type="Script" uid="uid://nl1a7e12lrfa" path="res://scripts/listeners/audio_component.gd" id="12_2wo0y"]
+[ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="12_lh40x"]
+[ext_resource type="Script" uid="uid://d3p2qxg0ftqmt" path="res://scripts/platform/simple_stagger_state.gd" id="12_wfdv6"]
+[ext_resource type="Script" uid="uid://qxnqp6qiqxw" path="res://scripts/components/hitbox.gd" id="13_r4g4d"]
+[ext_resource type="AudioStream" uid="uid://6uruevwnu186" path="res://audio/simple_enemy_hit.wav" id="13_skhkn"]
+[ext_resource type="Script" uid="uid://7cvdf53tkds2" path="res://scripts/platform/simple_recoil_state.gd" id="14_ir8sv"]
+[ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="14_yf6nf"]
+[ext_resource type="Script" uid="uid://ch6kcihci323o" path="res://scripts/platform/simple_groggy_state.gd" id="15_a8aot"]
+[ext_resource type="Script" uid="uid://ebh4v2paogrs" path="res://scripts/platform/flying_chase_state.gd" id="16_kttm4"]
+[ext_resource type="Script" uid="uid://vt6ench6q7cm" path="res://scripts/platform/flying_attack_state.gd" id="17_lh40x"]
+[ext_resource type="Script" uid="uid://dnreygx8olxx3" path="res://scripts/platform/simple_grounded_state.gd" id="18_r4g4d"]
+[ext_resource type="Script" uid="uid://dsf43ffjw15we" path="res://scripts/platform/simple_attack_state.gd" id="19_yf6nf"]
+
+[sub_resource type="Resource" id="Resource_tvabn"]
+script = ExtResource("2_5vwvj")
+startup_duration = 0.3
+active_duration = 0.1
+block_recoil_duration = 0.55
+recovery_duration = 0.2
+link_duration = 0.6
+animation_name = &""
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 10.0
+stamina_cost = 0.0
+focus_cost = 0
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(400, 0)
+defender_knockback_on_parry = 120.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(0, 0)
+active_movement_velocity = Vector2(0, 0)
+recovery_movement_velocity = Vector2(0, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_omdno"]
+script = ExtResource("3_yyhko")
+speed = 300.0
+run_speed = 500.0
+acceleration = 2000.0
+friction = 1500.0
+poise_shield_contribution = 30.0
+idle_animation = &""
+walk_animation = &"run"
+run_animation = &""
+metadata/_custom_type_script = "uid://m6k761rpsw2b"
+
+[sub_resource type="Resource" id="Resource_2wo0y"]
+script = ExtResource("4_yyhko")
+animation_name = &"death"
+sfx = ExtResource("5_pm6ks")
+metadata/_custom_type_script = "uid://b761fppfyuqaa"
+
+[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_fik6p"]
+atlas_res = ExtResource("4_pm6ks")
+skeleton_file_res = ExtResource("5_2wo0y")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wfdv6"]
+shader = ExtResource("8_dct62")
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_modifier = 0.0
+shader_parameter/tint_color = Color(1, 0, 0, 1)
+shader_parameter/tint_intensity = 0.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ikhq6"]
+radius = 38.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_yo2nc"]
+radius = 40.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3xv3x"]
+radius = 38.0
+
+[node name="SimpleEnemy" type="CharacterBody2D"]
+collision_layer = 64
+script = ExtResource("1_m6jwr")
+attack_profile = SubResource("Resource_tvabn")
+locomotion_profile = SubResource("Resource_omdno")
+death_profile = SubResource("Resource_2wo0y")
+
+[node name="SpineSprite" type="SpineSprite" parent="."]
+skeleton_data_res = SubResource("SpineSkeletonDataResource_fik6p")
+normal_material = SubResource("ShaderMaterial_wfdv6")
+preview_skin = "Default"
+preview_animation = "run"
+preview_frame = false
+preview_time = 0.0
+scale = Vector2(0.2, 0.2)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_ikhq6")
+
+[node name="SimpleStateMachine" type="Node" parent="."]
+script = ExtResource("9_a8aot")
+initial_state_key = "SimplePatrolState"
+metadata/_custom_type_script = "uid://rl2jebk5cpgg"
+
+[node name="SimplePatrolState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("7_wfdv6")
+metadata/_custom_type_script = "uid://j6611u6es7ei"
+
+[node name="SimpleDeathState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("10_pm6ks")
+metadata/_custom_type_script = "uid://nkr7lri0t1dn"
+
+[node name="SimpleStaggerState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("12_wfdv6")
+audio = ExtResource("13_skhkn")
+knockback_multiplier = 0.35
+metadata/_custom_type_script = "uid://d3p2qxg0ftqmt"
+
+[node name="SimpleRecoilState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("14_ir8sv")
+metadata/_custom_type_script = "uid://7cvdf53tkds2"
+
+[node name="SimpleGroggyState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("15_a8aot")
+metadata/_custom_type_script = "uid://ch6kcihci323o"
+
+[node name="FlyingChaseState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("16_kttm4")
+metadata/_custom_type_script = "uid://ebh4v2paogrs"
+
+[node name="FlyingAttackState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("17_lh40x")
+metadata/_custom_type_script = "uid://vt6ench6q7cm"
+
+[node name="SimpleGroundedState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("18_r4g4d")
+metadata/_custom_type_script = "uid://dnreygx8olxx3"
+
+[node name="SimpleAttackState" type="Node" parent="SimpleStateMachine"]
+script = ExtResource("19_yf6nf")
+metadata/_custom_type_script = "uid://dsf43ffjw15we"
+
+[node name="AnimationComponent" type="Node" parent="."]
+script = ExtResource("8_skhkn")
+metadata/_custom_type_script = "uid://cmjo1r3dy7y1a"
+
+[node name="AudioComponent" type="Node" parent="." node_paths=PackedStringArray("e_simple_state_machine")]
+script = ExtResource("12_2wo0y")
+e_simple_state_machine = NodePath("../SimpleStateMachine")
+metadata/_custom_type_script = "uid://nl1a7e12lrfa"
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("9_ir8sv")
+max_health = 1.0
+metadata/_custom_type_script = "uid://b32n8s4pkaq3b"
+
+[node name="PhysicsComponent" type="Node" parent="."]
+script = ExtResource("10_a8aot")
+metadata/_custom_type_script = "uid://bjvp3kd6bmkho"
+
+[node name="SurfaceContactComponent" type="Node" parent="."]
+script = ExtResource("11_kttm4")
+metadata/_custom_type_script = "uid://dhdu4hixec0wa"
+
+[node name="WallDetectorComponent" type="Node2D" parent="."]
+script = ExtResource("12_lh40x")
+metadata/_custom_type_script = "uid://bcyyrvir8fm3w"
+
+[node name="RayCast2D" type="RayCast2D" parent="WallDetectorComponent"]
+position = Vector2(0, -38)
+target_position = Vector2(50, 0)
+
+[node name="FloorDetector" type="RayCast2D" parent="WallDetectorComponent"]
+position = Vector2(40, 0)
+target_position = Vector2(0, 21)
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 32
+script = ExtResource("13_r4g4d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -40)
+shape = SubResource("CircleShape2D_yo2nc")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+visible = false
+collision_layer = 8
+collision_mask = 4
+script = ExtResource("14_yf6nf")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -38)
+shape = SubResource("CircleShape2D_3xv3x")
+</file>
+
 <file path="scripts/states/airborne_state.gd">
 class_name AirborneState
 extends State
@@ -8391,6 +8410,9 @@ var _released_this_frame: bool = false
 var _ignore_air_control_this_frame: bool = false
 
 var _landed_connected: bool = false
+
+var _is_gravity_suspended: bool = false
+var _current_attack_has_hit: bool = false
 
 var _attack_executor: AttackExecutor
 var _air_combo_component: AirComboComponent
@@ -8422,6 +8444,9 @@ func enter(args: Dictionary = {}):
 	_released_this_frame = false
 	_last_jump_was_air = false
 	_ignore_air_control_this_frame = false
+	
+	_is_gravity_suspended = false
+	_current_attack_has_hit = false
 
 	if surface_contact_component and not _landed_connected:
 		surface_contact_component.connect("landed", Callable(self, "_on_landed"))
@@ -8461,6 +8486,9 @@ func exit():
 	_pending_initial_velocity = 0.0
 	_last_jump_was_air = false
 	_ignore_air_control_this_frame = false
+	
+	_is_gravity_suspended = false
+	_current_attack_has_hit = false
 
 
 func handle_attack_input(profile: AttackProfile) -> InputHandlerResult:
@@ -8505,11 +8533,14 @@ func process_physics(delta: float, walk_direction: float, _is_running: bool) -> 
 	else:
 		new_velocity.x = current_walk_direction * 200.0
 
-	new_velocity = physics_component.apply_gravity(new_velocity, delta)
+	if not _is_gravity_suspended:
+		new_velocity = physics_component.apply_gravity(new_velocity, delta)
 
-	if new_velocity.y > 0.0:
-		var extra_down_a := 1600 * max(2.2 - 1.0, 0.0)
-		new_velocity.y += extra_down_a * delta
+		if new_velocity.y > 0.0:
+			var extra_down_a := 1600 * max(2.2 - 1.0, 0.0)
+			new_velocity.y += extra_down_a * delta
+	else:
+		new_velocity.y = 0.0
 
 	_update_facing_sign(walk_direction)
 	_update_phase(new_velocity)
@@ -8538,6 +8569,8 @@ func _start_air_attack(profile: AttackProfile):
 			_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
 
 	current_sub_state = SubStates.ATTACKING
+	_current_attack_has_hit = false
+	
 	_attack_executor.attack_phase_changed.connect(_on_phase_changed)
 	_attack_executor.finished.connect(_on_air_attack_finished)
 	_attack_executor.execute(profile)
@@ -8549,7 +8582,8 @@ func _on_air_attack_finished():
 	if _attack_executor.is_connected("attack_phase_changed", Callable(self, "_on_phase_changed")):
 		_attack_executor.attack_phase_changed.disconnect(_on_phase_changed)
 	
-	current_sub_state = SubStates.NORMAL
+	if not _current_attack_has_hit:
+		_is_gravity_suspended = false
 	
 	var buffered_data = state_machine.query_buffered_action()
 	if buffered_data and buffered_data.action == BufferComponent.BufferedAction.ATTACK:
@@ -8558,7 +8592,18 @@ func _on_air_attack_finished():
 			_start_air_attack(next_profile)
 			return
 
+	current_sub_state = SubStates.NORMAL
+	_is_gravity_suspended = false
+	
 	_update_phase(owner_node.velocity)
+
+func handle_attack_outcome(outcome: ContactResult) -> void:
+	var result = outcome.attacker_outcome
+	
+	if result == ContactResult.AttackerOutcome.HIT_SUCCESS_SIMPLE_ENEMY:
+		_is_gravity_suspended = true
+		_current_attack_has_hit = true
+		owner_node.velocity.y = 0.0
 
 func _on_phase_changed(phase_data: Dictionary):
 	state_machine.emit_phase_change(phase_data)
@@ -10337,7 +10382,7 @@ script = ExtResource("43_2w11d")
 startup_duration = 0.4
 active_duration = 0.1
 block_recoil_duration = 0.55
-recovery_duration = 0.45
+recovery_duration = 0.2
 link_duration = 0.6
 animation_name = &"shoot"
 active_sfx = ExtResource("44_8f1cb")
@@ -10472,12 +10517,12 @@ shader_parameter/tint_color = Color(1, 0, 0, 1)
 shader_parameter/tint_intensity = 0.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4gjji"]
-radius = 48.0
-height = 200.0
+radius = 30.0
+height = 100.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_mwp2n"]
-radius = 48.0
-height = 168.0
+radius = 30.0
+height = 100.0
 
 [sub_resource type="Resource" id="Resource_md1ol"]
 script = ExtResource("21_487ah")
@@ -10495,7 +10540,7 @@ arrival_tolerance = 15.0
 auto_jump_force = -600.0
 max_distance = 400.0
 detection_cone = 0.5
-same_target_lockout = false
+same_target_lockout = true
 animation_name = "dash"
 active_sfx = ExtResource("8_770dr")
 stamina_cost = 10.0
@@ -10531,12 +10576,10 @@ up_dodge_profile = ExtResource("10_jej6c")
 down_dodge_profile = ExtResource("11_f1ej7")
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
-offset = Vector2(0, -400)
 position_smoothing_enabled = true
 script = ExtResource("23_8f1cb")
 preset = 2
-exploration_zoom = Vector2(0.45, 0.45)
-combat_zoom = Vector2(0.7, 0.7)
+exploration_zoom = Vector2(0.6, 0.6)
 combat_cooldown = 1.5
 
 [node name="SpineSprite" type="SpineSprite" parent="Player"]
@@ -10546,14 +10589,14 @@ preview_skin = "Default"
 preview_animation = "-- Empty --"
 preview_frame = false
 preview_time = 0.0
-position = Vector2(0, 62)
-scale = Vector2(0.3, 0.3)
+scale = Vector2(0.17, 0.17)
 
 [node name="SpineBoneNode" type="SpineBoneNode" parent="Player/SpineSprite"]
 bone_name = "front-shoulder"
 show_behind_parent = true
-position = Vector2(-45.4704, -348.272)
+position = Vector2(-45.4704, -348.271)
 rotation = 0.00413158
+scale = Vector2(1, 1)
 
 [node name="PlayerFeedbackComponent" type="Node2D" parent="Player"]
 script = ExtResource("24_vdulj")
@@ -10563,7 +10606,7 @@ hitstop_slow_scale = 0.03
 trauma_att_none = 0.5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
-position = Vector2(0, -36)
+position = Vector2(0, -50)
 shape = SubResource("CapsuleShape2D_4gjji")
 
 [node name="Hurtbox" type="Area2D" parent="Player"]
@@ -10572,7 +10615,7 @@ collision_mask = 16
 script = ExtResource("24_l71n6")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player/Hurtbox"]
-position = Vector2(0, -20)
+position = Vector2(0, -50)
 shape = SubResource("CapsuleShape2D_mwp2n")
 
 [node name="AttackHitbox" type="Area2D" parent="Player"]
@@ -11162,7 +11205,7 @@ size = Vector2(5292, 1142)
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(29468, 929)
+position = Vector2(28846, 858)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -11174,8 +11217,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-24.1223, -328.783)
-rotation = 0.376419
+position = Vector2(-13.8147, -333.7)
+rotation = 0.455163
 scale = Vector2(1, 1)
 
 [node name="Enemys" type="Node" parent="."]
@@ -11199,10 +11242,10 @@ position = Vector2(-19131, 900)
 position = Vector2(-536, 832)
 
 [node name="EnemyAdv" parent="Enemys" instance=ExtResource("5_cpmsc")]
-position = Vector2(-889, 949)
+position = Vector2(13359, 949)
 
 [node name="EnemyElt" parent="Enemys" instance=ExtResource("6_cpmsc")]
-position = Vector2(10158, 563)
+position = Vector2(19447, 806)
 
 [node name="Boss" parent="Enemys" instance=ExtResource("2_7od0s")]
 position = Vector2(7347, 1882)
@@ -11245,10 +11288,10 @@ point_b_node = NodePath("../../../../Markers/PatrolPointB")
 target_position = Vector2(45, 0)
 
 [node name="AggressiveEnemy" parent="Enemys" instance=ExtResource("18_eguil")]
-position = Vector2(-24566, -831)
+position = Vector2(3860, 1100)
 
 [node name="FlyingAggressiveEnemy" parent="Enemys" instance=ExtResource("19_lc6wr")]
-position = Vector2(-25369, -1263)
+position = Vector2(15687, 770)
 
 [node name="SimplePatrolFlyState" parent="Enemys/FlyingAggressiveEnemy/SimpleStateMachine" index="8"]
 point_a_node = NodePath("../../../../Markers/AggressivePatrolPointA")
@@ -11262,6 +11305,9 @@ position = Vector2(40, 0)
 
 [node name="RangedEnemy" parent="Enemys" instance=ExtResource("21_wuj60")]
 position = Vector2(8518, 221)
+
+[node name="FlyingEnemy2" parent="Enemys" instance=ExtResource("17_eguil")]
+position = Vector2(2589, 1041)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -11286,7 +11332,7 @@ actor_to_watch = NodePath("../PlayerEntity/Player")
 
 [node name="Ground" type="TileMapLayer" parent="."]
 position = Vector2(1113, -3981)
-tile_map_data = PackedByteArray("AADv/1EAAQAAABIAAADv/1IAAQAAABMAAADv/1MAAQAAABQAAADv/1QAAQAAABUAAADv/1UAAQAAABYAAADv/1YAAQAAABcAAADw/1EAAQABABIAAADw/1IAAQABABMAAADw/1MAAQABABQAAADw/1QAAQABABUAAADw/1UAAQABABYAAADw/1YAAQABABcAAADx/1EAAQACABIAAADx/1IAAQACABMAAADx/1MAAQACABQAAADx/1QAAQACABUAAADx/1UAAQACABYAAADx/1YAAQACABcAAADy/1EAAQADABIAAADy/1IAAQADABMAAADy/1MAAQADABQAAADy/1QAAQADABUAAADy/1UAAQADABYAAADy/1YAAQADABcAAADz/1EAAQAEABIAAADz/1IAAQAEABMAAADz/1MAAQAEABQAAADz/1QAAQAEABUAAADz/1UAAQAEABYAAADz/1YAAQAEABcAAAD0/1EAAQAFABIAAAD0/1IAAQAFABMAAAD0/1MAAQAFABQAAAD0/1QAAQAFABUAAAD0/1UAAQAFABYAAAD0/1YAAQAFABcAAAD1/1EAAQAGABIAAAD1/1IAAQAGABMAAAD1/1MAAQAGABQAAAD1/1QAAQAGABUAAAD1/1UAAQAGABYAAAD1/1YAAQAGABcAAAD2/1EAAQAHABIAAAD2/1IAAQAHABMAAAD2/1MAAQAHABQAAAD2/1QAAQAHABUAAAD2/1UAAQAHABYAAAD2/1YAAQAHABcAAAD3/1EAAQAIABIAAAD3/1IAAQAIABMAAAD3/1MAAQAIABQAAAD3/1QAAQAIABUAAAD3/1UAAQAIABYAAAD3/1YAAQAIABcAAAD4/1EAAQAJABIAAAD4/1IAAQAJABMAAAD4/1MAAQAJABQAAAD4/1QAAQAJABUAAAD4/1UAAQAJABYAAAD4/1YAAQAJABcAAAD5/1EAAQAKABIAAAD5/1IAAQAKABMAAAD5/1MAAQAKABQAAAD5/1QAAQAKABUAAAD5/1UAAQAKABYAAAD5/1YAAQAKABcAAAD6/1EAAQALABIAAAD6/1IAAQALABMAAAD6/1MAAQALABQAAAD6/1QAAQALABUAAAD6/1UAAQALABYAAAD6/1YAAQALABcAAAD7/1EAAQAMABIAAAD7/1IAAQAMABMAAAD7/1MAAQAMABQAAAD7/1QAAQAMABUAAAD7/1UAAQAMABYAAAD7/1YAAQAMABcAAAD8/1EAAQAAABIAAAD8/1IAAQAAABMAAAD8/1MAAQAAABQAAAD8/1QAAQAAABUAAAD8/1UAAQAAABYAAAD8/1YAAQAAABcAAAD9/1EAAQABABIAAAD9/1IAAQABABMAAAD9/1MAAQABABQAAAD9/1QAAQABABUAAAD9/1UAAQABABYAAAD9/1YAAQABABcAAAD+/1EAAQACABIAAAD+/1IAAQACABMAAAD+/1MAAQACABQAAAD+/1QAAQACABUAAAD+/1UAAQACABYAAAD+/1YAAQACABcAAAD//1EAAQADABIAAAD//1IAAQADABMAAAD//1MAAQADABQAAAD//1QAAQADABUAAAD//1UAAQADABYAAAD//1YAAQADABcAAAAAAFEAAQAEABIAAAAAAFIAAQAEABMAAAAAAFMAAQAEABQAAAAAAFQAAQAEABUAAAAAAFUAAQAEABYAAAAAAFYAAQAEABcAAAABAFEAAQAFABIAAAABAFIAAQAFABMAAAABAFMAAQAFABQAAAABAFQAAQAFABUAAAABAFUAAQAFABYAAAABAFYAAQAFABcAAAACAFEAAQAGABIAAAACAFIAAQAGABMAAAACAFMAAQAGABQAAAACAFQAAQAGABUAAAACAFUAAQAGABYAAAACAFYAAQAGABcAAAADAFEAAQAHABIAAAADAFIAAQAHABMAAAADAFMAAQAHABQAAAADAFQAAQAHABUAAAADAFUAAQAHABYAAAADAFYAAQAHABcAAAAEAFEAAQAIABIAAAAEAFIAAQAIABMAAAAEAFMAAQAIABQAAAAEAFQAAQAIABUAAAAEAFUAAQAIABYAAAAEAFYAAQAIABcAAAAFAFEAAQAJABIAAAAFAFIAAQAJABMAAAAFAFMAAQAJABQAAAAFAFQAAQAJABUAAAAFAFUAAQAJABYAAAAFAFYAAQAJABcAAAAGAFEAAQAKABIAAAAGAFIAAQAKABMAAAAGAFMAAQAKABQAAAAGAFQAAQAKABUAAAAGAFUAAQAKABYAAAAGAFYAAQAKABcAAAAHAFEAAQALABIAAAAHAFIAAQALABMAAAAHAFMAAQALABQAAAAHAFQAAQALABUAAAAHAFUAAQALABYAAAAHAFYAAQALABcAAAAIAFEAAQAMABIAAAAIAFIAAQAMABMAAAAIAFMAAQAMABQAAAAIAFQAAQAMABUAAAAIAFUAAQAMABYAAAAIAFYAAQAMABcAAAAJAFEAAQANABIAAAAJAFIAAQANABMAAAAJAFMAAQANABQAAAAJAFQAAQANABUAAAAJAFUAAQANABYAAAAJAFYAAQANABcAAAAKAFEAAQAOABIAAAAKAFIAAQAOABMAAAAKAFMAAQAOABQAAAAKAFQAAQAOABUAAAAKAFUAAQAOABYAAAAKAFYAAQAOABcAAAALAFEAAQAPABIAAAALAFIAAQAPABMAAAALAFMAAQAPABQAAAALAFQAAQAPABUAAAALAFUAAQAPABYAAAALAFYAAQAPABcAAAAMAFEAAQAQABIAAAAMAFIAAQAQABMAAAAMAFMAAQAQABQAAAAMAFQAAQAQABUAAAAMAFUAAQAQABYAAAAMAFYAAQAQABcAAAANAFEAAQARABIAAAANAFIAAQARABMAAAANAFMAAQARABQAAAANAFQAAQARABUAAAANAFUAAQARABYAAAANAFYAAQARABcAAAAOAFEAAQASABIAAAAOAFIAAQASABMAAAAOAFMAAQASABQAAAAOAFQAAQASABUAAAAOAFUAAQASABYAAAAOAFYAAQASABcAAAAPAFEAAQATABIAAAAPAFIAAQATABMAAAAPAFMAAQATABQAAAAPAFQAAQATABUAAAAPAFUAAQATABYAAAAPAFYAAQATABcAAAAQAFEAAQAUABIAAAAQAFIAAQAUABMAAAAQAFMAAQAUABQAAAAQAFQAAQAUABUAAAAQAFUAAQAUABYAAAAQAFYAAQAUABcAAAARAFEAAQAVABIAAAARAFIAAQAVABMAAAARAFMAAQAVABQAAAARAFQAAQAVABUAAAARAFUAAQAVABYAAAARAFYAAQAVABcAAAASAFEAAQAWABIAAAASAFIAAQAWABMAAAASAFMAAQAWABQAAAASAFQAAQAWABUAAAASAFUAAQAWABYAAAASAFYAAQAWABcAAAATAFEAAQAXABIAAAATAFIAAQAXABMAAAATAFMAAQAXABQAAAATAFQAAQAXABUAAAATAFUAAQAXABYAAAATAFYAAQAXABcAAAAUAFEAAQAYABIAAAAUAFIAAQAYABMAAAAUAFMAAQAYABQAAAAUAFQAAQAYABUAAAAUAFUAAQAYABYAAAAUAFYAAQAYABcAAAAVAFEAAQAZABIAAAAVAFIAAQAZABMAAAAVAFMAAQAZABQAAAAVAFQAAQAZABUAAAAVAFUAAQAZABYAAAAVAFYAAQAZABcAAAAWAFEAAQAaABIAAAAWAFIAAQAaABMAAAAWAFMAAQAaABQAAAAWAFQAAQAaABUAAAAWAFUAAQAaABYAAAAWAFYAAQAaABcAAAAXAFEAAQAbABIAAAAXAFIAAQAbABMAAAAXAFMAAQAbABQAAAAXAFQAAQAbABUAAAAXAFUAAQAbABYAAAAXAFYAAQAbABcAAAAYAFEAAQAcABIAAAAYAFIAAQAcABMAAAAYAFMAAQAcABQAAAAYAFQAAQAcABUAAAAYAFUAAQAcABYAAAAYAFYAAQAcABcAAAAZAFEAAQAdABIAAAAZAFIAAQAdABMAAAAZAFMAAQAdABQAAAAZAFQAAQAdABUAAAAZAFUAAQAdABYAAAAZAFYAAQAdABcAAAAaAFEAAQAeABIAAAAaAFIAAQAeABMAAAAaAFMAAQAeABQAAAAaAFQAAQAeABUAAAAaAFUAAQAeABYAAAAaAFYAAQAeABcAAAAbAFEAAQAfABIAAAAbAFIAAQAfABMAAAAbAFMAAQAfABQAAAAbAFQAAQAfABUAAAAbAFUAAQAfABYAAAAbAFYAAQAfABcAAAAcAFEAAQAAABIAAAAcAFIAAQAAABMAAAAcAFMAAQAAABQAAAAcAFQAAQAAABUAAAAcAFUAAQAAABYAAAAcAFYAAQAAABcAAAAdAFEAAQABABIAAAAdAFIAAQABABMAAAAdAFMAAQABABQAAAAdAFQAAQABABUAAAAdAFUAAQABABYAAAAdAFYAAQABABcAAAAeAFEAAQACABIAAAAeAFIAAQACABMAAAAeAFMAAQACABQAAAAeAFQAAQACABUAAAAeAFUAAQACABYAAAAeAFYAAQACABcAAAAfAFEAAQAAABIAAAAfAFIAAQAAABMAAAAfAFMAAQAAABQAAAAfAFQAAQAAABUAAAAfAFUAAQAAABYAAAAfAFYAAQAAABcAAAAgAFEAAQABABIAAAAgAFIAAQABABMAAAAgAFMAAQABABQAAAAgAFQAAQABABUAAAAgAFUAAQABABYAAAAgAFYAAQABABcAAAAhAFEAAQACABIAAAAhAFIAAQACABMAAAAhAFMAAQACABQAAAAhAFQAAQACABUAAAAhAFUAAQACABYAAAAhAFYAAQACABcAAAAiAFEAAQADABIAAAAiAFIAAQADABMAAAAiAFMAAQADABQAAAAiAFQAAQADABUAAAAiAFUAAQADABYAAAAiAFYAAQADABcAAAAjAFEAAQAEABIAAAAjAFIAAQAEABMAAAAjAFMAAQAEABQAAAAjAFQAAQAEABUAAAAjAFUAAQAEABYAAAAjAFYAAQAEABcAAAAkAFEAAQAFABIAAAAkAFIAAQAFABMAAAAkAFMAAQAFABQAAAAkAFQAAQAFABUAAAAkAFUAAQAFABYAAAAkAFYAAQAFABcAAAAlAFEAAQAGABIAAAAlAFIAAQAGABMAAAAlAFMAAQAGABQAAAAlAFQAAQAGABUAAAAlAFUAAQAGABYAAAAlAFYAAQAGABcAAAAmAFEAAQAHABIAAAAmAFIAAQAHABMAAAAmAFMAAQAHABQAAAAmAFQAAQAHABUAAAAmAFUAAQAHABYAAAAmAFYAAQAHABcAAAAnAFEAAQAIABIAAAAnAFIAAQAIABMAAAAnAFMAAQAIABQAAAAnAFQAAQAIABUAAAAnAFUAAQAIABYAAAAnAFYAAQAIABcAAAAoAFEAAQAJABIAAAAoAFIAAQAJABMAAAAoAFMAAQAJABQAAAAoAFQAAQAJABUAAAAoAFUAAQAJABYAAAAoAFYAAQAJABcAAAApAFEAAQAKABIAAAApAFIAAQAKABMAAAApAFMAAQAKABQAAAApAFQAAQAKABUAAAApAFUAAQAKABYAAAApAFYAAQAKABcAAAAqAFEAAQALABIAAAAqAFIAAQALABMAAAAqAFMAAQALABQAAAAqAFQAAQALABUAAAAqAFUAAQALABYAAAAqAFYAAQALABcAAAArAFEAAQAMABIAAAArAFIAAQAMABMAAAArAFMAAQAMABQAAAArAFQAAQAMABUAAAArAFUAAQAMABYAAAArAFYAAQAMABcAAAAsAFEAAQANABIAAAAsAFIAAQANABMAAAAsAFMAAQANABQAAAAsAFQAAQANABUAAAAsAFUAAQANABYAAAAsAFYAAQANABcAAAAtAFEAAQAOABIAAAAtAFIAAQAOABMAAAAtAFMAAQAOABQAAAAtAFQAAQAOABUAAAAtAFUAAQAOABYAAAAtAFYAAQAOABcAAAAuAFEAAQAPABIAAAAuAFIAAQAPABMAAAAuAFMAAQAPABQAAAAuAFQAAQAPABUAAAAuAFUAAQAPABYAAAAuAFYAAQAPABcAAAAvAFEAAQAQABIAAAAvAFIAAQAQABMAAAAvAFMAAQAQABQAAAAvAFQAAQAQABUAAAAvAFUAAQAQABYAAAAvAFYAAQAQABcAAAAwAFEAAQARABIAAAAwAFIAAQARABMAAAAwAFMAAQARABQAAAAwAFQAAQARABUAAAAwAFUAAQARABYAAAAwAFYAAQARABcAAAAxAFEAAQASABIAAAAxAFIAAQASABMAAAAxAFMAAQASABQAAAAxAFQAAQASABUAAAAxAFUAAQASABYAAAAxAFYAAQASABcAAAAyAFEAAQATABIAAAAyAFIAAQATABMAAAAyAFMAAQATABQAAAAyAFQAAQATABUAAAAyAFUAAQATABYAAAAyAFYAAQATABcAAAAzAFEAAQAUABIAAAAzAFIAAQAUABMAAAAzAFMAAQAUABQAAAAzAFQAAQAUABUAAAAzAFUAAQAUABYAAAAzAFYAAQAUABcAAAA0AFEAAQAVABIAAAA0AFIAAQAVABMAAAA0AFMAAQAVABQAAAA0AFQAAQAVABUAAAA0AFUAAQAVABYAAAA0AFYAAQAVABcAAAA1AFEAAQAWABIAAAA1AFIAAQAWABMAAAA1AFMAAQAWABQAAAA1AFQAAQAWABUAAAA1AFUAAQAWABYAAAA1AFYAAQAWABcAAAA2AFEAAQAXABIAAAA2AFIAAQAXABMAAAA2AFMAAQAXABQAAAA2AFQAAQAXABUAAAA2AFUAAQAXABYAAAA2AFYAAQAXABcAAAA3AFEAAQAYABIAAAA3AFIAAQAYABMAAAA3AFMAAQAYABQAAAA3AFQAAQAYABUAAAA3AFUAAQAYABYAAAA3AFYAAQAYABcAAAA4AFEAAQAZABIAAAA4AFIAAQAZABMAAAA4AFMAAQAZABQAAAA4AFQAAQAZABUAAAA4AFUAAQAZABYAAAA4AFYAAQAZABcAAAA5AFEAAQAaABIAAAA5AFIAAQAaABMAAAA5AFMAAQAaABQAAAA5AFQAAQAaABUAAAA5AFUAAQAaABYAAAA5AFYAAQAaABcAAAA6AFEAAQAbABIAAAA6AFIAAQAbABMAAAA6AFMAAQAbABQAAAA6AFQAAQAbABUAAAA6AFUAAQAbABYAAAA6AFYAAQAbABcAAAA7AFEAAQAcABIAAAA7AFIAAQAcABMAAAA7AFMAAQAcABQAAAA7AFQAAQAcABUAAAA7AFUAAQAcABYAAAA7AFYAAQAcABcAAAA8AFEAAQAdABIAAAA8AFIAAQAdABMAAAA8AFMAAQAdABQAAAA8AFQAAQAdABUAAAA8AFUAAQAdABYAAAA8AFYAAQAdABcAAAA9AFEAAQAeABIAAAA9AFIAAQAeABMAAAA9AFMAAQAeABQAAAA9AFQAAQAeABUAAAA9AFUAAQAeABYAAAA9AFYAAQAeABcAAAA+AFEAAQAfABIAAAA+AFIAAQAfABMAAAA+AFMAAQAfABQAAAA+AFQAAQAfABUAAAA+AFUAAQAfABYAAAA+AFYAAQAfABcAAAA/AFEAAQAAABIAAAA/AFIAAQAAABMAAAA/AFMAAQAAABQAAAA/AFQAAQAAABUAAAA/AFUAAQAAABYAAAA/AFYAAQAAABcAAABAAFEAAQABABIAAABAAFIAAQABABMAAABAAFMAAQABABQAAABAAFQAAQABABUAAABAAFUAAQABABYAAABAAFYAAQABABcAAABBAFEAAQACABIAAABBAFIAAQACABMAAABBAFMAAQACABQAAABBAFQAAQACABUAAABBAFUAAQACABYAAABBAFYAAQACABcAAABCAFEAAQADABIAAABCAFIAAQADABMAAABCAFMAAQADABQAAABCAFQAAQADABUAAABCAFUAAQADABYAAABCAFYAAQADABcAAABDAFEAAQAEABIAAABDAFIAAQAEABMAAABDAFMAAQAEABQAAABDAFQAAQAEABUAAABDAFUAAQAEABYAAABDAFYAAQAEABcAAABEAFEAAQAFABIAAABEAFIAAQAFABMAAABEAFMAAQAFABQAAABEAFQAAQAFABUAAABEAFUAAQAFABYAAABEAFYAAQAFABcAAABFAFEAAQAGABIAAABFAFIAAQAGABMAAABFAFMAAQAGABQAAABFAFQAAQAGABUAAABFAFUAAQAGABYAAABFAFYAAQAGABcAAABGAFEAAQAHABIAAABGAFIAAQAHABMAAABGAFMAAQAHABQAAABGAFQAAQAHABUAAABGAFUAAQAHABYAAABGAFYAAQAHABcAAABHAFEAAQAIABIAAABHAFIAAQAIABMAAABHAFMAAQAIABQAAABHAFQAAQAIABUAAABHAFUAAQAIABYAAABHAFYAAQAIABcAAABIAFEAAQAJABIAAABIAFIAAQAJABMAAABIAFMAAQAJABQAAABIAFQAAQAJABUAAABIAFUAAQAJABYAAABIAFYAAQAJABcAAABJAFEAAQAKABIAAABJAFIAAQAKABMAAABJAFMAAQAKABQAAABJAFQAAQAKABUAAABJAFUAAQAKABYAAABJAFYAAQAKABcAAABKAFEAAQALABIAAABKAFIAAQALABMAAABKAFMAAQALABQAAABKAFQAAQALABUAAABKAFUAAQALABYAAABKAFYAAQALABcAAABLAFEAAQAMABIAAABLAFIAAQAMABMAAABLAFMAAQAMABQAAABLAFQAAQAMABUAAABLAFUAAQAMABYAAABLAFYAAQAMABcAAABMAFEAAQANABIAAABMAFIAAQANABMAAABMAFMAAQANABQAAABMAFQAAQANABUAAABMAFUAAQANABYAAABMAFYAAQANABcAAABNAFEAAQAOABIAAABNAFIAAQAOABMAAABNAFMAAQAOABQAAABNAFQAAQAOABUAAABNAFUAAQAOABYAAABNAFYAAQAOABcAAABOAFEAAQAPABIAAABOAFIAAQAPABMAAABOAFMAAQAPABQAAABOAFQAAQAPABUAAABOAFUAAQAPABYAAABOAFYAAQAPABcAAADu/1IAAQAfABMAAADu/1MAAQAfABQAAADu/1QAAQAfABUAAADu/1UAAQAfABYAAADu/1YAAQAfABcAAADu/1EAAQAfABIAAABoAFEAAQAAABIAAABoAFIAAQAAABMAAABoAFMAAQAAABQAAABoAFQAAQAAABUAAABoAFUAAQAAABYAAABoAFYAAQAAABcAAABpAFEAAQABABIAAABpAFIAAQABABMAAABpAFMAAQABABQAAABpAFQAAQABABUAAABpAFUAAQABABYAAABpAFYAAQABABcAAABqAFEAAQACABIAAABqAFIAAQACABMAAABqAFMAAQACABQAAABqAFQAAQACABUAAABqAFUAAQACABYAAABqAFYAAQACABcAAABrAFEAAQADABIAAABrAFIAAQADABMAAABrAFMAAQADABQAAABrAFQAAQADABUAAABrAFUAAQADABYAAABrAFYAAQADABcAAABsAFEAAQAEABIAAABsAFIAAQAEABMAAABsAFMAAQAEABQAAABsAFQAAQAEABUAAABsAFUAAQAEABYAAABsAFYAAQAEABcAAABtAFEAAQAFABIAAABtAFIAAQAFABMAAABtAFMAAQAFABQAAABtAFQAAQAFABUAAABtAFUAAQAFABYAAABtAFYAAQAFABcAAABuAFEAAQAGABIAAABuAFIAAQAGABMAAABuAFMAAQAGABQAAABuAFQAAQAGABUAAABuAFUAAQAGABYAAABuAFYAAQAGABcAAABvAFEAAQAHABIAAABvAFIAAQAHABMAAABvAFMAAQAHABQAAABvAFQAAQAHABUAAABvAFUAAQAHABYAAABvAFYAAQAHABcAAABwAFEAAQAIABIAAABwAFIAAQAIABMAAABwAFMAAQAIABQAAABwAFQAAQAIABUAAABwAFUAAQAIABYAAABwAFYAAQAIABcAAABxAFEAAQAJABIAAABxAFIAAQAJABMAAABxAFMAAQAJABQAAABxAFQAAQAJABUAAABxAFUAAQAJABYAAABxAFYAAQAJABcAAAByAFEAAQAKABIAAAByAFIAAQAKABMAAAByAFMAAQAKABQAAAByAFQAAQAKABUAAAByAFUAAQAKABYAAAByAFYAAQAKABcAAABzAFEAAQALABIAAABzAFIAAQALABMAAABzAFMAAQALABQAAABzAFQAAQALABUAAABzAFUAAQALABYAAABzAFYAAQALABcAAAB0AFEAAQAMABIAAAB0AFIAAQAMABMAAAB0AFMAAQAMABQAAAB0AFQAAQAMABUAAAB0AFUAAQAMABYAAAB0AFYAAQAMABcAAAB1AFEAAQANABIAAAB1AFIAAQANABMAAAB1AFMAAQANABQAAAB1AFQAAQANABUAAAB1AFUAAQANABYAAAB1AFYAAQANABcAAAB2AFEAAQAOABIAAAB2AFIAAQAOABMAAAB2AFMAAQAOABQAAAB2AFQAAQAOABUAAAB2AFUAAQAOABYAAAB2AFYAAQAOABcAAAB3AFEAAQAPABIAAAB3AFIAAQAPABMAAAB3AFMAAQAPABQAAAB3AFQAAQAPABUAAAB3AFUAAQAPABYAAAB3AFYAAQAPABcAAAB4AFEAAQAQABIAAAB4AFIAAQAQABMAAAB4AFMAAQAQABQAAAB4AFQAAQAQABUAAAB4AFUAAQAQABYAAAB4AFYAAQAQABcAAAB5AFEAAQARABIAAAB5AFIAAQARABMAAAB5AFMAAQARABQAAAB5AFQAAQARABUAAAB5AFUAAQARABYAAAB5AFYAAQARABcAAAB6AFEAAQASABIAAAB6AFIAAQASABMAAAB6AFMAAQASABQAAAB6AFQAAQASABUAAAB6AFUAAQASABYAAAB6AFYAAQASABcAAAB7AFEAAQATABIAAAB7AFIAAQATABMAAAB7AFMAAQATABQAAAB7AFQAAQATABUAAAB7AFUAAQATABYAAAB7AFYAAQATABcAAAB8AFEAAQAUABIAAAB8AFIAAQAUABMAAAB8AFMAAQAUABQAAAB8AFQAAQAUABUAAAB8AFUAAQAUABYAAAB8AFYAAQAUABcAAAB9AFEAAQAVABIAAAB9AFIAAQAVABMAAAB9AFMAAQAVABQAAAB9AFQAAQAVABUAAAB9AFUAAQAVABYAAAB9AFYAAQAVABcAAABOAF0AAQAAABIAAABOAF4AAQAAABMAAABPAF0AAQABABIAAABPAF4AAQABABMAAABQAF0AAQACABIAAABQAF4AAQACABMAAABRAF0AAQADABIAAABRAF4AAQADABMAAABSAF0AAQAEABIAAABSAF4AAQAEABMAAABTAF0AAQAFABIAAABTAF4AAQAFABMAAABUAF0AAQAGABIAAABUAF4AAQAGABMAAABVAF0AAQAHABIAAABVAF4AAQAHABMAAABWAF0AAQAIABIAAABWAF4AAQAIABMAAABXAF0AAQAJABIAAABXAF4AAQAJABMAAABYAF0AAQAKABIAAABYAF4AAQAKABMAAABZAF0AAQALABIAAABZAF4AAQALABMAAABaAF0AAQAMABIAAABaAF4AAQAMABMAAABbAF0AAQANABIAAABbAF4AAQANABMAAABcAF0AAQAOABIAAABcAF4AAQAOABMAAABdAF0AAQAPABIAAABdAF4AAQAPABMAAABeAF0AAQAQABIAAABeAF4AAQAQABMAAABfAF0AAQARABIAAABfAF4AAQARABMAAABgAF0AAQASABIAAABgAF4AAQASABMAAABhAF0AAQATABIAAABhAF4AAQATABMAAABiAF0AAQAUABIAAABiAF4AAQAUABMAAABjAF0AAQAVABIAAABjAF4AAQAVABMAAABkAF0AAQAWABIAAABkAF4AAQAWABMAAABlAF0AAQAXABIAAABlAF4AAQAXABMAAABmAF0AAQAYABIAAABmAF4AAQAYABMAAABnAF0AAQAZABIAAABnAF4AAQAZABMAAABoAF0AAQAaABIAAABoAF4AAQAaABMAAABpAF0AAQAbABIAAABpAF4AAQAbABMAAABwAEEAAQAAABIAAABwAEIAAQAAABMAAABwAEMAAQAAABQAAABxAEEAAQABABIAAABxAEIAAQABABMAAABxAEMAAQABABQAAAByAEEAAQACABIAAAByAEIAAQACABMAAAByAEMAAQACABQAAABzAEEAAQADABIAAABzAEIAAQADABMAAABzAEMAAQADABQAAAB0AEEAAQAEABIAAAB0AEIAAQAEABMAAAB0AEMAAQAEABQAAAB1AEEAAQAFABIAAAB1AEIAAQAFABMAAAB1AEMAAQAFABQAAAB2AEEAAQAGABIAAAB2AEIAAQAGABMAAAB2AEMAAQAGABQAAAB3AEEAAQAHABIAAAB3AEIAAQAHABMAAAB3AEMAAQAHABQAAAB4AEEAAQAIABIAAAB4AEIAAQAIABMAAAB4AEMAAQAIABQAAAB5AEEAAQAJABIAAAB5AEIAAQAJABMAAAB5AEMAAQAJABQAAAB6AEEAAQAKABIAAAB6AEIAAQAKABMAAAB6AEMAAQAKABQAAAB+ADcAAQAAABMAAAB+ADgAAQAAABQAAAB+ADkAAQAAABUAAAB+ADoAAQAAABYAAAB+ADsAAQAAABcAAAB/ADcAAQABABMAAAB/ADgAAQABABQAAAB/ADkAAQABABUAAAB/ADoAAQABABYAAAB/ADsAAQABABcAAAB+ADwAAQAAABMAAAB+AD0AAQAAABQAAAB+AD4AAQAAABUAAAB+AD8AAQAAABYAAAB+AEAAAQAAABcAAAB/ADwAAQABABMAAAB/AD0AAQABABQAAAB/AD4AAQABABUAAAB/AD8AAQABABYAAAB/AEAAAQABABcAAAB+AEEAAQAAABMAAAB/AEEAAQABABMAAAB1ADIAAQAAABMAAAB1ADMAAQAAABQAAAB1ADQAAQAAABUAAAB1ADUAAQAAABYAAAB1ADYAAQAAABcAAAB2ADIAAQABABMAAAB2ADMAAQABABQAAAB2ADQAAQABABUAAAB2ADUAAQABABYAAAB2ADYAAQABABcAAAB1ADcAAQAAABMAAAB1ADgAAQAAABQAAAB1ADkAAQAAABUAAAB2ADcAAQABABMAAAB2ADgAAQABABQAAAB2ADkAAQABABUAAAB9ACgAAQAAABMAAAB9ACkAAQAAABQAAAB9ACoAAQAAABUAAAB9ACsAAQAAABYAAAB9ACwAAQAAABcAAAB+ACgAAQABABMAAAB+ACkAAQABABQAAAB+ACoAAQABABUAAAB+ACsAAQABABYAAAB+ACwAAQABABcAAAB9AC0AAQAAABMAAAB9AC4AAQAAABQAAAB9AC8AAQAAABUAAAB9ADAAAQAAABYAAAB+AC0AAQABABMAAAB+AC4AAQABABQAAAB+AC8AAQABABUAAAB+ADAAAQABABYAAACHACgAAQAAABMAAACHACkAAQAAABQAAACHACoAAQAAABUAAACHACsAAQAAABYAAACHACwAAQAAABcAAACIACgAAQABABMAAACIACkAAQABABQAAACIACoAAQABABUAAACIACsAAQABABYAAACIACwAAQABABcAAACHAC0AAQAAABMAAACHAC4AAQAAABQAAACHAC8AAQAAABUAAACHADAAAQAAABYAAACHADEAAQAAABcAAACIAC0AAQABABMAAACIAC4AAQABABQAAACIAC8AAQABABUAAACIADAAAQABABYAAACIADEAAQABABcAAACHADIAAQAAABMAAACHADMAAQAAABQAAACHADQAAQAAABUAAACHADUAAQAAABYAAACIADIAAQABABMAAACIADMAAQABABQAAACIADQAAQABABUAAACIADUAAQABABYAAAB9ACYAAQATABQAAAB9ACcAAQATABUAAAB+ACYAAQAUABQAAAB+ACcAAQAUABUAAAB/ACYAAQAVABQAAAB/ACcAAQAVABUAAACAACYAAQAWABQAAACAACcAAQAWABUAAACBACYAAQAXABQAAACBACcAAQAXABUAAACCACYAAQAYABQAAACCACcAAQAYABUAAACDACYAAQAZABQAAACDACcAAQAZABUAAACEACYAAQAaABQAAACEACcAAQAaABUAAACFACYAAQAbABQAAACFACcAAQAbABUAAACGACYAAQAcABQAAACGACcAAQAcABUAAACHACYAAQAdABQAAACHACcAAQAdABUAAACIACYAAQAeABQAAACIACcAAQAeABUAAACWADcAAQAAABMAAACWADgAAQAAABQAAACWADkAAQAAABUAAACWADoAAQAAABYAAACWADsAAQAAABcAAACXADcAAQABABMAAACXADgAAQABABQAAACXADkAAQABABUAAACXADoAAQABABYAAACXADsAAQABABcAAACWADwAAQAAABMAAACWAD0AAQAAABQAAACXADwAAQABABMAAACXAD0AAQABABQAAACOADUAAQAAABQAAACOADYAAQAAABUAAACPADUAAQABABQAAACPADYAAQABABUAAABxACYAAQAAABQAAABxACcAAQAAABUAAAByACYAAQABABQAAAByACcAAQABABUAAABzACYAAQAAABQAAABzACcAAQAAABUAAAB0ACYAAQABABQAAAB0ACcAAQABABUAAAB1ACYAAQAAABQAAAB1ACcAAQAAABUAAAB2ACYAAQABABQAAAB2ACcAAQABABUAAAB3ACYAAQAAABQAAAB3ACcAAQAAABUAAAB4ACYAAQABABQAAAB4ACcAAQABABUAAAB5ACYAAQAAABQAAAB5ACcAAQAAABUAAAB6ACYAAQABABQAAAB6ACcAAQABABUAAAB7ACYAAQAAABQAAAB7ACcAAQAAABUAAAB8ACYAAQABABQAAAB8ACcAAQABABUAAAA=")
+tile_map_data = PackedByteArray("AADv/1EAAQAAABIAAADv/1IAAQAAABMAAADv/1MAAQAAABQAAADv/1QAAQAAABUAAADv/1UAAQAAABYAAADv/1YAAQAAABcAAADw/1EAAQABABIAAADw/1IAAQABABMAAADw/1MAAQABABQAAADw/1QAAQABABUAAADw/1UAAQABABYAAADw/1YAAQABABcAAADx/1EAAQACABIAAADx/1IAAQACABMAAADx/1MAAQACABQAAADx/1QAAQACABUAAADx/1UAAQACABYAAADx/1YAAQACABcAAADy/1EAAQADABIAAADy/1IAAQADABMAAADy/1MAAQADABQAAADy/1QAAQADABUAAADy/1UAAQADABYAAADy/1YAAQADABcAAADz/1EAAQAEABIAAADz/1IAAQAEABMAAADz/1MAAQAEABQAAADz/1QAAQAEABUAAADz/1UAAQAEABYAAADz/1YAAQAEABcAAAD0/1EAAQAFABIAAAD0/1IAAQAFABMAAAD0/1MAAQAFABQAAAD0/1QAAQAFABUAAAD0/1UAAQAFABYAAAD0/1YAAQAFABcAAAD1/1EAAQAGABIAAAD1/1IAAQAGABMAAAD1/1MAAQAGABQAAAD1/1QAAQAGABUAAAD1/1UAAQAGABYAAAD1/1YAAQAGABcAAAD2/1EAAQAHABIAAAD2/1IAAQAHABMAAAD2/1MAAQAHABQAAAD2/1QAAQAHABUAAAD2/1UAAQAHABYAAAD2/1YAAQAHABcAAAD3/1EAAQAIABIAAAD3/1IAAQAIABMAAAD3/1MAAQAIABQAAAD3/1QAAQAIABUAAAD3/1UAAQAIABYAAAD3/1YAAQAIABcAAAD4/1EAAQAJABIAAAD4/1IAAQAJABMAAAD4/1MAAQAJABQAAAD4/1QAAQAJABUAAAD4/1UAAQAJABYAAAD4/1YAAQAJABcAAAD5/1EAAQAKABIAAAD5/1IAAQAKABMAAAD5/1MAAQAKABQAAAD5/1QAAQAKABUAAAD5/1UAAQAKABYAAAD5/1YAAQAKABcAAAD6/1EAAQALABIAAAD6/1IAAQALABMAAAD6/1MAAQALABQAAAD6/1QAAQALABUAAAD6/1UAAQALABYAAAD6/1YAAQALABcAAAD7/1EAAQAMABIAAAD7/1IAAQAMABMAAAD7/1MAAQAMABQAAAD7/1QAAQAMABUAAAD7/1UAAQAMABYAAAD7/1YAAQAMABcAAAD8/1EAAQAAABIAAAD8/1IAAQAAABMAAAD8/1MAAQAAABQAAAD8/1QAAQAAABUAAAD8/1UAAQAAABYAAAD8/1YAAQAAABcAAAD9/1EAAQABABIAAAD9/1IAAQABABMAAAD9/1MAAQABABQAAAD9/1QAAQABABUAAAD9/1UAAQABABYAAAD9/1YAAQABABcAAAD+/1EAAQACABIAAAD+/1IAAQACABMAAAD+/1MAAQACABQAAAD+/1QAAQACABUAAAD+/1UAAQACABYAAAD+/1YAAQACABcAAAD//1EAAQADABIAAAD//1IAAQADABMAAAD//1MAAQADABQAAAD//1QAAQADABUAAAD//1UAAQADABYAAAD//1YAAQADABcAAAAAAFEAAQAEABIAAAAAAFIAAQAEABMAAAAAAFMAAQAEABQAAAAAAFQAAQAEABUAAAAAAFUAAQAEABYAAAAAAFYAAQAEABcAAAABAFEAAQAFABIAAAABAFIAAQAFABMAAAABAFMAAQAFABQAAAABAFQAAQAFABUAAAABAFUAAQAFABYAAAABAFYAAQAFABcAAAACAFEAAQAGABIAAAACAFIAAQAGABMAAAACAFMAAQAGABQAAAACAFQAAQAGABUAAAACAFUAAQAGABYAAAACAFYAAQAGABcAAAADAFEAAQAHABIAAAADAFIAAQAHABMAAAADAFMAAQAHABQAAAADAFQAAQAHABUAAAADAFUAAQAHABYAAAADAFYAAQAHABcAAAAEAFEAAQAIABIAAAAEAFIAAQAIABMAAAAEAFMAAQAIABQAAAAEAFQAAQAIABUAAAAEAFUAAQAIABYAAAAEAFYAAQAIABcAAAAFAFEAAQAJABIAAAAFAFIAAQAJABMAAAAFAFMAAQAJABQAAAAFAFQAAQAJABUAAAAFAFUAAQAJABYAAAAFAFYAAQAJABcAAAAGAFEAAQAKABIAAAAGAFIAAQAKABMAAAAGAFMAAQAKABQAAAAGAFQAAQAKABUAAAAGAFUAAQAKABYAAAAGAFYAAQAKABcAAAAHAFEAAQALABIAAAAHAFIAAQALABMAAAAHAFMAAQALABQAAAAHAFQAAQALABUAAAAHAFUAAQALABYAAAAHAFYAAQALABcAAAAIAFEAAQAMABIAAAAIAFIAAQAMABMAAAAIAFMAAQAMABQAAAAIAFQAAQAMABUAAAAIAFUAAQAMABYAAAAIAFYAAQAMABcAAAAJAFEAAQANABIAAAAJAFIAAQANABMAAAAJAFMAAQANABQAAAAJAFQAAQANABUAAAAJAFUAAQANABYAAAAJAFYAAQANABcAAAAKAFEAAQAOABIAAAAKAFIAAQAOABMAAAAKAFMAAQAOABQAAAAKAFQAAQAOABUAAAAKAFUAAQAOABYAAAAKAFYAAQAOABcAAAALAFEAAQAPABIAAAALAFIAAQAPABMAAAALAFMAAQAPABQAAAALAFQAAQAPABUAAAALAFUAAQAPABYAAAALAFYAAQAPABcAAAAMAFEAAQAQABIAAAAMAFIAAQAQABMAAAAMAFMAAQAQABQAAAAMAFQAAQAQABUAAAAMAFUAAQAQABYAAAAMAFYAAQAQABcAAAANAFEAAQARABIAAAANAFIAAQARABMAAAANAFMAAQARABQAAAANAFQAAQARABUAAAANAFUAAQARABYAAAANAFYAAQARABcAAAAOAFEAAQASABIAAAAOAFIAAQASABMAAAAOAFMAAQASABQAAAAOAFQAAQASABUAAAAOAFUAAQASABYAAAAOAFYAAQASABcAAAAPAFEAAQATABIAAAAPAFIAAQATABMAAAAPAFMAAQATABQAAAAPAFQAAQATABUAAAAPAFUAAQATABYAAAAPAFYAAQATABcAAAAQAFEAAQAUABIAAAAQAFIAAQAUABMAAAAQAFMAAQAUABQAAAAQAFQAAQAUABUAAAAQAFUAAQAUABYAAAAQAFYAAQAUABcAAAARAFEAAQAVABIAAAARAFIAAQAVABMAAAARAFMAAQAVABQAAAARAFQAAQAVABUAAAARAFUAAQAVABYAAAARAFYAAQAVABcAAAASAFEAAQAWABIAAAASAFIAAQAWABMAAAASAFMAAQAWABQAAAASAFQAAQAWABUAAAASAFUAAQAWABYAAAASAFYAAQAWABcAAAATAFEAAQAXABIAAAATAFIAAQAXABMAAAATAFMAAQAXABQAAAATAFQAAQAXABUAAAATAFUAAQAXABYAAAATAFYAAQAXABcAAAAUAFEAAQAYABIAAAAUAFIAAQAYABMAAAAUAFMAAQAYABQAAAAUAFQAAQAYABUAAAAUAFUAAQAYABYAAAAUAFYAAQAYABcAAAAVAFEAAQAZABIAAAAVAFIAAQAZABMAAAAVAFMAAQAZABQAAAAVAFQAAQAZABUAAAAVAFUAAQAZABYAAAAVAFYAAQAZABcAAAAWAFEAAQAaABIAAAAWAFIAAQAaABMAAAAWAFMAAQAaABQAAAAWAFQAAQAaABUAAAAWAFUAAQAaABYAAAAWAFYAAQAaABcAAAAXAFEAAQAbABIAAAAXAFIAAQAbABMAAAAXAFMAAQAbABQAAAAXAFQAAQAbABUAAAAXAFUAAQAbABYAAAAXAFYAAQAbABcAAAAYAFEAAQAcABIAAAAYAFIAAQAcABMAAAAYAFMAAQAcABQAAAAYAFQAAQAcABUAAAAYAFUAAQAcABYAAAAYAFYAAQAcABcAAAAZAFEAAQAdABIAAAAZAFIAAQAdABMAAAAZAFMAAQAdABQAAAAZAFQAAQAdABUAAAAZAFUAAQAdABYAAAAZAFYAAQAdABcAAAAaAFEAAQAeABIAAAAaAFIAAQAeABMAAAAaAFMAAQAeABQAAAAaAFQAAQAeABUAAAAaAFUAAQAeABYAAAAaAFYAAQAeABcAAAAbAFEAAQAfABIAAAAbAFIAAQAfABMAAAAbAFMAAQAfABQAAAAbAFQAAQAfABUAAAAbAFUAAQAfABYAAAAbAFYAAQAfABcAAAAcAFEAAQAAABIAAAAcAFIAAQAAABMAAAAcAFMAAQAAABQAAAAcAFQAAQAAABUAAAAcAFUAAQAAABYAAAAcAFYAAQAAABcAAAAdAFEAAQABABIAAAAdAFIAAQABABMAAAAdAFMAAQABABQAAAAdAFQAAQABABUAAAAdAFUAAQABABYAAAAdAFYAAQABABcAAAAeAFEAAQACABIAAAAeAFIAAQACABMAAAAeAFMAAQACABQAAAAeAFQAAQACABUAAAAeAFUAAQACABYAAAAeAFYAAQACABcAAAAfAFEAAQAAABIAAAAfAFIAAQAAABMAAAAfAFMAAQAAABQAAAAfAFQAAQAAABUAAAAfAFUAAQAAABYAAAAfAFYAAQAAABcAAAAgAFEAAQABABIAAAAgAFIAAQABABMAAAAgAFMAAQABABQAAAAgAFQAAQABABUAAAAgAFUAAQABABYAAAAgAFYAAQABABcAAAAhAFEAAQACABIAAAAhAFIAAQACABMAAAAhAFMAAQACABQAAAAhAFQAAQACABUAAAAhAFUAAQACABYAAAAhAFYAAQACABcAAAAiAFEAAQADABIAAAAiAFIAAQADABMAAAAiAFMAAQADABQAAAAiAFQAAQADABUAAAAiAFUAAQADABYAAAAiAFYAAQADABcAAAAjAFEAAQAEABIAAAAjAFIAAQAEABMAAAAjAFMAAQAEABQAAAAjAFQAAQAEABUAAAAjAFUAAQAEABYAAAAjAFYAAQAEABcAAAAkAFEAAQAFABIAAAAkAFIAAQAFABMAAAAkAFMAAQAFABQAAAAkAFQAAQAFABUAAAAkAFUAAQAFABYAAAAkAFYAAQAFABcAAAAlAFEAAQAGABIAAAAlAFIAAQAGABMAAAAlAFMAAQAGABQAAAAlAFQAAQAGABUAAAAlAFUAAQAGABYAAAAlAFYAAQAGABcAAAAmAFEAAQAHABIAAAAmAFIAAQAHABMAAAAmAFMAAQAHABQAAAAmAFQAAQAHABUAAAAmAFUAAQAHABYAAAAmAFYAAQAHABcAAAAnAFEAAQAIABIAAAAnAFIAAQAIABMAAAAnAFMAAQAIABQAAAAnAFQAAQAIABUAAAAnAFUAAQAIABYAAAAnAFYAAQAIABcAAAAoAFEAAQAJABIAAAAoAFIAAQAJABMAAAAoAFMAAQAJABQAAAAoAFQAAQAJABUAAAAoAFUAAQAJABYAAAAoAFYAAQAJABcAAAApAFEAAQAKABIAAAApAFIAAQAKABMAAAApAFMAAQAKABQAAAApAFQAAQAKABUAAAApAFUAAQAKABYAAAApAFYAAQAKABcAAAAqAFEAAQALABIAAAAqAFIAAQALABMAAAAqAFMAAQALABQAAAAqAFQAAQALABUAAAAqAFUAAQALABYAAAAqAFYAAQALABcAAAArAFEAAQAMABIAAAArAFIAAQAMABMAAAArAFMAAQAMABQAAAArAFQAAQAMABUAAAArAFUAAQAMABYAAAArAFYAAQAMABcAAAAsAFEAAQANABIAAAAsAFIAAQANABMAAAAsAFMAAQANABQAAAAsAFQAAQANABUAAAAsAFUAAQANABYAAAAsAFYAAQANABcAAAAtAFEAAQAOABIAAAAtAFIAAQAOABMAAAAtAFMAAQAOABQAAAAtAFQAAQAOABUAAAAtAFUAAQAOABYAAAAtAFYAAQAOABcAAAAuAFEAAQAPABIAAAAuAFIAAQAPABMAAAAuAFMAAQAPABQAAAAuAFQAAQAPABUAAAAuAFUAAQAPABYAAAAuAFYAAQAPABcAAAAvAFEAAQAQABIAAAAvAFIAAQAQABMAAAAvAFMAAQAQABQAAAAvAFQAAQAQABUAAAAvAFUAAQAQABYAAAAvAFYAAQAQABcAAAAwAFEAAQARABIAAAAwAFIAAQARABMAAAAwAFMAAQARABQAAAAwAFQAAQARABUAAAAwAFUAAQARABYAAAAwAFYAAQARABcAAAAxAFEAAQASABIAAAAxAFIAAQASABMAAAAxAFMAAQASABQAAAAxAFQAAQASABUAAAAxAFUAAQASABYAAAAxAFYAAQASABcAAAAyAFEAAQATABIAAAAyAFIAAQATABMAAAAyAFMAAQATABQAAAAyAFQAAQATABUAAAAyAFUAAQATABYAAAAyAFYAAQATABcAAAAzAFEAAQAUABIAAAAzAFIAAQAUABMAAAAzAFMAAQAUABQAAAAzAFQAAQAUABUAAAAzAFUAAQAUABYAAAAzAFYAAQAUABcAAAA0AFEAAQAVABIAAAA0AFIAAQAVABMAAAA0AFMAAQAVABQAAAA0AFQAAQAVABUAAAA0AFUAAQAVABYAAAA0AFYAAQAVABcAAAA1AFEAAQAWABIAAAA1AFIAAQAWABMAAAA1AFMAAQAWABQAAAA1AFQAAQAWABUAAAA1AFUAAQAWABYAAAA1AFYAAQAWABcAAAA2AFEAAQAXABIAAAA2AFIAAQAXABMAAAA2AFMAAQAXABQAAAA2AFQAAQAXABUAAAA2AFUAAQAXABYAAAA2AFYAAQAXABcAAAA3AFEAAQAYABIAAAA3AFIAAQAYABMAAAA3AFMAAQAYABQAAAA3AFQAAQAYABUAAAA3AFUAAQAYABYAAAA3AFYAAQAYABcAAAA4AFEAAQAZABIAAAA4AFIAAQAZABMAAAA4AFMAAQAZABQAAAA4AFQAAQAZABUAAAA4AFUAAQAZABYAAAA4AFYAAQAZABcAAAA5AFEAAQAaABIAAAA5AFIAAQAaABMAAAA5AFMAAQAaABQAAAA5AFQAAQAaABUAAAA5AFUAAQAaABYAAAA5AFYAAQAaABcAAAA6AFEAAQAbABIAAAA6AFIAAQAbABMAAAA6AFMAAQAbABQAAAA6AFQAAQAbABUAAAA6AFUAAQAbABYAAAA6AFYAAQAbABcAAAA7AFEAAQAcABIAAAA7AFIAAQAcABMAAAA7AFMAAQAcABQAAAA7AFQAAQAcABUAAAA7AFUAAQAcABYAAAA7AFYAAQAcABcAAAA8AFEAAQAdABIAAAA8AFIAAQAdABMAAAA8AFMAAQAdABQAAAA8AFQAAQAdABUAAAA8AFUAAQAdABYAAAA8AFYAAQAdABcAAAA9AFEAAQAeABIAAAA9AFIAAQAeABMAAAA9AFMAAQAeABQAAAA9AFQAAQAeABUAAAA9AFUAAQAeABYAAAA9AFYAAQAeABcAAAA+AFEAAQAfABIAAAA+AFIAAQAfABMAAAA+AFMAAQAfABQAAAA+AFQAAQAfABUAAAA+AFUAAQAfABYAAAA+AFYAAQAfABcAAAA/AFEAAQAAABIAAAA/AFIAAQAAABMAAAA/AFMAAQAAABQAAAA/AFQAAQAAABUAAAA/AFUAAQAAABYAAAA/AFYAAQAAABcAAABAAFEAAQABABIAAABAAFIAAQABABMAAABAAFMAAQABABQAAABAAFQAAQABABUAAABAAFUAAQABABYAAABAAFYAAQABABcAAABBAFEAAQACABIAAABBAFIAAQACABMAAABBAFMAAQACABQAAABBAFQAAQACABUAAABBAFUAAQACABYAAABBAFYAAQACABcAAABCAFEAAQADABIAAABCAFIAAQADABMAAABCAFMAAQADABQAAABCAFQAAQADABUAAABCAFUAAQADABYAAABCAFYAAQADABcAAABDAFEAAQAEABIAAABDAFIAAQAEABMAAABDAFMAAQAEABQAAABDAFQAAQAEABUAAABDAFUAAQAEABYAAABDAFYAAQAEABcAAABEAFEAAQAFABIAAABEAFIAAQAFABMAAABEAFMAAQAFABQAAABEAFQAAQAFABUAAABEAFUAAQAFABYAAABEAFYAAQAFABcAAABFAFEAAQAGABIAAABFAFIAAQAGABMAAABFAFMAAQAGABQAAABFAFQAAQAGABUAAABFAFUAAQAGABYAAABFAFYAAQAGABcAAABGAFEAAQAHABIAAABGAFIAAQAHABMAAABGAFMAAQAHABQAAABGAFQAAQAHABUAAABGAFUAAQAHABYAAABGAFYAAQAHABcAAABHAFEAAQAIABIAAABHAFIAAQAIABMAAABHAFMAAQAIABQAAABHAFQAAQAIABUAAABHAFUAAQAIABYAAABHAFYAAQAIABcAAABIAFEAAQAJABIAAABIAFIAAQAJABMAAABIAFMAAQAJABQAAABIAFQAAQAJABUAAABIAFUAAQAJABYAAABIAFYAAQAJABcAAABJAFEAAQAKABIAAABJAFIAAQAKABMAAABJAFMAAQAKABQAAABJAFQAAQAKABUAAABJAFUAAQAKABYAAABJAFYAAQAKABcAAABKAFEAAQALABIAAABKAFIAAQALABMAAABKAFMAAQALABQAAABKAFQAAQALABUAAABKAFUAAQALABYAAABKAFYAAQALABcAAABLAFEAAQAMABIAAABLAFIAAQAMABMAAABLAFMAAQAMABQAAABLAFQAAQAMABUAAABLAFUAAQAMABYAAABLAFYAAQAMABcAAABMAFEAAQANABIAAABMAFIAAQANABMAAABMAFMAAQANABQAAABMAFQAAQANABUAAABMAFUAAQANABYAAABMAFYAAQANABcAAABNAFEAAQAOABIAAABNAFIAAQAOABMAAABNAFMAAQAOABQAAABNAFQAAQAOABUAAABNAFUAAQAOABYAAABNAFYAAQAOABcAAABOAFEAAQAPABIAAABOAFIAAQAPABMAAABOAFMAAQAPABQAAABOAFQAAQAPABUAAABOAFUAAQAPABYAAABOAFYAAQAPABcAAADu/1IAAQAfABMAAADu/1MAAQAfABQAAADu/1QAAQAfABUAAADu/1UAAQAfABYAAADu/1YAAQAfABcAAADu/1EAAQAfABIAAABoAFEAAQAAABIAAABoAFIAAQAAABMAAABoAFMAAQAAABQAAABoAFQAAQAAABUAAABoAFUAAQAAABYAAABoAFYAAQAAABcAAABpAFEAAQABABIAAABpAFIAAQABABMAAABpAFMAAQABABQAAABpAFQAAQABABUAAABpAFUAAQABABYAAABpAFYAAQABABcAAABqAFEAAQACABIAAABqAFIAAQACABMAAABqAFMAAQACABQAAABqAFQAAQACABUAAABqAFUAAQACABYAAABqAFYAAQACABcAAABrAFEAAQADABIAAABrAFIAAQADABMAAABrAFMAAQADABQAAABrAFQAAQADABUAAABrAFUAAQADABYAAABrAFYAAQADABcAAABsAFEAAQAEABIAAABsAFIAAQAEABMAAABsAFMAAQAEABQAAABsAFQAAQAEABUAAABsAFUAAQAEABYAAABsAFYAAQAEABcAAABtAFEAAQAFABIAAABtAFIAAQAFABMAAABtAFMAAQAFABQAAABtAFQAAQAFABUAAABtAFUAAQAFABYAAABtAFYAAQAFABcAAABuAFEAAQAGABIAAABuAFIAAQAGABMAAABuAFMAAQAGABQAAABuAFQAAQAGABUAAABuAFUAAQAGABYAAABuAFYAAQAGABcAAABvAFEAAQAHABIAAABvAFIAAQAHABMAAABvAFMAAQAHABQAAABvAFQAAQAHABUAAABvAFUAAQAHABYAAABvAFYAAQAHABcAAABwAFEAAQAIABIAAABwAFIAAQAIABMAAABwAFMAAQAIABQAAABwAFQAAQAIABUAAABwAFUAAQAIABYAAABwAFYAAQAIABcAAABxAFEAAQAJABIAAABxAFIAAQAJABMAAABxAFMAAQAJABQAAABxAFQAAQAJABUAAABxAFUAAQAJABYAAABxAFYAAQAJABcAAAByAFEAAQAKABIAAAByAFIAAQAKABMAAAByAFMAAQAKABQAAAByAFQAAQAKABUAAAByAFUAAQAKABYAAAByAFYAAQAKABcAAABzAFEAAQALABIAAABzAFIAAQALABMAAABzAFMAAQALABQAAABzAFQAAQALABUAAABzAFUAAQALABYAAABzAFYAAQALABcAAAB0AFEAAQAMABIAAAB0AFIAAQAMABMAAAB0AFMAAQAMABQAAAB0AFQAAQAMABUAAAB0AFUAAQAMABYAAAB0AFYAAQAMABcAAAB1AFEAAQANABIAAAB1AFIAAQANABMAAAB1AFMAAQANABQAAAB1AFQAAQANABUAAAB1AFUAAQANABYAAAB1AFYAAQANABcAAAB2AFEAAQAOABIAAAB2AFIAAQAOABMAAAB2AFMAAQAOABQAAAB2AFQAAQAOABUAAAB2AFUAAQAOABYAAAB2AFYAAQAOABcAAAB3AFEAAQAPABIAAAB3AFIAAQAPABMAAAB3AFMAAQAPABQAAAB3AFQAAQAPABUAAAB3AFUAAQAPABYAAAB3AFYAAQAPABcAAAB4AFEAAQAQABIAAAB4AFIAAQAQABMAAAB4AFMAAQAQABQAAAB4AFQAAQAQABUAAAB4AFUAAQAQABYAAAB4AFYAAQAQABcAAAB5AFEAAQARABIAAAB5AFIAAQARABMAAAB5AFMAAQARABQAAAB5AFQAAQARABUAAAB5AFUAAQARABYAAAB5AFYAAQARABcAAAB6AFEAAQASABIAAAB6AFIAAQASABMAAAB6AFMAAQASABQAAAB6AFQAAQASABUAAAB6AFUAAQASABYAAAB6AFYAAQASABcAAAB7AFEAAQATABIAAAB7AFIAAQATABMAAAB7AFMAAQATABQAAAB7AFQAAQATABUAAAB7AFUAAQATABYAAAB7AFYAAQATABcAAAB8AFEAAQAUABIAAAB8AFIAAQAUABMAAAB8AFMAAQAUABQAAAB8AFQAAQAUABUAAAB8AFUAAQAUABYAAAB8AFYAAQAUABcAAAB9AFEAAQAVABIAAAB9AFIAAQAVABMAAAB9AFMAAQAVABQAAAB9AFQAAQAVABUAAAB9AFUAAQAVABYAAAB9AFYAAQAVABcAAABOAF0AAQAAABIAAABOAF4AAQAAABMAAABPAF0AAQABABIAAABPAF4AAQABABMAAABQAF0AAQACABIAAABQAF4AAQACABMAAABRAF0AAQADABIAAABRAF4AAQADABMAAABSAF0AAQAEABIAAABSAF4AAQAEABMAAABTAF0AAQAFABIAAABTAF4AAQAFABMAAABUAF0AAQAGABIAAABUAF4AAQAGABMAAABVAF0AAQAHABIAAABVAF4AAQAHABMAAABWAF0AAQAIABIAAABWAF4AAQAIABMAAABXAF0AAQAJABIAAABXAF4AAQAJABMAAABYAF0AAQAKABIAAABYAF4AAQAKABMAAABZAF0AAQALABIAAABZAF4AAQALABMAAABaAF0AAQAMABIAAABaAF4AAQAMABMAAABbAF0AAQANABIAAABbAF4AAQANABMAAABcAF0AAQAOABIAAABcAF4AAQAOABMAAABdAF0AAQAPABIAAABdAF4AAQAPABMAAABeAF0AAQAQABIAAABeAF4AAQAQABMAAABfAF0AAQARABIAAABfAF4AAQARABMAAABgAF0AAQASABIAAABgAF4AAQASABMAAABhAF0AAQATABIAAABhAF4AAQATABMAAABiAF0AAQAUABIAAABiAF4AAQAUABMAAABjAF0AAQAVABIAAABjAF4AAQAVABMAAABkAF0AAQAWABIAAABkAF4AAQAWABMAAABlAF0AAQAXABIAAABlAF4AAQAXABMAAABmAF0AAQAYABIAAABmAF4AAQAYABMAAABnAF0AAQAZABIAAABnAF4AAQAZABMAAABoAF0AAQAaABIAAABoAF4AAQAaABMAAABpAF0AAQAbABIAAABpAF4AAQAbABMAAABwAEEAAQAAABIAAABwAEIAAQAAABMAAABwAEMAAQAAABQAAABxAEEAAQABABIAAABxAEIAAQABABMAAABxAEMAAQABABQAAAByAEEAAQACABIAAAByAEIAAQACABMAAAByAEMAAQACABQAAABzAEEAAQADABIAAABzAEIAAQADABMAAABzAEMAAQADABQAAAB0AEEAAQAEABIAAAB0AEIAAQAEABMAAAB0AEMAAQAEABQAAAB1AEEAAQAFABIAAAB1AEIAAQAFABMAAAB1AEMAAQAFABQAAAB2AEEAAQAGABIAAAB2AEIAAQAGABMAAAB2AEMAAQAGABQAAAB3AEEAAQAHABIAAAB3AEIAAQAHABMAAAB3AEMAAQAHABQAAAB4AEEAAQAIABIAAAB4AEIAAQAIABMAAAB4AEMAAQAIABQAAAB5AEEAAQAJABIAAAB5AEIAAQAJABMAAAB5AEMAAQAJABQAAAB6AEEAAQAKABIAAAB6AEIAAQAKABMAAAB6AEMAAQAKABQAAAB+ADcAAQAAABMAAAB+ADgAAQAAABQAAAB+ADkAAQAAABUAAAB+ADoAAQAAABYAAAB+ADsAAQAAABcAAAB/ADcAAQABABMAAAB/ADgAAQABABQAAAB/ADkAAQABABUAAAB/ADoAAQABABYAAAB/ADsAAQABABcAAAB+ADwAAQAAABMAAAB+AD0AAQAAABQAAAB+AD4AAQAAABUAAAB+AD8AAQAAABYAAAB+AEAAAQAAABcAAAB/ADwAAQABABMAAAB/AD0AAQABABQAAAB/AD4AAQABABUAAAB/AD8AAQABABYAAAB/AEAAAQABABcAAAB+AEEAAQAAABMAAAB/AEEAAQABABMAAAB1ADIAAQAAABMAAAB1ADMAAQAAABQAAAB1ADQAAQAAABUAAAB1ADUAAQAAABYAAAB1ADYAAQAAABcAAAB2ADIAAQABABMAAAB2ADMAAQABABQAAAB2ADQAAQABABUAAAB2ADUAAQABABYAAAB2ADYAAQABABcAAAB1ADcAAQAAABMAAAB1ADgAAQAAABQAAAB1ADkAAQAAABUAAAB2ADcAAQABABMAAAB2ADgAAQABABQAAAB2ADkAAQABABUAAAB9ACgAAQAAABMAAAB9ACkAAQAAABQAAAB9ACoAAQAAABUAAAB9ACsAAQAAABYAAAB9ACwAAQAAABcAAAB+ACgAAQABABMAAAB+ACkAAQABABQAAAB+ACoAAQABABUAAAB+ACsAAQABABYAAAB+ACwAAQABABcAAAB9AC0AAQAAABMAAAB9AC4AAQAAABQAAAB9AC8AAQAAABUAAAB9ADAAAQAAABYAAAB+AC0AAQABABMAAAB+AC4AAQABABQAAAB+AC8AAQABABUAAAB+ADAAAQABABYAAACHACgAAQAAABMAAACHACkAAQAAABQAAACHACoAAQAAABUAAACHACsAAQAAABYAAACHACwAAQAAABcAAACIACgAAQABABMAAACIACkAAQABABQAAACIACoAAQABABUAAACIACsAAQABABYAAACIACwAAQABABcAAACHAC0AAQAAABMAAACHAC4AAQAAABQAAACHAC8AAQAAABUAAACHADAAAQAAABYAAACHADEAAQAAABcAAACIAC0AAQABABMAAACIAC4AAQABABQAAACIAC8AAQABABUAAACIADAAAQABABYAAACIADEAAQABABcAAACHADIAAQAAABMAAACHADMAAQAAABQAAACHADQAAQAAABUAAACHADUAAQAAABYAAACIADIAAQABABMAAACIADMAAQABABQAAACIADQAAQABABUAAACIADUAAQABABYAAAB9ACYAAQATABQAAAB9ACcAAQATABUAAAB+ACYAAQAUABQAAAB+ACcAAQAUABUAAAB/ACYAAQAVABQAAAB/ACcAAQAVABUAAACAACYAAQAWABQAAACAACcAAQAWABUAAACBACYAAQAXABQAAACBACcAAQAXABUAAACCACYAAQAYABQAAACCACcAAQAYABUAAACDACYAAQAZABQAAACDACcAAQAZABUAAACEACYAAQAaABQAAACEACcAAQAaABUAAACFACYAAQAbABQAAACFACcAAQAbABUAAACGACYAAQAcABQAAACGACcAAQAcABUAAACHACYAAQAdABQAAACHACcAAQAdABUAAACIACYAAQAeABQAAACIACcAAQAeABUAAACWADcAAQAAABMAAACWADgAAQAAABQAAACWADkAAQAAABUAAACWADoAAQAAABYAAACWADsAAQAAABcAAACXADcAAQABABMAAACXADgAAQABABQAAACXADkAAQABABUAAACXADoAAQABABYAAACXADsAAQABABcAAACWADwAAQAAABMAAACWAD0AAQAAABQAAACXADwAAQABABMAAACXAD0AAQABABQAAACOADUAAQAAABQAAACOADYAAQAAABUAAACPADUAAQABABQAAACPADYAAQABABUAAABxACYAAQAAABQAAABxACcAAQAAABUAAAByACYAAQABABQAAAByACcAAQABABUAAABzACYAAQAAABQAAABzACcAAQAAABUAAAB0ACYAAQABABQAAAB0ACcAAQABABUAAAB1ACYAAQAAABQAAAB1ACcAAQAAABUAAAB2ACYAAQABABQAAAB2ACcAAQABABUAAAB3ACYAAQAAABQAAAB3ACcAAQAAABUAAAB4ACYAAQABABQAAAB4ACcAAQABABUAAAB5ACYAAQAAABQAAAB5ACcAAQAAABUAAAB6ACYAAQABABQAAAB6ACcAAQABABUAAAB7ACYAAQAAABQAAAB7ACcAAQAAABUAAAB8ACYAAQABABQAAAB8ACcAAQABABUAAACCAFEAAQAAABIAAACCAFIAAQAAABMAAACCAFMAAQAAABQAAACCAFQAAQAAABUAAACCAFUAAQAAABYAAACCAFYAAQAAABcAAACDAFEAAQABABIAAACDAFIAAQABABMAAACDAFMAAQABABQAAACDAFQAAQABABUAAACDAFUAAQABABYAAACDAFYAAQABABcAAACEAFEAAQACABIAAACEAFIAAQACABMAAACEAFMAAQACABQAAACEAFQAAQACABUAAACEAFUAAQACABYAAACEAFYAAQACABcAAACFAFEAAQADABIAAACFAFIAAQADABMAAACFAFMAAQADABQAAACFAFQAAQADABUAAACFAFUAAQADABYAAACFAFYAAQADABcAAACGAFEAAQAEABIAAACGAFIAAQAEABMAAACGAFMAAQAEABQAAACGAFQAAQAEABUAAACGAFUAAQAEABYAAACGAFYAAQAEABcAAACHAFEAAQAFABIAAACHAFIAAQAFABMAAACHAFMAAQAFABQAAACHAFQAAQAFABUAAACHAFUAAQAFABYAAACHAFYAAQAFABcAAACIAFEAAQAGABIAAACIAFIAAQAGABMAAACIAFMAAQAGABQAAACIAFQAAQAGABUAAACIAFUAAQAGABYAAACIAFYAAQAGABcAAACJAFEAAQAHABIAAACJAFIAAQAHABMAAACJAFMAAQAHABQAAACJAFQAAQAHABUAAACJAFUAAQAHABYAAACJAFYAAQAHABcAAACKAFEAAQAIABIAAACKAFIAAQAIABMAAACKAFMAAQAIABQAAACKAFQAAQAIABUAAACKAFUAAQAIABYAAACKAFYAAQAIABcAAACLAFEAAQAJABIAAACLAFIAAQAJABMAAACLAFMAAQAJABQAAACLAFQAAQAJABUAAACLAFUAAQAJABYAAACLAFYAAQAJABcAAACMAFEAAQAKABIAAACMAFIAAQAKABMAAACMAFMAAQAKABQAAACMAFQAAQAKABUAAACMAFUAAQAKABYAAACMAFYAAQAKABcAAACNAFEAAQALABIAAACNAFIAAQALABMAAACNAFMAAQALABQAAACNAFQAAQALABUAAACNAFUAAQALABYAAACNAFYAAQALABcAAACOAFEAAQAMABIAAACOAFIAAQAMABMAAACOAFMAAQAMABQAAACOAFQAAQAMABUAAACOAFUAAQAMABYAAACOAFYAAQAMABcAAACPAFEAAQANABIAAACPAFIAAQANABMAAACPAFMAAQANABQAAACPAFQAAQANABUAAACPAFUAAQANABYAAACPAFYAAQANABcAAACQAFEAAQAOABIAAACQAFIAAQAOABMAAACQAFMAAQAOABQAAACQAFQAAQAOABUAAACQAFUAAQAOABYAAACQAFYAAQAOABcAAACRAFEAAQAPABIAAACRAFIAAQAPABMAAACRAFMAAQAPABQAAACRAFQAAQAPABUAAACRAFUAAQAPABYAAACRAFYAAQAPABcAAACSAFEAAQAQABIAAACSAFIAAQAQABMAAACSAFMAAQAQABQAAACSAFQAAQAQABUAAACSAFUAAQAQABYAAACSAFYAAQAQABcAAACTAFEAAQARABIAAACTAFIAAQARABMAAACTAFMAAQARABQAAACTAFQAAQARABUAAACTAFUAAQARABYAAACTAFYAAQARABcAAACUAFEAAQASABIAAACUAFIAAQASABMAAACUAFMAAQASABQAAACUAFQAAQASABUAAACUAFUAAQASABYAAACUAFYAAQASABcAAACVAFEAAQATABIAAACVAFIAAQATABMAAACVAFMAAQATABQAAACVAFQAAQATABUAAACVAFUAAQATABYAAACVAFYAAQATABcAAACWAFEAAQAUABIAAACWAFIAAQAUABMAAACWAFMAAQAUABQAAACWAFQAAQAUABUAAACWAFUAAQAUABYAAACWAFYAAQAUABcAAACXAFEAAQAVABIAAACXAFIAAQAVABMAAACXAFMAAQAVABQAAACXAFQAAQAVABUAAACXAFUAAQAVABYAAACXAFYAAQAVABcAAACYAFEAAQAWABIAAACYAFIAAQAWABMAAACYAFMAAQAWABQAAACYAFQAAQAWABUAAACYAFUAAQAWABYAAACYAFYAAQAWABcAAACZAFEAAQAXABIAAACZAFIAAQAXABMAAACZAFMAAQAXABQAAACZAFQAAQAXABUAAACZAFUAAQAXABYAAACZAFYAAQAXABcAAACaAFEAAQAYABIAAACaAFIAAQAYABMAAACaAFMAAQAYABQAAACaAFQAAQAYABUAAACaAFUAAQAYABYAAACaAFYAAQAYABcAAACbAFEAAQAZABIAAACbAFIAAQAZABMAAACbAFMAAQAZABQAAACbAFQAAQAZABUAAACbAFUAAQAZABYAAACbAFYAAQAZABcAAACcAFEAAQAaABIAAACcAFIAAQAaABMAAACcAFMAAQAaABQAAACcAFQAAQAaABUAAACcAFUAAQAaABYAAACcAFYAAQAaABcAAACdAFEAAQAbABIAAACdAFIAAQAbABMAAACdAFMAAQAbABQAAACdAFQAAQAbABUAAACdAFUAAQAbABYAAACdAFYAAQAbABcAAACeAFEAAQAcABIAAACeAFIAAQAcABMAAACeAFMAAQAcABQAAACeAFQAAQAcABUAAACeAFUAAQAcABYAAACeAFYAAQAcABcAAACfAFEAAQAdABIAAACfAFIAAQAdABMAAACfAFMAAQAdABQAAACfAFQAAQAdABUAAACfAFUAAQAdABYAAACfAFYAAQAdABcAAACgAFEAAQAeABIAAACgAFIAAQAeABMAAACgAFMAAQAeABQAAACgAFQAAQAeABUAAACgAFUAAQAeABYAAACgAFYAAQAeABcAAACoAFEAAQAAABIAAACoAFIAAQAAABMAAACoAFMAAQAAABQAAACoAFQAAQAAABUAAACoAFUAAQAAABYAAACoAFYAAQAAABcAAACpAFEAAQABABIAAACpAFIAAQABABMAAACpAFMAAQABABQAAACpAFQAAQABABUAAACpAFUAAQABABYAAACpAFYAAQABABcAAACqAFEAAQACABIAAACqAFIAAQACABMAAACqAFMAAQACABQAAACqAFQAAQACABUAAACqAFUAAQACABYAAACqAFYAAQACABcAAACrAFEAAQADABIAAACrAFIAAQADABMAAACrAFMAAQADABQAAACrAFQAAQADABUAAACrAFUAAQADABYAAACrAFYAAQADABcAAACsAFEAAQAEABIAAACsAFIAAQAEABMAAACsAFMAAQAEABQAAACsAFQAAQAEABUAAACsAFUAAQAEABYAAACsAFYAAQAEABcAAACtAFEAAQAFABIAAACtAFIAAQAFABMAAACtAFMAAQAFABQAAACtAFQAAQAFABUAAACtAFUAAQAFABYAAACtAFYAAQAFABcAAACuAFEAAQAGABIAAACuAFIAAQAGABMAAACuAFMAAQAGABQAAACuAFQAAQAGABUAAACuAFUAAQAGABYAAACuAFYAAQAGABcAAACvAFEAAQAHABIAAACvAFIAAQAHABMAAACvAFMAAQAHABQAAACvAFQAAQAHABUAAACvAFUAAQAHABYAAACvAFYAAQAHABcAAACwAFEAAQAIABIAAACwAFIAAQAIABMAAACwAFMAAQAIABQAAACwAFQAAQAIABUAAACwAFUAAQAIABYAAACwAFYAAQAIABcAAACxAFEAAQAJABIAAACxAFIAAQAJABMAAACxAFMAAQAJABQAAACxAFQAAQAJABUAAACxAFUAAQAJABYAAACxAFYAAQAJABcAAACyAFEAAQAKABIAAACyAFIAAQAKABMAAACyAFMAAQAKABQAAACyAFQAAQAKABUAAACyAFUAAQAKABYAAACyAFYAAQAKABcAAACzAFEAAQALABIAAACzAFIAAQALABMAAACzAFMAAQALABQAAACzAFQAAQALABUAAACzAFUAAQALABYAAACzAFYAAQALABcAAAC0AFEAAQAMABIAAAC0AFIAAQAMABMAAAC0AFMAAQAMABQAAAC0AFQAAQAMABUAAAC0AFUAAQAMABYAAAC0AFYAAQAMABcAAAC1AFEAAQANABIAAAC1AFIAAQANABMAAAC1AFMAAQANABQAAAC1AFQAAQANABUAAAC1AFUAAQANABYAAAC1AFYAAQANABcAAAC2AFEAAQAOABIAAAC2AFIAAQAOABMAAAC2AFMAAQAOABQAAAC2AFQAAQAOABUAAAC2AFUAAQAOABYAAAC2AFYAAQAOABcAAAC3AFEAAQAPABIAAAC3AFIAAQAPABMAAAC3AFMAAQAPABQAAAC3AFQAAQAPABUAAAC3AFUAAQAPABYAAAC3AFYAAQAPABcAAAC4AFEAAQAQABIAAAC4AFIAAQAQABMAAAC4AFMAAQAQABQAAAC4AFQAAQAQABUAAAC4AFUAAQAQABYAAAC4AFYAAQAQABcAAAC5AFEAAQARABIAAAC5AFIAAQARABMAAAC5AFMAAQARABQAAAC5AFQAAQARABUAAAC5AFUAAQARABYAAAC5AFYAAQARABcAAAC6AFEAAQASABIAAAC6AFIAAQASABMAAAC6AFMAAQASABQAAAC6AFQAAQASABUAAAC6AFUAAQASABYAAAC6AFYAAQASABcAAAC7AFEAAQATABIAAAC7AFIAAQATABMAAAC7AFMAAQATABQAAAC7AFQAAQATABUAAAC7AFUAAQATABYAAAC7AFYAAQATABcAAAC8AFEAAQAUABIAAAC8AFIAAQAUABMAAAC8AFMAAQAUABQAAAC8AFQAAQAUABUAAAC8AFUAAQAUABYAAAC8AFYAAQAUABcAAAC9AFEAAQAVABIAAAC9AFIAAQAVABMAAAC9AFMAAQAVABQAAAC9AFQAAQAVABUAAAC9AFUAAQAVABYAAAC9AFYAAQAVABcAAAC+AFEAAQAWABIAAAC+AFIAAQAWABMAAAC+AFMAAQAWABQAAAC+AFQAAQAWABUAAAC+AFUAAQAWABYAAAC+AFYAAQAWABcAAAC/AFEAAQAXABIAAAC/AFIAAQAXABMAAAC/AFMAAQAXABQAAAC/AFQAAQAXABUAAAC/AFUAAQAXABYAAAC/AFYAAQAXABcAAADAAFEAAQAYABIAAADAAFIAAQAYABMAAADAAFMAAQAYABQAAADAAFQAAQAYABUAAADAAFUAAQAYABYAAADAAFYAAQAYABcAAADBAFEAAQAZABIAAADBAFIAAQAZABMAAADBAFMAAQAZABQAAADBAFQAAQAZABUAAADBAFUAAQAZABYAAADBAFYAAQAZABcAAADCAFEAAQAaABIAAADCAFIAAQAaABMAAADCAFMAAQAaABQAAADCAFQAAQAaABUAAADCAFUAAQAaABYAAADCAFYAAQAaABcAAADDAFEAAQAbABIAAADDAFIAAQAbABMAAADDAFMAAQAbABQAAADDAFQAAQAbABUAAADDAFUAAQAbABYAAADDAFYAAQAbABcAAADEAFEAAQAcABIAAADEAFIAAQAcABMAAADEAFMAAQAcABQAAADEAFQAAQAcABUAAADEAFUAAQAcABYAAADEAFYAAQAcABcAAADFAFEAAQAdABIAAADFAFIAAQAdABMAAADFAFMAAQAdABQAAADFAFQAAQAdABUAAADFAFUAAQAdABYAAADFAFYAAQAdABcAAADGAFEAAQAeABIAAADGAFIAAQAeABMAAADGAFMAAQAeABQAAADGAFQAAQAeABUAAADGAFUAAQAeABYAAADGAFYAAQAeABcAAADHAFEAAQAfABIAAADHAFIAAQAfABMAAADHAFMAAQAfABQAAADHAFQAAQAfABUAAADHAFUAAQAfABYAAADHAFYAAQAfABcAAADMAE0AAQAEABIAAADMAE4AAQAEABMAAADMAE8AAQAEABQAAADMAFAAAQAEABUAAADMAFEAAQAEABYAAADMAFIAAQAEABcAAADNAE0AAQAFABIAAADNAE4AAQAFABMAAADNAE8AAQAFABQAAADNAFAAAQAFABUAAADNAFEAAQAFABYAAADNAFIAAQAFABcAAADOAE0AAQAGABIAAADOAE4AAQAGABMAAADOAE8AAQAGABQAAADOAFAAAQAGABUAAADOAFEAAQAGABYAAADOAFIAAQAGABcAAADPAE0AAQAHABIAAADPAE4AAQAHABMAAADPAE8AAQAHABQAAADPAFAAAQAHABUAAADPAFEAAQAHABYAAADPAFIAAQAHABcAAADQAE0AAQAIABIAAADQAE4AAQAIABMAAADQAE8AAQAIABQAAADQAFAAAQAIABUAAADQAFEAAQAIABYAAADQAFIAAQAIABcAAADRAE0AAQAJABIAAADRAE4AAQAJABMAAADRAE8AAQAJABQAAADRAFAAAQAJABUAAADRAFEAAQAJABYAAADRAFIAAQAJABcAAADSAE0AAQAKABIAAADSAE4AAQAKABMAAADSAE8AAQAKABQAAADSAFAAAQAKABUAAADSAFEAAQAKABYAAADSAFIAAQAKABcAAADTAE0AAQALABIAAADTAE4AAQALABMAAADTAE8AAQALABQAAADTAFAAAQALABUAAADTAFEAAQALABYAAADTAFIAAQALABcAAADUAE0AAQAMABIAAADUAE4AAQAMABMAAADUAE8AAQAMABQAAADUAFAAAQAMABUAAADUAFEAAQAMABYAAADUAFIAAQAMABcAAADVAE0AAQANABIAAADVAE4AAQANABMAAADVAE8AAQANABQAAADVAFAAAQANABUAAADVAFEAAQANABYAAADVAFIAAQANABcAAADWAE0AAQAOABIAAADWAE4AAQAOABMAAADWAE8AAQAOABQAAADWAFAAAQAOABUAAADWAFEAAQAOABYAAADWAFIAAQAOABcAAADXAE0AAQAPABIAAADXAE4AAQAPABMAAADXAE8AAQAPABQAAADXAFAAAQAPABUAAADXAFEAAQAPABYAAADXAFIAAQAPABcAAADYAE0AAQAQABIAAADYAE4AAQAQABMAAADYAE8AAQAQABQAAADYAFAAAQAQABUAAADYAFEAAQAQABYAAADYAFIAAQAQABcAAADZAE0AAQARABIAAADZAE4AAQARABMAAADZAE8AAQARABQAAADZAFAAAQARABUAAADZAFEAAQARABYAAADZAFIAAQARABcAAADaAE0AAQASABIAAADaAE4AAQASABMAAADaAE8AAQASABQAAADaAFAAAQASABUAAADaAFEAAQASABYAAADaAFIAAQASABcAAADbAE0AAQATABIAAADbAE4AAQATABMAAADbAE8AAQATABQAAADbAFAAAQATABUAAADbAFEAAQATABYAAADbAFIAAQATABcAAADcAE0AAQAUABIAAADcAE4AAQAUABMAAADcAE8AAQAUABQAAADcAFAAAQAUABUAAADcAFEAAQAUABYAAADcAFIAAQAUABcAAADdAE0AAQAVABIAAADdAE4AAQAVABMAAADdAE8AAQAVABQAAADdAFAAAQAVABUAAADdAFEAAQAVABYAAADdAFIAAQAVABcAAADeAE0AAQAWABIAAADeAE4AAQAWABMAAADeAE8AAQAWABQAAADeAFAAAQAWABUAAADeAFEAAQAWABYAAADeAFIAAQAWABcAAADfAE0AAQAXABIAAADfAE4AAQAXABMAAADfAE8AAQAXABQAAADfAFAAAQAXABUAAADfAFEAAQAXABYAAADfAFIAAQAXABcAAADgAE0AAQAYABIAAADgAE4AAQAYABMAAADgAE8AAQAYABQAAADgAFAAAQAYABUAAADgAFEAAQAYABYAAADgAFIAAQAYABcAAADhAE0AAQAZABIAAADhAE4AAQAZABMAAADhAE8AAQAZABQAAADhAFAAAQAZABUAAADhAFEAAQAZABYAAADhAFIAAQAZABcAAADiAE0AAQAaABIAAADiAE4AAQAaABMAAADiAE8AAQAaABQAAADiAFAAAQAaABUAAADiAFEAAQAaABYAAADiAFIAAQAaABcAAADjAE0AAQAbABIAAADjAE4AAQAbABMAAADjAE8AAQAbABQAAADjAFAAAQAbABUAAADjAFEAAQAbABYAAADjAFIAAQAbABcAAADkAE0AAQAcABIAAADkAE4AAQAcABMAAADkAE8AAQAcABQAAADkAFAAAQAcABUAAADkAFEAAQAcABYAAADkAFIAAQAcABcAAADlAE0AAQAdABIAAADlAE4AAQAdABMAAADlAE8AAQAdABQAAADlAFAAAQAdABUAAADlAFEAAQAdABYAAADlAFIAAQAdABcAAADmAE0AAQAeABIAAADmAE4AAQAeABMAAADmAE8AAQAeABQAAADmAFAAAQAeABUAAADmAFEAAQAeABYAAADmAFIAAQAeABcAAADnAE0AAQAfABIAAADnAE4AAQAfABMAAADnAE8AAQAfABQAAADnAFAAAQAfABUAAADnAFEAAQAfABYAAADnAFIAAQAfABcAAAACAU0AAQAAABIAAAACAU4AAQAAABMAAAACAU8AAQAAABQAAAACAVAAAQAAABUAAAACAVEAAQAAABYAAAACAVIAAQAAABcAAAADAU0AAQABABIAAAADAU4AAQABABMAAAADAU8AAQABABQAAAADAVAAAQABABUAAAADAVEAAQABABYAAAADAVIAAQABABcAAAAEAU0AAQACABIAAAAEAU4AAQACABMAAAAEAU8AAQACABQAAAAEAVAAAQACABUAAAAEAVEAAQACABYAAAAEAVIAAQACABcAAAAFAU0AAQADABIAAAAFAU4AAQADABMAAAAFAU8AAQADABQAAAAFAVAAAQADABUAAAAFAVEAAQADABYAAAAFAVIAAQADABcAAAAGAU0AAQAEABIAAAAGAU4AAQAEABMAAAAGAU8AAQAEABQAAAAGAVAAAQAEABUAAAAGAVEAAQAEABYAAAAGAVIAAQAEABcAAAAHAU0AAQAFABIAAAAHAU4AAQAFABMAAAAHAU8AAQAFABQAAAAHAVAAAQAFABUAAAAHAVEAAQAFABYAAAAHAVIAAQAFABcAAAAIAU0AAQAGABIAAAAIAU4AAQAGABMAAAAIAU8AAQAGABQAAAAIAVAAAQAGABUAAAAIAVEAAQAGABYAAAAIAVIAAQAGABcAAAAJAU0AAQAHABIAAAAJAU4AAQAHABMAAAAJAU8AAQAHABQAAAAJAVAAAQAHABUAAAAJAVEAAQAHABYAAAAJAVIAAQAHABcAAAAKAU0AAQAIABIAAAAKAU4AAQAIABMAAAAKAU8AAQAIABQAAAAKAVAAAQAIABUAAAAKAVEAAQAIABYAAAAKAVIAAQAIABcAAAALAU0AAQAJABIAAAALAU4AAQAJABMAAAALAU8AAQAJABQAAAALAVAAAQAJABUAAAALAVEAAQAJABYAAAALAVIAAQAJABcAAAAMAU0AAQAKABIAAAAMAU4AAQAKABMAAAAMAU8AAQAKABQAAAAMAVAAAQAKABUAAAAMAVEAAQAKABYAAAAMAVIAAQAKABcAAAANAU0AAQALABIAAAANAU4AAQALABMAAAANAU8AAQALABQAAAANAVAAAQALABUAAAANAVEAAQALABYAAAANAVIAAQALABcAAAAOAU0AAQAMABIAAAAOAU4AAQAMABMAAAAOAU8AAQAMABQAAAAOAVAAAQAMABUAAAAOAVEAAQAMABYAAAAOAVIAAQAMABcAAAAPAU0AAQANABIAAAAPAU4AAQANABMAAAAPAU8AAQANABQAAAAPAVAAAQANABUAAAAPAVEAAQANABYAAAAPAVIAAQANABcAAAAQAU0AAQAOABIAAAAQAU4AAQAOABMAAAAQAU8AAQAOABQAAAAQAVAAAQAOABUAAAAQAVEAAQAOABYAAAAQAVIAAQAOABcAAAARAU0AAQAPABIAAAARAU4AAQAPABMAAAARAU8AAQAPABQAAAARAVAAAQAPABUAAAARAVEAAQAPABYAAAARAVIAAQAPABcAAAASAU0AAQAQABIAAAASAU4AAQAQABMAAAASAU8AAQAQABQAAAASAVAAAQAQABUAAAASAVEAAQAQABYAAAASAVIAAQAQABcAAAATAU0AAQARABIAAAATAU4AAQARABMAAAATAU8AAQARABQAAAATAVAAAQARABUAAAATAVEAAQARABYAAAATAVIAAQARABcAAAAUAU0AAQASABIAAAAUAU4AAQASABMAAAAUAU8AAQASABQAAAAUAVAAAQASABUAAAAUAVEAAQASABYAAAAUAVIAAQASABcAAAAVAU0AAQATABIAAAAVAU4AAQATABMAAAAVAU8AAQATABQAAAAVAVAAAQATABUAAAAVAVEAAQATABYAAAAVAVIAAQATABcAAAAWAU0AAQAUABIAAAAWAU4AAQAUABMAAAAWAU8AAQAUABQAAAAWAVAAAQAUABUAAAAWAVEAAQAUABYAAAAWAVIAAQAUABcAAAAXAU0AAQAVABIAAAAXAU4AAQAVABMAAAAXAU8AAQAVABQAAAAXAVAAAQAVABUAAAAXAVEAAQAVABYAAAAXAVIAAQAVABcAAAAYAU0AAQAWABIAAAAYAU4AAQAWABMAAAAYAU8AAQAWABQAAAAYAVAAAQAWABUAAAAYAVEAAQAWABYAAAAYAVIAAQAWABcAAAAZAU0AAQAXABIAAAAZAU4AAQAXABMAAAAZAU8AAQAXABQAAAAZAVAAAQAXABUAAAAZAVEAAQAXABYAAAAZAVIAAQAXABcAAAAaAU0AAQAYABIAAAAaAU4AAQAYABMAAAAaAU8AAQAYABQAAAAaAVAAAQAYABUAAAAaAVEAAQAYABYAAAAaAVIAAQAYABcAAAAbAU0AAQAZABIAAAAbAU4AAQAZABMAAAAbAU8AAQAZABQAAAAbAVAAAQAZABUAAAAbAVEAAQAZABYAAAAbAVIAAQAZABcAAAAcAU0AAQAaABIAAAAcAU4AAQAaABMAAAAcAU8AAQAaABQAAAAcAVAAAQAaABUAAAAcAVEAAQAaABYAAAAcAVIAAQAaABcAAAAdAU0AAQAbABIAAAAdAU4AAQAbABMAAAAdAU8AAQAbABQAAAAdAVAAAQAbABUAAAAdAVEAAQAbABYAAAAdAVIAAQAbABcAAAAeAU0AAQAcABIAAAAeAU4AAQAcABMAAAAeAU8AAQAcABQAAAAeAVAAAQAcABUAAAAeAVEAAQAcABYAAAAeAVIAAQAcABcAAAAfAU0AAQAdABIAAAAfAU4AAQAdABMAAAAfAU8AAQAdABQAAAAfAVAAAQAdABUAAAAfAVEAAQAdABYAAAAfAVIAAQAdABcAAAAgAU0AAQAeABIAAAAgAU4AAQAeABMAAAAgAU8AAQAeABQAAAAgAVAAAQAeABUAAAAgAVEAAQAeABYAAAAgAVIAAQAeABcAAAAhAU0AAQAfABIAAAAhAU4AAQAfABMAAAAhAU8AAQAfABQAAAAhAVAAAQAfABUAAAAhAVEAAQAfABYAAAAhAVIAAQAfABcAAAA=")
 tile_set = SubResource("TileSet_erwad")
 
 [node name="CombatArena" type="Area2D" parent="." node_paths=PackedStringArray("spawn_points")]
@@ -11318,10 +11364,10 @@ position = Vector2(6634, 255)
 position = Vector2(7486, 255)
 
 [node name="AggressivePatrolPointA" type="Marker2D" parent="Markers"]
-position = Vector2(-25326, -1283)
+position = Vector2(15027, 670)
 
 [node name="AggressivePatrolPointB" type="Marker2D" parent="Markers"]
-position = Vector2(-27555, -1335)
+position = Vector2(15954, 670)
 
 [node name="Scenario" parent="." instance=ExtResource("22_lyr1n")]
 
@@ -11385,6 +11431,18 @@ position = Vector2(7211, 723)
 
 [node name="Token4" parent="Tokens" instance=ExtResource("16_hi14r")]
 position = Vector2(6923, 515)
+
+[node name="Token9" parent="Tokens" instance=ExtResource("16_hi14r")]
+position = Vector2(6560, 515)
+
+[node name="Token10" parent="Tokens" instance=ExtResource("16_hi14r")]
+position = Vector2(16771, 875)
+
+[node name="Token11" parent="Tokens" instance=ExtResource("16_hi14r")]
+position = Vector2(16349, 978)
+
+[node name="Token12" parent="Tokens" instance=ExtResource("16_hi14r")]
+position = Vector2(17192, 779)
 
 [node name="Token5" parent="Tokens" instance=ExtResource("16_hi14r")]
 position = Vector2(7224, 251)
