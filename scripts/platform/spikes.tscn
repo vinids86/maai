@@ -38,7 +38,7 @@ recovery_poise_shield = 300.0
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_yj7u6"]
-size = Vector2(106, 30)
+size = Vector2(90, 30)
 
 [node name="Spikes" type="Node2D" groups=["Environment"]]
 script = ExtResource("1_ffmaa")
@@ -53,5 +53,5 @@ collision_mask = 32
 script = ExtResource("4_ysxx2")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(-1, 36)
+position = Vector2(0, 36)
 shape = SubResource("RectangleShape2D_yj7u6")

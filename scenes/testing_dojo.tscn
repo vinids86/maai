@@ -401,7 +401,7 @@ size = Vector2(5292, 1142)
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(36900, -1752)
+position = Vector2(28821, 923)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -413,8 +413,8 @@ position = Vector2(-101, 149)
 preview_animation = "idle"
 
 [node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-23.9492, -330.422)
-rotation = 0.376379
+position = Vector2(-23.4412, -331.279)
+rotation = 0.380242
 scale = Vector2(1, 1)
 
 [node name="Enemys" type="Node" parent="."]
