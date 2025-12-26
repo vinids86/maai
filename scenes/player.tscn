@@ -1,4 +1,4 @@
-[gd_scene load_steps=80 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=81 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="2_g2els"]
@@ -72,6 +72,7 @@
 [ext_resource type="Script" uid="uid://kqlkm03xp1rg" path="res://scripts/states/wall_slide_state.gd" id="63_tk41t"]
 [ext_resource type="Script" uid="uid://lrni4bey3mio" path="res://scripts/states/counter_ready_state.gd" id="73_qjsmb"]
 [ext_resource type="Script" uid="uid://dwcab8okwt5u2" path="res://scripts/states/countered_vulnerable_state.gd" id="74_mwp2n"]
+[ext_resource type="Script" uid="uid://bg4mwww8kngw6" path="res://scripts/components/player_input_component.gd" id="75_0yhus"]
 [ext_resource type="Script" uid="uid://d28fgt1kpvll5" path="res://scripts/components/counter_executor_component.gd" id="75_mwp2n"]
 [ext_resource type="Script" uid="uid://c4isdgib4nmf7" path="res://scripts/states/air_attack_state.gd" id="77_jlll7"]
 
@@ -384,6 +385,10 @@ script = ExtResource("74_mwp2n")
 [node name="AirAttackState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("77_jlll7")
 metadata/_custom_type_script = "uid://c4isdgib4nmf7"
+
+[node name="PlayerInputComponent" type="Node" parent="Player"]
+script = ExtResource("75_0yhus")
+metadata/_custom_type_script = "uid://bg4mwww8kngw6"
 
 [node name="PathTarget" type="Node2D" parent="."]
 
