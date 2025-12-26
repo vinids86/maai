@@ -96,7 +96,7 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
 
-	if _is_simple_enemy(context.attacker_node):
+	if context.attacker_node is SimpleEnemy:
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
 		var reason = { "outcome": "HIT", "knockback_vector": context.attack_profile.knockback_vector }
 		state_machine.on_current_state_finished(reason)
@@ -127,6 +127,3 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 	
 	return result_for_attacker
-
-func _is_simple_enemy(node) -> bool:
-	return node.get_class() == "SimpleEnemy" or (node.get_script() and "class_name SimpleEnemy" in node.get_script().source_code)
