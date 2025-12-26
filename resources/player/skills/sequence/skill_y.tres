@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="SequenceSkill" load_steps=8 format=3 uid="uid://baj5x6gblv2ke"]
+
+[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="1_jh4f3"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_s0q0k"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="3_utrx8"]
+[ext_resource type="AudioStream" uid="uid://curr3hsosggk4" path="res://audio/attack_2.wav" id="4_igta4"]
+[ext_resource type="AudioStream" uid="uid://dbm1xt5hw8dp0" path="res://audio/dodge.wav" id="5_uwv4n"]
+
+[sub_resource type="Resource" id="Resource_jlll7"]
+script = ExtResource("3_utrx8")
+startup_duration = 0.1
+active_duration = 0.25
+block_recoil_duration = 0.55
+recovery_duration = 0.01
+link_duration = 0.6
+animation_name = &"shoot"
+startup_sfx = ExtResource("5_uwv4n")
+active_sfx = ExtResource("4_igta4")
+hitbox_size = Vector2(160, 140)
+hitbox_position = Vector2(100, -30)
+damage = 5.0
+stamina_cost = 0.0
+focus_cost = 25
+focus_gain_on_hit = 0
+stamina_damage = 10.0
+poise_impact_contribution = 10.0
+poise_momentum_gain = 0.0
+poise_momentum_duration = 1.5
+knockback_vector = Vector2(1600, -100)
+defender_knockback_on_parry = 200.0
+parry_interaction = 0
+unparryable_type = 0
+movement_type = 0
+startup_movement_velocity = Vector2(1000, 0)
+active_movement_velocity = Vector2(1000, 0)
+recovery_movement_velocity = Vector2(200, 0)
+link_movement_velocity = Vector2(0, 0)
+startup_poise_shield = 10.0
+active_poise_shield = 10.0
+recovery_poise_shield = 300.0
+metadata/_custom_type_script = "uid://ci25w6pwsje4r"
+
+[sub_resource type="Resource" id="Resource_qk6i7"]
+script = ExtResource("2_s0q0k")
+attacks = Array[ExtResource("3_utrx8")]([SubResource("Resource_jlll7")])
+metadata/_custom_type_script = "uid://bwq542vou2wu1"
+
+[resource]
+script = ExtResource("1_jh4f3")
+skill_phases = Array[ExtResource("2_s0q0k")]([SubResource("Resource_qk6i7")])
+skill_name = ""
+metadata/_custom_type_script = "uid://cyu224lucyda8"

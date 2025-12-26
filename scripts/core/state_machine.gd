@@ -19,8 +19,8 @@ signal transitioned(from_state: State, to_state: State)
 @export var action_cost_validator: ActionCostValidator
 @export var health_component: HealthComponent
 
-# --- ESTADOS (ARRASAR NODOS AQUI) ---
-# Isso garante que eles existam sem precisar de "find_child" ou strings mágicas no setup
+# --- ESTADOS (Dependências para validação e referência interna) ---
+# Arraste os nós para cá no Inspector
 @export_group("Movement States")
 @export var locomotion_state: State
 @export var airborne_state: State
@@ -66,9 +66,7 @@ func initialize(p_owner_node: Node):
 	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
 
 	# --- REGISTRO DE ESTADOS ---
-	# Mapeamos os exports para o dicionário 'states' para manter compatibilidade
-	# com a lógica de strings (transition_to("Name")) sem quebrar os scripts dos estados.
-	
+	# Coleta os estados exportados para garantir que estão no dicionário
 	var mandatory_states = [
 		locomotion_state, airborne_state, dash_state, dodge_state, wall_slide_state,
 		attack_state, air_attack_state, sequence_state, finisher_ready_state, counter_ready_state,
@@ -79,7 +77,7 @@ func initialize(p_owner_node: Node):
 		if state:
 			_register_and_init_state(state)
 
-	# Inicializa estados extras (não obrigatórios) que estejam na árvore mas não no export
+	# Inicializa estados extras (filhos que não estão nos exports, caso existam)
 	for child in get_children():
 		if child is State and not states.has(child.name):
 			_register_and_init_state(child)
@@ -96,7 +94,7 @@ func initialize(p_owner_node: Node):
 
 func _register_and_init_state(state: State):
 	states[state.name] = state
-	# Mantemos a assinatura antiga de inicialização para não quebrar seus scripts de State atuais
+	# Mantemos a assinatura de inicialização que seus scripts de State já usam
 	state.initialize(
 		self, 
 		owner_node, 
@@ -109,6 +107,7 @@ func _register_and_init_state(state: State):
 
 func _validate_dependencies():
 	assert(owner_node != null, "StateMachine: initialize() não chamado.")
+	
 	# Componentes
 	assert(physics_component, "StateMachine: Faltando PhysicsComponent")
 	assert(path_follower_component, "StateMachine: Faltando PathFollowerComponent")
@@ -119,10 +118,10 @@ func _validate_dependencies():
 	assert(action_cost_validator, "StateMachine: Faltando ActionCostValidator")
 	assert(health_component, "StateMachine: Faltando HealthComponent")
 	
-	# Estados Críticos (Exemplos)
-	assert(locomotion_state, "StateMachine: Faltando LocomotionState")
-	assert(airborne_state, "StateMachine: Faltando AirborneState")
-	assert(death_state, "StateMachine: Faltando DeathState")
+	# Validação de Estados Críticos (Exemplos)
+	assert(locomotion_state, "StateMachine: Faltando LocomotionState no Inspector")
+	assert(airborne_state, "StateMachine: Faltando AirborneState no Inspector")
+	assert(death_state, "StateMachine: Faltando DeathState no Inspector")
 
 # ------------------------------------------------------------------------------
 # INPUT HANDLERS (EXPLICITOS)
@@ -137,7 +136,7 @@ func on_jump_pressed(profile: JumpProfile):
 				var transition_args = {"profile": profile, "apply_jump_impulse": true}
 				if result.context.get("is_wall_jump", false):
 					transition_args["is_wall_jump"] = true
-				transition_to("AirborneState", transition_args)
+				_transition_to("AirborneState", transition_args)
 		InputHandlerResult.Status.REJECTED:
 			buffer_component.capture(BufferComponent.BufferedAction.JUMP, {"profile": profile})
 		InputHandlerResult.Status.CONSUMED:
@@ -153,7 +152,7 @@ func on_dodge_pressed(direction: Vector2, profile: DodgeProfile):
 		InputHandlerResult.Status.ACCEPTED:
 			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
-				transition_to("DodgeState", {"direction": direction, "profile": profile})
+				_transition_to("DodgeState", {"direction": direction, "profile": profile})
 		InputHandlerResult.Status.REJECTED:
 			buffer_component.capture(BufferComponent.BufferedAction.DODGE, {"direction": direction, "profile": profile})
 		InputHandlerResult.Status.CONSUMED:
@@ -165,7 +164,7 @@ func on_dash_pressed(profile: DashProfile):
 		InputHandlerResult.Status.ACCEPTED:
 			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
-				transition_to("DashState", {"profile": profile})
+				_transition_to("DashState", {"profile": profile})
 		InputHandlerResult.Status.REJECTED:
 			buffer_component.capture(BufferComponent.BufferedAction.DASH, {"profile": profile})
 		InputHandlerResult.Status.CONSUMED:
@@ -178,11 +177,11 @@ func on_attack_pressed(profile: AttackProfile):
 			var profile_to_use: AttackProfile = result.context.get("override_profile", profile)
 			if action_cost_validator.try_pay_costs(profile_to_use):
 				buffer_component.clear()
-				# Lógica para decidir se é ataque aéreo ou chão
+				# Lógica para decidir se é ataque aéreo ou chão baseada no nome do estado
 				if current_state.name == "AirborneState" or current_state.name == "AirAttackState":
-					transition_to("AirAttackState", {"profile": profile_to_use})
+					_transition_to("AirAttackState", {"profile": profile_to_use})
 				else:
-					transition_to("AttackState", {"profile": profile_to_use})
+					_transition_to("AttackState", {"profile": profile_to_use})
 		InputHandlerResult.Status.REJECTED:			
 			var profile_to_buffer = result.context.get("override_profile", profile)
 			buffer_component.capture(BufferComponent.BufferedAction.ATTACK, {"profile": profile_to_buffer})
@@ -195,7 +194,7 @@ func on_parry_pressed(profile: ParryProfile):
 		InputHandlerResult.Status.ACCEPTED:
 			if action_cost_validator.try_pay_costs(profile):
 				buffer_component.clear()
-				transition_to("ParryState", {"profile": profile})
+				_transition_to("ParryState", {"profile": profile})
 		InputHandlerResult.Status.REJECTED:
 			buffer_component.capture(BufferComponent.BufferedAction.PARRY, {"profile": profile})
 		
@@ -206,7 +205,7 @@ func on_sequence_skill_pressed(skill_attack_set: AttackSet):
 			if skill_attack_set and not skill_attack_set.attacks.is_empty():
 				buffer_component.clear()
 				var sequence = ActionSequence.new(skill_attack_set.attacks)
-				transition_to("SequenceState", {"sequence_context": sequence})
+				_transition_to("SequenceState", {"sequence_context": sequence})
 		InputHandlerResult.Status.REJECTED:
 			buffer_component.capture(BufferComponent.BufferedAction.SEQUENCE_SKILL, {"skill_set": skill_attack_set})
 		InputHandlerResult.Status.CONSUMED:
@@ -224,27 +223,27 @@ func on_current_state_finished(reason: Dictionary = {}):
 		match outcome:
 			"FELL_OFF":
 				owner_node.reset_air_actions()
-				transition_to("AirborneState", { "allow_coyote": true })
+				_transition_to("AirborneState", { "allow_coyote": true })
 				return
 			"WALL_CONTACT":
 				owner_node.reset_air_actions()
-				transition_to("WallSlideState", {"profile": owner_node.get_wall_slide_profile()})
+				_transition_to("WallSlideState", {"profile": owner_node.get_wall_slide_profile()})
 				return
 			"DODGE_COUNTER_READY":
-				transition_to("CounterReadyState", {"result": reason.get("result")})
+				_transition_to("CounterReadyState", {"result": reason.get("result")})
 				return
 			"BLOCKED":
-				transition_to("BlockStunState", {"profile": owner_node.get_block_stun_profile(), "knockback_vector": reason.get("knockback_vector", Vector2.ZERO)})
+				_transition_to("BlockStunState", {"profile": owner_node.get_block_stun_profile(), "knockback_vector": reason.get("knockback_vector", Vector2.ZERO)})
 				return
 			"GUARD_BROKEN":
-				transition_to("GuardBrokenState", {"profile": owner_node.get_guard_broken_profile(), "knockback_vector": reason.get("knockback_vector", Vector2.ZERO)})
+				_transition_to("GuardBrokenState", {"profile": owner_node.get_guard_broken_profile(), "knockback_vector": reason.get("knockback_vector", Vector2.ZERO)})
 				return
 			"FINISHER_HIT":
 				reason["profile"] = owner_node.get_stagger_profile()
-				transition_to("StaggerState", reason)
+				_transition_to("StaggerState", reason)
 				return
 			"HIT", "POISE_BROKEN":
-				transition_to("StaggerState", {"profile": owner_node.get_stagger_profile(), "knockback_vector": reason.get("knockback_vector", Vector2.ZERO)})
+				_transition_to("StaggerState", {"profile": owner_node.get_stagger_profile(), "knockback_vector": reason.get("knockback_vector", Vector2.ZERO)})
 				return
 
 	if owner_node.is_on_floor():
@@ -257,48 +256,50 @@ func on_current_state_finished(reason: Dictionary = {}):
 			BufferComponent.BufferedAction.JUMP:
 				var j_profile: JumpProfile = buffered_data.context.get("profile")
 				if action_cost_validator.try_pay_costs(j_profile):
-					transition_to("AirborneState", {"profile": j_profile, "apply_jump_impulse": true})
+					_transition_to("AirborneState", {"profile": j_profile, "apply_jump_impulse": true})
 					return
 			BufferComponent.BufferedAction.DASH:
 				var d_profile: DashProfile = buffered_data.context.get("profile")
+				# Lógica extra de dash aéreo vs chão se necessário
 				if owner_node is CharacterBody2D and not owner_node.is_on_floor():
-					transition_to("AirborneState")
+					_transition_to("AirborneState")
 				on_dash_pressed(d_profile)
 				return
 			BufferComponent.BufferedAction.ATTACK:
 				var profile = buffered_data.context.get("profile")
 				if action_cost_validator.try_pay_costs(profile):
 					if current_state.name == "AirborneState" or current_state.name == "AirAttackState":
-						transition_to("AirAttackState", {"profile": profile})
+						_transition_to("AirAttackState", {"profile": profile})
 					else:
-						transition_to("AttackState", {"profile": profile})
+						_transition_to("AttackState", {"profile": profile})
 					return
 			BufferComponent.BufferedAction.DODGE:
 				var direction = buffered_data.context.get("direction")
 				var profile = buffered_data.context.get("profile")
 				if action_cost_validator.try_pay_costs(profile):
-					transition_to("DodgeState", {"direction": direction, "profile": profile})
+					_transition_to("DodgeState", {"direction": direction, "profile": profile})
 					return
 			BufferComponent.BufferedAction.PARRY:
 				var profile = buffered_data.context.get("profile")
 				if action_cost_validator.try_pay_costs(profile):
-					transition_to("ParryState", {"profile": profile})
+					_transition_to("ParryState", {"profile": profile})
 					return
 			BufferComponent.BufferedAction.SEQUENCE_SKILL:
 				var skill_set = buffered_data.context.get("skill_set")
 				if skill_set and not skill_set.attacks.is_empty():
 					var sequence = ActionSequence.new(skill_set.attacks)
-					transition_to("SequenceState", {"sequence_context": sequence})
+					_transition_to("SequenceState", {"sequence_context": sequence})
 					return
 
 	# 3. Prioridade: Retorno Padrão
 	if owner_node.is_on_floor():
 		var profile = owner_node.get_locomotion_profile()
-		transition_to(initial_state_key, {"profile": profile})
+		_transition_to(initial_state_key, {"profile": profile})
 	else:
-		transition_to("AirborneState")
+		_transition_to("AirborneState")
 
-func transition_to(new_state_key: String, args: Dictionary = {}):
+# Transição PRIVADA: Ninguém deve chamar isso de fora, apenas a StateMachine
+func _transition_to(new_state_key: String, args: Dictionary = {}):
 	if current_state is DeathState: return
 	if not states.has(new_state_key): 
 		push_error("StateMachine: Tentativa de transição para estado inválido ou não atribuído: " + new_state_key)
@@ -325,13 +326,13 @@ func _on_impact_resolved(result: ContactResult):
 		match result.attacker_outcome:
 			ContactResult.AttackerOutcome.PARRIED:
 				if current_state.handle_attacker_parried(result):
-					transition_to("ParriedState", {"profile": owner_node.get_parried_profile(), "knockback_vector": result.knockback_vector})
+					_transition_to("ParriedState", {"profile": owner_node.get_parried_profile(), "knockback_vector": result.knockback_vector})
 			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
-				transition_to("FinisherReadyState", {"profile": owner_node.get_finisher_profile(), "target": result.defender_node})
+				_transition_to("FinisherReadyState", {"profile": owner_node.get_finisher_profile(), "target": result.defender_node})
 			ContactResult.AttackerOutcome.TRADE_LOST:
-				transition_to("StaggerState", {"profile": owner_node.get_stagger_profile()})
+				_transition_to("StaggerState", {"profile": owner_node.get_stagger_profile()})
 			ContactResult.AttackerOutcome.DODGE_COUNTERED_VULNERABLE:
-				transition_to("CounteredVulnerableState", {"result": result})
+				_transition_to("CounteredVulnerableState", {"result": result})
 
 func _on_owner_died():
 	if current_state is DeathState:
@@ -339,7 +340,7 @@ func _on_owner_died():
 	var profile = null
 	if owner_node.has_method("get_death_profile"):
 		profile = owner_node.get_death_profile()
-	transition_to("DeathState", {"profile": profile})
+	_transition_to("DeathState", {"profile": profile})
 
 func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
 	if not current_state: return Vector2.ZERO
