@@ -1,22 +1,44 @@
 class_name State
 extends Node
 
-var state_machine: StateMachine
-var owner_node: Node
-var physics_component: Node
-var path_follower_component: Node
-var surface_contact_component: SurfaceContactComponent
-var wall_detector: WallDetectorComponent
-var counter_executor_component: CounterExecutorComponent
+# --- AUTO-WIRING ---
+# O Estado busca seu pai. Assume-se que o Estado é filho direto da StateMachine.
+@onready var state_machine: StateMachine = _get_state_machine()
 
-func initialize(sm: StateMachine, owner: Node, physics_comp: Node, path_follower_comp: Node, surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent, p_counter_executor_comp: CounterExecutorComponent):
-	self.state_machine = sm
-	self.owner_node = owner
-	self.physics_component = physics_comp
-	self.path_follower_component = path_follower_comp
-	self.surface_contact_component = surface_contact_comp
-	self.wall_detector = p_wall_detector
-	self.counter_executor_component = p_counter_executor_comp
+# O Owner (Actor) é acessado dinamicamente através da máquina.
+# Isso funciona porque o Actor roda initialize() na máquina antes do primeiro enter() do estado.
+var owner_node: Actor:
+	get: return state_machine.owner_node
+
+# --- ACESSO A COMPONENTES (Via Actor) ---
+var physics_component: PhysicsComponent:
+	get: return owner_node.physics_component
+
+var path_follower_component: PathFollowerComponent:
+	get: return owner_node.path_follower_component
+
+var surface_contact_component: SurfaceContactComponent:
+	get: return owner_node.surface_contact_component
+
+var wall_detector: WallDetectorComponent:
+	get: return owner_node.wall_detector
+
+var counter_executor_component: CounterExecutorComponent:
+	get: return owner_node.counter_executor_component
+
+# --- LÓGICA DE SETUP ---
+
+func _get_state_machine() -> StateMachine:
+	var parent = get_parent()
+	if not parent is StateMachine:
+		push_error("Erro: O Estado '%s' deve ser filho de um nó StateMachine!" % name)
+		return null
+	return parent as StateMachine
+
+# Removemos a função 'initialize' antiga completamente.
+# Se precisar de setup customizado, use _ready()
+
+# --- MÉTODOS VIRTUAIS (Mantidos iguais) ---
 
 func enter(_args: Dictionary = {}):
 	pass
@@ -33,6 +55,7 @@ func process_input(_event: InputEvent):
 func process_physics(_delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
 	return Vector2.ZERO
 
+# --- INPUT HANDLERS (Igual ao anterior) ---
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
@@ -51,6 +74,7 @@ func handle_jump_input(_profile: JumpProfile) -> InputHandlerResult:
 func handle_sequence_skill_input(_skill_attack_set: AttackSet) -> InputHandlerResult:
 	return InputHandlerResult.new(InputHandlerResult.Status.REJECTED)
 
+# --- COMBAT LOGIC (Mantida igual, apenas usando as variáveis herdadas) ---
 func handle_attack_outcome(_result: ContactResult):
 	pass
 
@@ -75,12 +99,10 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 	result_for_attacker.defender_node = context.defender_node
 	result_for_attacker.attack_profile = context.attack_profile
 
-	if context.attacker_node is SimpleEnemy:
+	if _is_simple_enemy(context.attacker_node):
 		context.defender_health_comp.take_damage(context.attack_profile.damage)
-		
 		var reason = { "outcome": "HIT", "knockback_vector": context.attack_profile.knockback_vector }
 		state_machine.on_current_state_finished(reason)
-		
 		result_for_attacker.defender_outcome = ContactResult.DefenderOutcome.HIT
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.SIMPLE_ENEMY_HIT
 		return result_for_attacker
@@ -108,3 +130,6 @@ func _resolve_default_contact(context: ContactContext) -> ContactResult:
 		result_for_attacker.attacker_outcome = ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS
 	
 	return result_for_attacker
+
+func _is_simple_enemy(node) -> bool:
+	return node.get_class() == "SimpleEnemy" or (node.get_script() and "class_name SimpleEnemy" in node.get_script().source_code)

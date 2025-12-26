@@ -404,14 +404,9 @@ target_position = Vector2(35, 0)
 script = ExtResource("58_0b4fd")
 metadata/_custom_type_script = "uid://bwxgsevlwe736"
 
-[node name="StateMachine" type="Node" parent="Enemy" node_paths=PackedStringArray("physics_component", "path_follower_component", "buffer_component", "surface_contact_component", "wall_detector", "counter_executor_component", "action_cost_validator", "health_component", "locomotion_state", "airborne_state", "dash_state", "wall_slide_state", "attack_state", "air_attack_state", "sequence_state", "finisher_ready_state", "counter_ready_state", "parry_state", "parried_state", "block_stun_state", "guard_broken_state", "stagger_state", "countered_vulnerable_state", "death_state")]
+[node name="StateMachine" type="Node" parent="Enemy" node_paths=PackedStringArray("buffer_component", "action_cost_validator", "health_component", "locomotion_state", "airborne_state", "dash_state", "wall_slide_state", "attack_state", "air_attack_state", "sequence_state", "finisher_ready_state", "counter_ready_state", "parry_state", "parried_state", "block_stun_state", "guard_broken_state", "stagger_state", "countered_vulnerable_state", "death_state")]
 script = ExtResource("6_ipns3")
-physics_component = NodePath("../PhysicsComponent")
-path_follower_component = NodePath("../PathFollowerComponent")
 buffer_component = NodePath("../BufferComponent")
-surface_contact_component = NodePath("../SurfaceContactComponent")
-wall_detector = NodePath("../WallDetectorComponent")
-counter_executor_component = NodePath("../CounterExecutorComponent")
 action_cost_validator = NodePath("../ActionCostValidator")
 health_component = NodePath("../HealthComponent")
 locomotion_state = NodePath("LocomotionState")
