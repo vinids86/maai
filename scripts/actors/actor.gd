@@ -85,10 +85,7 @@ func get_stagger_profile() -> StaggerProfile: return stagger_profile
 func get_parried_profile() -> ParriedProfile: return parried_profile
 func get_guard_broken_profile() -> GuardBrokenProfile: return guard_broken_profile
 func get_death_profile() -> DeathProfile: return death_profile
-
-func get_finisher_attack_profile() -> AttackProfile:
-	if not finisher_profile: return null
-	return finisher_profile.attack_profile
+func get_finisher_attack_profile() -> AttackProfile: return finisher_profile.attack_profile
 
 # --- UTILITÁRIOS ---
 
