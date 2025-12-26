@@ -79,16 +79,7 @@ func _ready():
 	spine_sprite.animation_event.connect(_on_spine_event)
 	
 	action_cost_validator.setup(stamina_component, null)
-	state_machine.setup(
-		self,
-		physics_component,
-		path_follower_component,
-		buffer_component,
-		action_cost_validator,
-		surface_contact_component,
-		wall_detector,
-		counter_executor_component
-	)
+	state_machine.initialize(self)
 	
 	attack_executor.setup(self)
 

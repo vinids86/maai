@@ -70,16 +70,7 @@ func _ready():
 	animation_component.setup(state_machine, spine_sprite)
 	spine_sprite.animation_event.connect(_on_spine_event)
 	action_cost_validator.setup(stamina_component, focus_component)
-	state_machine.setup(
-		self,
-		physics_component,
-		path_follower_component,
-		buffer_component,
-		action_cost_validator,
-		surface_contact_component,
-		wall_detector,
-		counter_executor_component
-	)
+	state_machine.initialize(self)
 	air_mobility_component.setup(self, surface_contact_component, smart_targeting_component)
 	surface_contact_component.call_deferred("setup", self)
 

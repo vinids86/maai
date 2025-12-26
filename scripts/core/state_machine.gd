@@ -4,79 +4,129 @@ extends Node
 signal phase_changed(phase_data: Dictionary)
 signal transitioned(from_state: State, to_state: State)
 
+# --- CONFIGURAÇÕES ---
+@export_group("Settings")
 @export var initial_state_key: String = "LocomotionState"
 
+# --- COMPONENTES (DEPENDÊNCIA OBRIGATÓRIA) ---
+@export_group("Core Components")
+@export var physics_component: PhysicsComponent
+@export var path_follower_component: PathFollowerComponent
+@export var buffer_component: BufferComponent
+@export var surface_contact_component: SurfaceContactComponent
+@export var wall_detector: WallDetectorComponent
+@export var counter_executor_component: CounterExecutorComponent
+@export var action_cost_validator: ActionCostValidator
+@export var health_component: HealthComponent
+
+# --- ESTADOS (ARRASAR NODOS AQUI) ---
+# Isso garante que eles existam sem precisar de "find_child" ou strings mágicas no setup
+@export_group("Movement States")
+@export var locomotion_state: State
+@export var airborne_state: State
+@export var dash_state: State
+@export var dodge_state: State
+@export var wall_slide_state: State
+
+@export_group("Combat States")
+@export var attack_state: State
+@export var air_attack_state: State
+@export var sequence_state: State
+@export var finisher_ready_state: State
+@export var counter_ready_state: State
+
+@export_group("Reaction/Defense States")
+@export var parry_state: State
+@export var parried_state: State
+@export var block_stun_state: State
+@export var guard_broken_state: State
+@export var stagger_state: State
+@export var countered_vulnerable_state: State
+@export var death_state: State
+
+# --- VARIÁVEIS INTERNAS ---
 var states: Dictionary = {}
 var current_state: State
 var owner_node: Node
-var physics_component: Node
-var path_follower_component: Node
-var buffer_component: BufferComponent
-var action_cost_validator: ActionCostValidator
-var surface_contact_component: SurfaceContactComponent
-var wall_detector: WallDetectorComponent
-var counter_executor_component: Node
 
-func setup(p_owner_node: Node, p_physics_comp: Node, p_path_follower_comp: Node, p_buffer_comp: BufferComponent, p_action_cost_validator: ActionCostValidator, p_surface_contact_comp: SurfaceContactComponent, p_wall_detector: WallDetectorComponent, p_counter_executor_comp: Node):
+# ------------------------------------------------------------------------------
+# INICIALIZAÇÃO E VALIDAÇÃO
+# ------------------------------------------------------------------------------
+
+func initialize(p_owner_node: Node):
 	owner_node = p_owner_node
-	physics_component = p_physics_comp
-	path_follower_component = p_path_follower_comp
-	buffer_component = p_buffer_comp
-	action_cost_validator = p_action_cost_validator
-	surface_contact_component = p_surface_contact_comp
-	wall_detector = p_wall_detector
-	counter_executor_component = p_counter_executor_comp
-	assert(owner_node != null, "StateMachine: owner_node não pode ser nulo.")
-	assert(physics_component != null, "StateMachine: physics_component não pode ser nulo.")
-	assert(path_follower_component != null, "StateMachine: path_follower_component não pode ser nulo.")
-	assert(buffer_component != null, "StateMachine: buffer_component não pode ser nulo.")
-	assert(action_cost_validator != null, "StateMachine: action_cost_validator não pode ser nulo.")
-	assert(surface_contact_component != null, "StateMachine: surface_contact_component não pode ser nulo.")
-	assert(wall_detector != null, "StateMachine: wall_detector não pode ser nulo.")
-	assert(counter_executor_component != null, "StateMachine: counter_executor_component não pode ser nulo.")
+	
+	_validate_dependencies()
+	
+	# Inicializa Componentes Lógicos
 	counter_executor_component.initialize(owner_node, self)
-	var health_component = owner_node.find_child("HealthComponent")
-	if health_component:
-		health_component.died.connect(_on_owner_died)
-
+	
+	# Conecta Sinais Globais
+	health_component.died.connect(_on_owner_died)
 	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
 
-	for child in get_children():
-		if child is State:
-			states[child.name] = child
-			child.initialize(self, owner_node, physics_component, path_follower_component, surface_contact_component, wall_detector, counter_executor_component)
+	# --- REGISTRO DE ESTADOS ---
+	# Mapeamos os exports para o dicionário 'states' para manter compatibilidade
+	# com a lógica de strings (transition_to("Name")) sem quebrar os scripts dos estados.
 	
+	var mandatory_states = [
+		locomotion_state, airborne_state, dash_state, dodge_state, wall_slide_state,
+		attack_state, air_attack_state, sequence_state, finisher_ready_state, counter_ready_state,
+		parry_state, parried_state, block_stun_state, guard_broken_state, stagger_state, countered_vulnerable_state, death_state
+	]
+
+	for state in mandatory_states:
+		if state:
+			_register_and_init_state(state)
+
+	# Inicializa estados extras (não obrigatórios) que estejam na árvore mas não no export
+	for child in get_children():
+		if child is State and not states.has(child.name):
+			_register_and_init_state(child)
+	
+	# Entra no estado inicial
 	if states.has(initial_state_key):
 		current_state = states[initial_state_key]
-		var profile = owner_node.get_locomotion_profile()
+		var profile = null
+		if owner_node.has_method("get_locomotion_profile"):
+			profile = owner_node.get_locomotion_profile()
 		current_state.enter({"profile": profile})
 	else:
 		push_error("StateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
 
-func _on_owner_died():
-	if current_state is DeathState:
-		return
-	var profile = owner_node.get_death_profile()
-	transition_to("DeathState", {"profile": profile})
+func _register_and_init_state(state: State):
+	states[state.name] = state
+	# Mantemos a assinatura antiga de inicialização para não quebrar seus scripts de State atuais
+	state.initialize(
+		self, 
+		owner_node, 
+		physics_component, 
+		path_follower_component, 
+		surface_contact_component, 
+		wall_detector, 
+		counter_executor_component
+	)
 
-func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
-	if not current_state: return Vector2.ZERO
-	return current_state.process_physics(delta, walk_direction, is_running)
-
-func process_input(event: InputEvent):
-	if current_state: current_state.process_input(event)
-
-func emit_phase_change(data: Dictionary):
-	emit_signal("phase_changed", data)
+func _validate_dependencies():
+	assert(owner_node != null, "StateMachine: initialize() não chamado.")
+	# Componentes
+	assert(physics_component, "StateMachine: Faltando PhysicsComponent")
+	assert(path_follower_component, "StateMachine: Faltando PathFollowerComponent")
+	assert(buffer_component, "StateMachine: Faltando BufferComponent")
+	assert(surface_contact_component, "StateMachine: Faltando SurfaceContactComponent")
+	assert(wall_detector, "StateMachine: Faltando WallDetectorComponent")
+	assert(counter_executor_component, "StateMachine: Faltando CounterExecutorComponent")
+	assert(action_cost_validator, "StateMachine: Faltando ActionCostValidator")
+	assert(health_component, "StateMachine: Faltando HealthComponent")
 	
-func get_current_state() -> State:
-	return current_state
+	# Estados Críticos (Exemplos)
+	assert(locomotion_state, "StateMachine: Faltando LocomotionState")
+	assert(airborne_state, "StateMachine: Faltando AirborneState")
+	assert(death_state, "StateMachine: Faltando DeathState")
 
-func query_buffered_action() -> Dictionary:
-	if buffer_component: return buffer_component.consume()
-	return {}
-
-# --- INPUT HANDLERS ---
+# ------------------------------------------------------------------------------
+# INPUT HANDLERS (EXPLICITOS)
+# ------------------------------------------------------------------------------
 
 func on_jump_pressed(profile: JumpProfile):
 	var result: InputHandlerResult = current_state.handle_jump_input(profile)
@@ -128,6 +178,7 @@ func on_attack_pressed(profile: AttackProfile):
 			var profile_to_use: AttackProfile = result.context.get("override_profile", profile)
 			if action_cost_validator.try_pay_costs(profile_to_use):
 				buffer_component.clear()
+				# Lógica para decidir se é ataque aéreo ou chão
 				if current_state.name == "AirborneState" or current_state.name == "AirAttackState":
 					transition_to("AirAttackState", {"profile": profile_to_use})
 				else:
@@ -161,25 +212,14 @@ func on_sequence_skill_pressed(skill_attack_set: AttackSet):
 		InputHandlerResult.Status.CONSUMED:
 			pass
 
-func _on_impact_resolved(result: ContactResult):
-	if result.attacker_node == owner_node:
-		if current_state: current_state.handle_attack_outcome(result)
-
-		match result.attacker_outcome:
-			ContactResult.AttackerOutcome.PARRIED:
-				if current_state.handle_attacker_parried(result):
-					transition_to("ParriedState", {"profile": owner_node.get_parried_profile(), "knockback_vector": result.knockback_vector})
-			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
-				transition_to("FinisherReadyState", {"profile": owner_node.get_finisher_profile(), "target": result.defender_node})
-			ContactResult.AttackerOutcome.TRADE_LOST:
-				transition_to("StaggerState", {"profile": owner_node.get_stagger_profile()})
-			ContactResult.AttackerOutcome.DODGE_COUNTERED_VULNERABLE:
-				transition_to("CounteredVulnerableState", {"result": result})
-
-# --- TRANSITIONS & LOGIC ---
+# ------------------------------------------------------------------------------
+# LÓGICA DE TRANSIÇÃO E BUFFER
+# ------------------------------------------------------------------------------
 
 func on_current_state_finished(reason: Dictionary = {}):
 	var outcome = reason.get("outcome")
+	
+	# 1. Prioridade: Saídas Forçadas (Outcome)
 	if outcome:
 		match outcome:
 			"FELL_OFF":
@@ -210,6 +250,7 @@ func on_current_state_finished(reason: Dictionary = {}):
 	if owner_node.is_on_floor():
 		owner_node.reset_air_actions()
 
+	# 2. Prioridade: Buffer
 	var buffered_data = buffer_component.consume()
 	if buffered_data:
 		match buffered_data.action:
@@ -250,6 +291,7 @@ func on_current_state_finished(reason: Dictionary = {}):
 					transition_to("SequenceState", {"sequence_context": sequence})
 					return
 
+	# 3. Prioridade: Retorno Padrão
 	if owner_node.is_on_floor():
 		var profile = owner_node.get_locomotion_profile()
 		transition_to(initial_state_key, {"profile": profile})
@@ -258,7 +300,9 @@ func on_current_state_finished(reason: Dictionary = {}):
 
 func transition_to(new_state_key: String, args: Dictionary = {}):
 	if current_state is DeathState: return
-	if not states.has(new_state_key): return
+	if not states.has(new_state_key): 
+		push_error("StateMachine: Tentativa de transição para estado inválido ou não atribuído: " + new_state_key)
+		return
 
 	var new_state = states[new_state_key]
 	if new_state == current_state and not new_state.allow_reentry(): return
@@ -269,3 +313,47 @@ func transition_to(new_state_key: String, args: Dictionary = {}):
 	current_state = new_state
 	current_state.enter(args)
 	emit_signal("transitioned", previous_state, current_state)
+
+# ------------------------------------------------------------------------------
+# LISTENERS E LOOPS
+# ------------------------------------------------------------------------------
+
+func _on_impact_resolved(result: ContactResult):
+	if result.attacker_node == owner_node:
+		if current_state: current_state.handle_attack_outcome(result)
+
+		match result.attacker_outcome:
+			ContactResult.AttackerOutcome.PARRIED:
+				if current_state.handle_attacker_parried(result):
+					transition_to("ParriedState", {"profile": owner_node.get_parried_profile(), "knockback_vector": result.knockback_vector})
+			ContactResult.AttackerOutcome.GUARD_BREAK_SUCCESS:
+				transition_to("FinisherReadyState", {"profile": owner_node.get_finisher_profile(), "target": result.defender_node})
+			ContactResult.AttackerOutcome.TRADE_LOST:
+				transition_to("StaggerState", {"profile": owner_node.get_stagger_profile()})
+			ContactResult.AttackerOutcome.DODGE_COUNTERED_VULNERABLE:
+				transition_to("CounteredVulnerableState", {"result": result})
+
+func _on_owner_died():
+	if current_state is DeathState:
+		return
+	var profile = null
+	if owner_node.has_method("get_death_profile"):
+		profile = owner_node.get_death_profile()
+	transition_to("DeathState", {"profile": profile})
+
+func process_physics(delta: float, walk_direction: float, is_running: bool) -> Vector2:
+	if not current_state: return Vector2.ZERO
+	return current_state.process_physics(delta, walk_direction, is_running)
+
+func process_input(event: InputEvent):
+	if current_state: current_state.process_input(event)
+
+func emit_phase_change(data: Dictionary):
+	emit_signal("phase_changed", data)
+	
+func get_current_state() -> State:
+	return current_state
+
+func query_buffered_action() -> Dictionary:
+	if buffer_component: return buffer_component.consume()
+	return {}
