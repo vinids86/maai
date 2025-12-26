@@ -4,41 +4,25 @@ extends Node
 signal phase_changed(phase_data: Dictionary)
 signal transitioned(from_state: State, to_state: State)
 
+# --- CONFIGURAÇÕES ---
 @export_group("Settings")
 @export var initial_state_key: String = "LocomotionState"
 
+# --- COMPONENTES LÓGICOS ---
 @export_group("Logic Components")
 @export var buffer_component: BufferComponent
 @export var action_cost_validator: ActionCostValidator
 @export var health_component: HealthComponent 
 
-# --- ESTADOS (Referências para Validação e Dicionário) ---
-@export_group("Movement States")
-@export var locomotion_state: State
-@export var airborne_state: State
-@export var dash_state: State
-@export var dodge_state: State
-@export var wall_slide_state: State
-
-@export_group("Combat States")
-@export var attack_state: State
-@export var air_attack_state: State
-@export var sequence_state: State
-@export var finisher_ready_state: State
-@export var counter_ready_state: State
-
-@export_group("Reaction/Defense States")
-@export var parry_state: State
-@export var parried_state: State
-@export var block_stun_state: State
-@export var guard_broken_state: State
-@export var stagger_state: State
-@export var countered_vulnerable_state: State
-@export var death_state: State
-
-var states: Dictionary = {}
+# --- VARIÁVEIS INTERNAS ---
+# Cache para armazenar referências de estados já encontrados e evitar get_node repetitivo
+var states_cache: Dictionary = {} 
 var current_state: State
 var owner_node: Actor 
+
+# ------------------------------------------------------------------------------
+# INICIALIZAÇÃO E VALIDAÇÃO
+# ------------------------------------------------------------------------------
 
 func initialize(p_owner_node: Actor):
 	owner_node = p_owner_node
@@ -53,43 +37,66 @@ func initialize(p_owner_node: Actor):
 	
 	ImpactResolver.impact_resolved.connect(_on_impact_resolved)
 
-	# --- REGISTRO MÍNIMO ---
-	# Apenas populamos o dicionário 'states' usando os exports.
-	# NÃO chamamos inicialização nos estados. Eles já se autoconfiguraram no _ready().
-	
-	var all_exported_states = [
-		locomotion_state, airborne_state, dash_state, dodge_state, wall_slide_state,
-		attack_state, air_attack_state, sequence_state, finisher_ready_state, counter_ready_state,
-		parry_state, parried_state, block_stun_state, guard_broken_state, stagger_state, countered_vulnerable_state, death_state
-	]
-
-	for state in all_exported_states:
-		if state:
-			states[state.name] = state
-
-	# Opcional: Se quiser suportar estados que não estão no export mas são filhos
-	for child in get_children():
-		if child is State and not states.has(child.name):
-			states[child.name] = child
-	
-	# Start
-	if states.has(initial_state_key):
-		current_state = states[initial_state_key]
-		var profile = null
-		if owner_node.has_method("get_locomotion_profile"):
-			profile = owner_node.get_locomotion_profile()
-		current_state.enter({"profile": profile})
-	else:
-		push_error("StateMachine Error: Estado inicial '%s' não encontrado." % initial_state_key)
+	_transition_to(initial_state_key)
 
 func _validate_dependencies():
 	assert(owner_node != null, "StateMachine: initialize() não chamado.")
 	assert(buffer_component, "StateMachine: Faltando BufferComponent")
-	# ... adicione seus asserts de estados aqui ...
+	assert(action_cost_validator, "StateMachine: Faltando ActionCostValidator.")
+	assert(health_component, "StateMachine: Faltando HealthComponent.")
 
-# ... (Mantenha Input Handlers e _transition_to iguais) ...
-# Não há necessidade de alterá-los se eles usam 'current_state' e 'owner_node'
-# que já estão configurados.
+# ------------------------------------------------------------------------------
+# LÓGICA DE TRANSIÇÃO (LAZY LOADING)
+# ------------------------------------------------------------------------------
+
+func _transition_to(state_name: String, args: Dictionary = {}):
+	if current_state is DeathState: return
+	
+	# 1. Busca Dinâmica: Tenta recuperar o estado do Cache ou da Árvore
+	var new_state = _get_state_node(state_name)
+	
+	# Se falhou em encontrar (erro já logado no helper), aborta.
+	if not new_state:
+		return 
+
+	# 2. Verifica reentrada
+	if new_state == current_state and not new_state.allow_reentry(): return
+
+	# 3. Troca de Estado
+	var previous_state = current_state
+	if previous_state: previous_state.exit()
+
+	current_state = new_state
+	current_state.enter(args)
+	emit_signal("transitioned", previous_state, current_state)
+
+## Helper que implementa o Lazy Loading + Cache
+## Retorna o nó do estado ou null se não encontrar
+func _get_state_node(state_name: String) -> State:
+	# A. Se já conhecemos esse estado, retorna rápido do cache (Performance)
+	if states_cache.has(state_name):
+		return states_cache[state_name]
+		
+	# B. Se não, tenta encontrar o nó filho agora (Discovery)
+	# O get_node_or_null é seguro e não crasha se não existir
+	var node = get_node_or_null(state_name)
+	
+	# C. Validação e Cache
+	if node:
+		if node is State:
+			# Sucesso! Cacheia para a próxima vez ser instantâneo
+			states_cache[state_name] = node
+			return node
+		else:
+			push_error("StateMachine Critical: Nó '%s' encontrado, mas não herda de State!" % state_name)
+	else:
+		push_error("StateMachine Critical: Estado '%s' não encontrado como filho de StateMachine." % state_name)
+		
+	return null
+
+# ------------------------------------------------------------------------------
+# INPUT HANDLERS (Mantidos iguais, chamando _transition_to com strings)
+# ------------------------------------------------------------------------------
 
 func on_jump_pressed(profile: JumpProfile):
 	var result: InputHandlerResult = current_state.handle_jump_input(profile)
@@ -252,19 +259,9 @@ func on_current_state_finished(reason: Dictionary = {}):
 	else:
 		_transition_to("AirborneState")
 
-func _transition_to(new_state_key: String, args: Dictionary = {}):
-	if current_state is DeathState: return
-	if not states.has(new_state_key): return
-
-	var new_state = states[new_state_key]
-	if new_state == current_state and not new_state.allow_reentry(): return
-
-	var previous_state = current_state
-	if previous_state: previous_state.exit()
-
-	current_state = new_state
-	current_state.enter(args)
-	emit_signal("transitioned", previous_state, current_state)
+# ------------------------------------------------------------------------------
+# LISTENERS E LOOPS
+# ------------------------------------------------------------------------------
 
 func _on_impact_resolved(result: ContactResult):
 	if result.attacker_node == owner_node:

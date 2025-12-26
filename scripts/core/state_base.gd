@@ -35,9 +35,6 @@ func _get_state_machine() -> StateMachine:
 		return null
 	return parent as StateMachine
 
-# Removemos a função 'initialize' antiga completamente.
-# Se precisar de setup customizado, use _ready()
-
 # --- MÉTODOS VIRTUAIS (Mantidos iguais) ---
 
 func enter(_args: Dictionary = {}):

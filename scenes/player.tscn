@@ -315,28 +315,11 @@ metadata/_custom_type_script = "uid://b0lnh740qgaih"
 script = ExtResource("54_ha2mi")
 metadata/_custom_type_script = "uid://bwxgsevlwe736"
 
-[node name="StateMachine" type="Node" parent="Player" node_paths=PackedStringArray("buffer_component", "action_cost_validator", "health_component", "locomotion_state", "airborne_state", "dash_state", "dodge_state", "wall_slide_state", "attack_state", "air_attack_state", "sequence_state", "finisher_ready_state", "counter_ready_state", "parry_state", "parried_state", "block_stun_state", "guard_broken_state", "stagger_state", "countered_vulnerable_state", "death_state")]
+[node name="StateMachine" type="Node" parent="Player" node_paths=PackedStringArray("buffer_component", "action_cost_validator", "health_component")]
 script = ExtResource("3_qhqgy")
 buffer_component = NodePath("../BufferComponent")
 action_cost_validator = NodePath("../ActionCostValidator")
 health_component = NodePath("../HealthComponent")
-locomotion_state = NodePath("LocomotionState")
-airborne_state = NodePath("AirborneState")
-dash_state = NodePath("DashState")
-dodge_state = NodePath("DodgeState")
-wall_slide_state = NodePath("WallSlideState")
-attack_state = NodePath("AttackState")
-air_attack_state = NodePath("AirAttackState")
-sequence_state = NodePath("SequenceState")
-finisher_ready_state = NodePath("FinisherReadyState")
-counter_ready_state = NodePath("CounterReadyState")
-parry_state = NodePath("ParryState")
-parried_state = NodePath("ParriedState")
-block_stun_state = NodePath("BlockStunState")
-guard_broken_state = NodePath("GuardBrokenState")
-stagger_state = NodePath("StaggerState")
-countered_vulnerable_state = NodePath("CounteredVulnerableState")
-death_state = NodePath("DashState")
 
 [node name="LocomotionState" type="Node" parent="Player/StateMachine"]
 script = ExtResource("4_dqkch")
