@@ -1,91 +1,60 @@
 class_name Player
-extends CharacterBody2D
+extends Actor # <--- Mudança principal aqui
 
-@onready var state_machine: StateMachine = $StateMachine
-@onready var spine_sprite: SpineSprite = $SpineSprite
-@onready var animation_component: AnimationComponent = $AnimationComponent
-@onready var air_mobility_component: AirMobilityComponent = $AirMobilityComponent
-@onready var vfx_component: VFXComponent = $VFXComponent
-@onready var audio_component: AudioComponent = $AudioComponent
-@onready var health_component: HealthComponent = $HealthComponent
-@onready var stamina_component: StaminaComponent = $StaminaComponent
+# --- COMPONENTES ESPECÍFICOS DO PLAYER ---
 @onready var focus_component: FocusComponent = $FocusComponent
-@onready var physics_component: PhysicsComponent = $PhysicsComponent
-@onready var path_follower_component: PathFollowerComponent = $PathFollowerComponent
-@onready var buffer_component: BufferComponent = $BufferComponent
-@onready var surface_contact_component: SurfaceContactComponent = $SurfaceContactComponent
-@onready var wall_detector: WallDetectorComponent = $WallDetectorComponent
-@onready var hold_input_timer: Timer = $HoldInputTimer
-@onready var run_cancel_timer: Timer = $RunCancelTimer
-@onready var attack_executor: AttackExecutor = $AttackExecutor
-@onready var counter_executor_component: CounterExecutorComponent = $CounterExecutorComponent
-@onready var combo_component: ComboComponent = $ComboComponent
 @onready var air_combo_component: AirComboComponent = $AirComboComponent
-@onready var skill_combo_component: SkillComboComponent = $SkillComboComponent
+# SmartTargeting é usado na mobilidade aérea do player
+@onready var smart_targeting_component: SmartTargetingComponent = $SmartTargetingComponent
+
+# --- UI & UTILITÁRIOS ---
 @onready var hud: HUDController = get_tree().get_first_node_in_group("hud")
 @onready var path_target: Node2D = get_parent().get_node("PathTarget")
-@onready var action_cost_validator: ActionCostValidator = $ActionCostValidator
-@onready var smart_targeting_component: SmartTargetingComponent = $SmartTargetingComponent
-@export_group("Combat Data")
-@export var base_poise: float
+@onready var hold_input_timer: Timer = $HoldInputTimer
+@onready var run_cancel_timer: Timer = $RunCancelTimer
 
+# --- SKILLS E COMBATE DO PLAYER ---
 @export_group("Equipped Skills")
 @export var skill_x: BaseSkill
 @export var skill_y: BaseSkill
 @export var skill_a: BaseSkill
 @export var skill_b: BaseSkill
 
-var _equipped_skills: Dictionary = {}
-
-@export_group("Profiles")
-@export var jump_profile: JumpProfile
+# --- PERFIS EXCLUSIVOS DO PLAYER ---
+# (O Actor já tem jump_profile, mas o Player tem o running_jump extra)
+@export_group("Player Specific Profiles")
 @export var running_jump_profile: JumpProfile
-@export var finisher_profile: FinisherProfile
-@export var parry_profile: ParryProfile
-@export var riposte_profile: AttackProfile
-@export var block_stun_profile: BlockStunProfile
-@export var stagger_profile: StaggerProfile
-@export var parried_profile: ParriedProfile
-@export var guard_broken_profile: GuardBrokenProfile
-@export var locomotion_profile: LocomotionProfile
-@export var death_profile: DeathProfile
-@export var dash_profile: DashProfile
-@export var dash_attack_profile: AttackProfile
-@export var wall_slide_profile: WallSlideProfile
-
-@export_group("Dodge Profiles")
-@export var neutral_dodge_profile: DodgeProfile
-@export var forward_dodge_profile: DodgeProfile
-@export var back_dodge_profile: DodgeProfile
-@export var up_dodge_profile: DodgeProfile
-@export var down_dodge_profile: DodgeProfile
-
-var is_running: bool = false
-var facing_sign: int = 1
-var facing_locked: bool = false
+@export var dash_profile: DashProfile # Dash puro é do player, DashAttack é comum
 
 func _ready():
+	super() # Chama validações do Actor
+	
 	GameManager.player_node = self
 	
+	# Setup de componentes
 	animation_component.setup(state_machine, spine_sprite)
 	spine_sprite.animation_event.connect(_on_spine_event)
+	
+	# ActionValidator do Player usa Focus e Stamina
 	action_cost_validator.setup(stamina_component, focus_component)
+	
+	# A StateMachine é inicializada aqui passando 'self' (que é um Actor)
 	state_machine.initialize(self)
+	
 	air_mobility_component.setup(self, surface_contact_component, smart_targeting_component)
 	surface_contact_component.call_deferred("setup", self)
 
 	if hud:
 		await hud.ready
 		hud.initialize_hud(self)
+		
 	attack_executor.setup(self)
+	
 	hold_input_timer.timeout.connect(_on_hold_input_timer_timeout)
 	run_cancel_timer.timeout.connect(_on_run_cancel_timer_timeout)
 	surface_contact_component.landed.connect(_on_landed)
+	
 	_build_skill_dictionary()
-
-func _update_facing_direction():
-	if is_instance_valid(spine_sprite):
-		spine_sprite.scale.x = abs(spine_sprite.scale.x) * facing_sign
 
 func _exit_tree():
 	if GameManager.player_node == self:
@@ -93,18 +62,19 @@ func _exit_tree():
 
 func _physics_process(delta: float):
 	var walk_direction = Input.get_axis("move_left", "move_right")
+	
+	# Usa o método utilitário do pai Actor
 	_update_facing_direction()
 	
+	# A State Machine processa a física usando os dados
 	velocity = state_machine.process_physics(delta, walk_direction, is_running)
 
 	move_and_slide()
 	
-func _on_spine_event(sprite: SpineSprite, animation_state: SpineAnimationState, track_entry: SpineTrackEntry, event: SpineEvent):
+func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState, _track_entry: SpineTrackEntry, event: SpineEvent):
 	var event_name = event.get_data().get_event_name()
-	
-	match event_name:
-		"footstep":
-			audio_component.play_footstep()
+	if event_name == "footstep":
+		audio_component.play_footstep()
 
 func _build_skill_dictionary():
 	if skill_x: _equipped_skills["skill_x"] = skill_x
@@ -112,6 +82,7 @@ func _build_skill_dictionary():
 	if skill_a: _equipped_skills["skill_a"] = skill_a
 	if skill_b: _equipped_skills["skill_b"] = skill_b
 
+# --- INPUT HANDLING (Mantido no Player) ---
 func _unhandled_input(event: InputEvent):
 	
 	if event.is_action_pressed("debug_vfx"):
@@ -119,11 +90,11 @@ func _unhandled_input(event: InputEvent):
 			var spawn_pos = global_position + Vector2(30 * facing_sign, -15)
 			var direction = Vector2.RIGHT * facing_sign
 			vfx_component.spawn_vfx("blood_splatter", spawn_pos, direction)
-
 		get_viewport().set_input_as_handled()
 		return
 	
 	if event.is_action_pressed("jump"):
+		# Lógica específica: Player tem pulo de corrida
 		var profile = running_jump_profile if is_running else jump_profile
 		if profile:
 			state_machine.on_jump_pressed(profile)
@@ -164,9 +135,11 @@ func _unhandled_input(event: InputEvent):
 	
 	if event.is_action_pressed("attack"):
 		var profile_to_use: AttackProfile
+		# Combo logic permanece aqui ou movemos para componente depois
 		if is_on_floor():
 			profile_to_use = combo_component.get_next_attack_profile()
 		else:
+			# Player usa Air Combo Component
 			profile_to_use = air_combo_component.get_next_attack_profile()
 		
 		if profile_to_use:
@@ -185,6 +158,7 @@ func _unhandled_input(event: InputEvent):
 				return
 
 	if event.is_action_pressed("parry"):
+		# get_parry_profile() agora vem do Actor
 		var profile = get_parry_profile()
 		if profile:
 			state_machine.on_parry_pressed(profile)
@@ -193,9 +167,16 @@ func _unhandled_input(event: InputEvent):
 
 	state_machine.process_input(event)
 
-func reset_air_actions() -> void:
-	air_mobility_component.reset_resources()
-	
+# --- GETTERS E HELPERS ---
+# Removemos getters redundantes que já existem no Actor.
+# Mantemos apenas os específicos ou overrides necessários.
+
+func get_dash_profile() -> DashProfile:
+	return dash_profile
+
+# O Actor já tem get_jump_profile, mas aqui retornamos o base.
+# Se precisar retornar o running profile dinamicamente, podemos sobrescrever.
+
 func _on_hold_input_timer_timeout():
 	if Input.is_action_pressed("dodge"):
 		is_running = true
@@ -218,46 +199,6 @@ func _send_dodge_intention():
 	var profile = _get_dodge_profile_for_direction(direction)
 	if profile:
 		state_machine.on_dodge_pressed(direction, profile)
-
-func get_jump_profile() -> JumpProfile:
-	return jump_profile
-
-func get_dash_profile() -> DashProfile:
-	return dash_profile
-
-func get_riposte_profile() -> AttackProfile:
-	return riposte_profile
-
-func get_finisher_profile() -> FinisherProfile:
-	return finisher_profile
-
-func get_finisher_attack_profile() -> AttackProfile:
-	if not finisher_profile: return null
-	return finisher_profile.attack_profile
-
-func get_parry_profile() -> ParryProfile:
-	return parry_profile
-	
-func get_block_stun_profile() -> BlockStunProfile:
-	return block_stun_profile
-	
-func get_stagger_profile() -> StaggerProfile:
-	return stagger_profile
-	
-func get_parried_profile() -> ParriedProfile:
-	return parried_profile
-	
-func get_guard_broken_profile() -> GuardBrokenProfile:
-	return guard_broken_profile
-
-func get_locomotion_profile() -> LocomotionProfile:
-	return locomotion_profile
-	
-func get_death_profile() -> DeathProfile:
-	return death_profile
-	
-func get_wall_slide_profile() -> WallSlideProfile:
-	return wall_slide_profile
 
 func _get_dodge_direction_from_input() -> Vector2:
 	var direction = Vector2.ZERO

@@ -200,7 +200,7 @@ metadata/_custom_type_script = "uid://24v4chol2qs0"
 
 [node name="EnemyEntity" type="Node2D"]
 
-[node name="Enemy" type="CharacterBody2D" parent="."]
+[node name="Enemy" type="CharacterBody2D" parent="." node_paths=PackedStringArray("state_machine", "spine_sprite", "animation_component", "physics_component", "health_component", "stamina_component", "action_cost_validator", "audio_component", "vfx_component", "attack_executor", "counter_executor_component", "combo_component", "skill_combo_component", "hitbox_component", "hurtbox_component", "air_mobility_component", "path_follower_component", "buffer_component", "surface_contact_component", "wall_detector")]
 collision_layer = 64
 collision_mask = 3
 script = ExtResource("1_md0e3")
@@ -209,22 +209,42 @@ skill_y = ExtResource("3_g0yyi")
 skill_a = ExtResource("4_5utat")
 skill_b = ExtResource("5_ci0sa")
 skill_z = ExtResource("9_ci0sa")
+enemy_tint_color = Color(0.458824, 0.176471, 0.368627, 1)
+enemy_tint_intensity = 0.5
+state_machine = NodePath("StateMachine")
+spine_sprite = NodePath("SpineSprite")
+animation_component = NodePath("AnimationComponent")
+physics_component = NodePath("PhysicsComponent")
+health_component = NodePath("HealthComponent")
+stamina_component = NodePath("StaminaComponent")
+action_cost_validator = NodePath("ActionCostValidator")
+audio_component = NodePath("AudioComponent")
+vfx_component = NodePath("VFXComponent")
+attack_executor = NodePath("AttackExecutor")
+counter_executor_component = NodePath("CounterExecutorComponent")
+combo_component = NodePath("ComboComponent")
+skill_combo_component = NodePath("SkillComboComponent")
+hitbox_component = NodePath("AttackHitbox")
+hurtbox_component = NodePath("Hurtbox")
+air_mobility_component = NodePath("AirMobilityComponent")
+path_follower_component = NodePath("PathFollowerComponent")
+buffer_component = NodePath("BufferComponent")
+surface_contact_component = NodePath("SurfaceContactComponent")
+wall_detector = NodePath("WallDetectorComponent")
 base_poise = 200.0
+locomotion_profile = ExtResource("9_2sbpf")
 jump_profile = ExtResource("5_g0yyi")
+wall_slide_profile = ExtResource("16_b5geg")
 finisher_profile = ExtResource("3_thsr5")
 parry_profile = SubResource("Resource_djthp")
 riposte_profile = ExtResource("12_13roy")
+dash_attack_profile = ExtResource("17_5utat")
 block_stun_profile = SubResource("Resource_whoqb")
 stagger_profile = ExtResource("12_rogs8")
 parried_profile = ExtResource("7_ekh6n")
 guard_broken_profile = ExtResource("20_2mchx")
-locomotion_profile = ExtResource("9_2sbpf")
 death_profile = ExtResource("20_4lt7r")
-dash_attack_profile = ExtResource("17_5utat")
-wall_slide_profile = ExtResource("16_b5geg")
 neutral_dodge_profile = ExtResource("24_4c6tc")
-enemy_tint_color = Color(0.458824, 0.176471, 0.368627, 1)
-enemy_tint_intensity = 0.5
 
 [node name="SpineSprite" type="SpineSprite" parent="Enemy"]
 skeleton_data_res = ExtResource("23_by3os")
