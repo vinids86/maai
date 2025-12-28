@@ -1,0 +1,14 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+uid="uid://c11t3j34j8vvc"
+path="res://.godot/imported/Sem título.skel-fcf1b477d51e942b7e0ade8b182c3720.spskel"
+
+[deps]
+
+source_file="res://assets/SpineTest/Sem título.skel"
+dest_files=["res://.godot/imported/Sem título.skel-fcf1b477d51e942b7e0ade8b182c3720.spskel"]
+
+[params]
+

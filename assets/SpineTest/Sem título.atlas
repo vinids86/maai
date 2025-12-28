@@ -1,0 +1,25 @@
+Sem título.png
+size:1924,1236
+filter:Linear,Linear
+pma:true
+ArmL
+bounds:300,1158,157,76
+ArmR
+bounds:459,1136,160,98
+offsets:0,1,160,99
+Fundo
+bounds:2,2,1920,1080
+offsets:1,1,1922,1082
+Head
+bounds:921,1084,150,150
+LegL
+bounds:772,1105,129,147
+offsets:0,0,147,147
+rotate:90
+LegR
+bounds:621,1126,108,149
+rotate:90
+Torso
+bounds:2,1179,55,296
+offsets:0,0,55,297
+rotate:90

@@ -405,7 +405,6 @@ position = Vector2(28821, 923)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
-base_poise = 0.0
 
 [node name="Camera2D" parent="PlayerEntity/Player" index="0"]
 position = Vector2(-101, 149)

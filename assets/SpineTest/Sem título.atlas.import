@@ -1,0 +1,16 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+uid="uid://c2v8i4nuvst6t"
+path="res://.godot/imported/Sem título.atlas-de02ad89cf696f0702eeace7712c684f.spatlas"
+
+[deps]
+
+source_file="res://assets/SpineTest/Sem título.atlas"
+dest_files=["res://.godot/imported/Sem título.atlas-de02ad89cf696f0702eeace7712c684f.spatlas"]
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"
