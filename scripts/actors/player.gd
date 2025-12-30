@@ -30,7 +30,6 @@ func _ready():
 	
 	# Setup de componentes existentes
 	animation_component.setup(state_machine, spine_sprite)
-	spine_sprite.animation_event.connect(_on_spine_event)
 	
 	action_cost_validator.setup(stamina_component, focus_component)
 	state_machine.initialize(self)
@@ -102,10 +101,6 @@ func process_root_motion(delta: float):
 	# Para o Y, geralmente queremos manter a gravidade se o movimento da animação for pífio
 	if abs(motion_y) > 1.0: # Só aplica se mover mais que 1 pixel no Spine
 		velocity.y = (motion_y * final_scale_y * 0.17) / delta
-func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState, _track_entry: SpineTrackEntry, event: SpineEvent):
-	var event_name = event.get_data().get_event_name()
-	if event_name == "footstep":
-		audio_component.play_footstep()
 
 func _build_skill_dictionary():
 	if skill_x: _equipped_skills["skill_x"] = skill_x

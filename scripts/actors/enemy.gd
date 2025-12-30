@@ -33,9 +33,7 @@ func _ready():
 	
 	animation_component.setup(state_machine, spine_sprite)
 	_apply_visual_tint()
-	
-	spine_sprite.animation_event.connect(_on_spine_event)
-	
+		
 	# Inimigo geralmente não usa FocusComponent, então passamos null no segundo arg
 	action_cost_validator.setup(stamina_component, null)
 	
@@ -73,12 +71,6 @@ func _physics_process(delta: float):
 	# Processa movimento
 	velocity = state_machine.process_physics(delta, walk_direction, is_running_ia)
 	move_and_slide()
-
-func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState, _track_entry: SpineTrackEntry, event: SpineEvent):
-	var event_name = event.get_data().get_event_name()
-	if event_name == "footstep":
-		if audio_component:
-			audio_component.play_footstep()
 
 func _on_detection_entered(body: Node2D):
 	if body is Player:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=81 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=79 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="2_g2els"]
@@ -50,7 +50,6 @@
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="27_wqfne"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="28_wnwbv"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="29_gl8cc"]
-[ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="31_qsb7e"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="34_8svfe"]
 [ext_resource type="AudioStream" uid="uid://7nnpy5lp40x1" path="res://audio/footstep.ogg" id="36_770dr"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="36_t4otl"]
@@ -75,13 +74,6 @@
 [ext_resource type="Script" uid="uid://bg4mwww8kngw6" path="res://scripts/components/player_input_component.gd" id="75_0yhus"]
 [ext_resource type="Script" uid="uid://d28fgt1kpvll5" path="res://scripts/components/counter_executor_component.gd" id="75_mwp2n"]
 [ext_resource type="Script" uid="uid://c4isdgib4nmf7" path="res://scripts/states/air_attack_state.gd" id="77_jlll7"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_qjsmb"]
-shader = ExtResource("31_qsb7e")
-shader_parameter/flash_color = Color(1, 1, 1, 1)
-shader_parameter/flash_modifier = 0.0
-shader_parameter/tint_color = Color(1, 0, 0, 1)
-shader_parameter/tint_intensity = 0.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4gjji"]
 radius = 30.0
@@ -171,17 +163,11 @@ combat_cooldown = 1.5
 
 [node name="SpineSprite" type="SpineSprite" parent="Player"]
 skeleton_data_res = ExtResource("24_mwp2n")
-normal_material = SubResource("ShaderMaterial_qjsmb")
 preview_skin = "Default"
-preview_animation = "lighht_attack_1"
+preview_animation = "-- Empty --"
 preview_frame = false
 preview_time = 0.0
 scale = Vector2(0.3, 0.3)
-
-[node name="SpineBoneNode" type="SpineBoneNode" parent="Player/SpineSprite"]
-color = Color(1, 0, 0, 1)
-bone_name = "root"
-show_behind_parent = true
 
 [node name="PlayerFeedbackComponent" type="Node2D" parent="Player"]
 script = ExtResource("24_vdulj")

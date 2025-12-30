@@ -25,7 +25,7 @@ enum MovementType {
 @export var link_duration: float = 0.6
 
 @export_group("Presentation")
-@export var animation_name: StringName
+@export var animation_name: StringName = "light_attack_1"
 @export var startup_sfx: AudioStream
 @export var active_sfx: AudioStream
 @export var recovery_sfx: AudioStream

@@ -73,6 +73,7 @@ func _ready() -> void:
 
 # --- API PÚBLICA (GETTERS PARA A STATE MACHINE) ---
 # Isso permite que a StateMachine acesse dados sem saber se é Player ou Enemy
+func get_spine_sprite() -> SpineSprite: return spine_sprite
 
 func get_locomotion_profile() -> LocomotionProfile: return locomotion_profile
 func get_jump_profile() -> JumpProfile: return jump_profile
