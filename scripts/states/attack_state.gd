@@ -9,11 +9,18 @@ var _current_phase: InternalPhase
 var _time_left_in_phase: float = 0.0
 var _is_initialized: bool = false
 
+# Nome do osso no Spine
+const ROOT_BONE_NAME: String = "root"
+const SPINE_SCALE_FACTOR: float = 1.0 
+
+# Variável para calcular o delta de posição do osso
+var _last_root_x: float = 0.0
+# Flag para ignorar o "salto" causado pela transição de animação
+var _ignore_next_frame: bool = false
+
 func _initialize_references():
-	if _is_initialized:
-		return
+	if _is_initialized: return
 	_attack_executor = owner_node.find_child("AttackExecutor")
-	assert(_attack_executor != null, "AttackState: Nó 'AttackExecutor' não encontrado.")
 	_is_initialized = true
 
 func enter(args: Dictionary = {}):
@@ -30,6 +37,25 @@ func enter(args: Dictionary = {}):
 	
 	owner_node.facing_locked = true
 	_current_phase = InternalPhase.EXECUTING
+	
+	# Prepara variáveis de controle
+	_last_root_x = 0.0
+	_ignore_next_frame = true # Ignora o primeiro frame para evitar o salto do Mix
+	
+	if _current_profile.movement_type == AttackProfile.MovementType.ROOT_MOTION:
+		var sprite = owner_node.get_spine_sprite()
+		if sprite:
+			# Assumimos o controle do Update para garantir a ordem das coisas
+			sprite.update_mode = SpineConstant.UpdateMode_Manual
+			sprite.position = Vector2.ZERO # Reseta offset visual
+			
+			# HACK IMPRESCINDÍVEL:
+			# Forçamos o Spine a limpar o Mix da animação anterior para esta
+			# Isso impede que o 'Track Time' comece em 0.266 como mostrou seu log
+			var entry = sprite.get_animation_state().get_current(0)
+			if entry:
+				entry.set_mix_duration(0)
+
 	_attack_executor.execute(_current_profile)
 
 func exit():
@@ -42,47 +68,116 @@ func exit():
 
 	owner_node.facing_locked = false
 	_current_phase = InternalPhase.EXECUTING
+	
+	# Devolve o controle para o modo automático
+	if _current_profile and _current_profile.movement_type == AttackProfile.MovementType.ROOT_MOTION:
+		var sprite = owner_node.get_spine_sprite()
+		if sprite:
+			sprite.update_mode = SpineConstant.UpdateMode_Process
+			sprite.position = Vector2.ZERO
+			
 	_current_profile = null
+	_last_root_x = 0.0
 
 func process_physics(delta: float, _walk_direction: float, _is_running: bool) -> Vector2:
-	var new_velocity = owner_node.velocity
+	# Mantém a gravidade funcionando independente do resto
+	var current_velocity = owner_node.velocity
+	current_velocity = physics_component.apply_gravity(current_velocity, delta)
 	
+	# Se estivermos em Root Motion, processamos o movimento aqui e AGORA.
+	# Não retornamos velocity.x para o CharacterBody, nós o movemos diretamente.
+	if _current_phase == InternalPhase.EXECUTING and \
+	   _current_profile and \
+	   _current_profile.movement_type == AttackProfile.MovementType.ROOT_MOTION:
+		
+		_apply_root_motion_displacement(delta)
+		current_velocity.x = 0.0 # A física padrão não deve empurrar o boneco, o Root Motion já empurrou
+		return current_velocity
+
+	# Lógica Padrão (Sem Root Motion)
 	match _current_phase:
 		InternalPhase.LINK:
 			_time_left_in_phase -= delta
 			if _time_left_in_phase <= 0.0:
 				state_machine.on_current_state_finished()
-				new_velocity.x = 0.0
-				return physics_component.apply_gravity(new_velocity, delta)
+				current_velocity.x = 0.0
+				return current_velocity
 			
 			var move_vel = _current_profile.link_movement_velocity
-			
-			new_velocity.x = move_vel.x * owner_node.facing_sign
-			if owner_node.is_on_floor():
-				new_velocity.y = move_vel.y
+			current_velocity.x = move_vel.x * owner_node.facing_sign
+			if owner_node.is_on_floor(): current_velocity.y = move_vel.y
 		
 		InternalPhase.RECOIL:
 			_time_left_in_phase -= delta
-			if _time_left_in_phase <= 0.0:
-				_on_attack_finished()
+			if _time_left_in_phase <= 0.0: _on_attack_finished()
 			var recoil_movement_x = -40.0
-			
-			new_velocity.x = recoil_movement_x * -owner_node.facing_sign
+			current_velocity.x = recoil_movement_x * -owner_node.facing_sign
 		
 		InternalPhase.EXECUTING:
-			if _attack_executor and _current_profile:
+			if _attack_executor:
 				if _current_profile.movement_type == AttackProfile.MovementType.PATH_TARGET:
 					if path_follower_component and path_follower_component.is_active():
 						if owner_node.is_on_floor():
-							new_velocity = path_follower_component.calculate_target_velocity(delta)
+							return path_follower_component.calculate_target_velocity(delta)
 						else:
-							new_velocity.x = 0.0
+							current_velocity.x = 0.0
 				else:
-					new_velocity.x = _attack_executor.get_physics_movement_velocity().x
+					# Movimento padrão via velocity
+					current_velocity.x = _attack_executor.get_physics_movement_velocity().x
 
-	new_velocity = physics_component.apply_gravity(new_velocity, delta)
-	return new_velocity
+	return current_velocity
 
+# --- NOVO SISTEMA DE MOVIMENTO DIRETO ---
+func _apply_root_motion_displacement(delta: float):
+	var sprite = owner_node.get_spine_sprite()
+	if not sprite: return
+	
+	# 1. Atualiza a animação manualmente
+	sprite.update_skeleton(delta)
+	
+	var skeleton = sprite.get_skeleton()
+	var root_bone = skeleton.find_bone(ROOT_BONE_NAME)
+	if not root_bone: return
+	
+	# 2. Pega a posição absoluta do osso na animação
+	var current_root_x = root_bone.get_x()
+	
+	# 3. Se for o primeiro frame, apenas reseta a referência e zera o visual
+	if _ignore_next_frame:
+		_ignore_next_frame = false
+		_last_root_x = current_root_x
+		root_bone.set_x(0.0)
+		skeleton.update_world_transform(0)
+		return
+
+	# 4. Calcula o DESLOCAMENTO (não velocidade)
+	# Quantos pixels o osso andou desde o último frame?
+	var displacement_x = (current_root_x - _last_root_x) * SPINE_SCALE_FACTOR
+	
+	# Atualiza referência para o próximo
+	_last_root_x = current_root_x
+	
+	# 5. Move o corpo físico usando colisão (Kinematic)
+	# Isso move o 'CharacterBody2D' e para se bater em parede
+	if not is_zero_approx(displacement_x):
+		var motion_vector = Vector2(displacement_x * owner_node.facing_sign, 0.0)
+		# Nota: usamos move_and_collide para mover exatamente essa distância
+		owner_node.move_and_collide(motion_vector)
+	
+	# 6. O Pulo do Gato Visual
+	# O corpo físico andou 'displacement_x' para frente.
+	# O sprite (filho) vai junto.
+	# O osso (neto) também andou 'displacement_x' para frente na animação.
+	# Resultado visual sem correção: O sprite anda 2x a distância.
+	#
+	# Correção: Zeramos o osso. O sprite volta para a origem do corpo físico.
+	# Como o corpo físico já andou, o visual fica correto no mundo.
+	root_bone.set_x(0.0)
+	
+	# 7. Aplica a correção visual no Spine antes de renderizar
+	skeleton.update_world_transform(0) # 0 = PhysicsUpdateMode_None
+
+# --- (Restante Inalterado) ---
 func handle_attack_input(_profile: AttackProfile) -> InputHandlerResult:
 	if _current_phase == InternalPhase.LINK:
 		return InputHandlerResult.new(InputHandlerResult.Status.ACCEPTED)

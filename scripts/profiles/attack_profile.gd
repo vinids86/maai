@@ -14,7 +14,8 @@ enum UnparryableType {
 
 enum MovementType {
 	PHYSICS,
-	PATH_TARGET
+	PATH_TARGET,
+	ROOT_MOTION,
 }
 
 @export_group("Phases")
@@ -53,7 +54,7 @@ enum MovementType {
 @export var unparryable_type: UnparryableType = UnparryableType.NONE
 
 @export_group("Movement")
-@export var movement_type: MovementType = MovementType.PHYSICS
+@export var movement_type: MovementType = MovementType.ROOT_MOTION
 @export var startup_movement_velocity: Vector2 = Vector2.ZERO
 @export var active_movement_velocity: Vector2 = Vector2.ZERO
 @export var recovery_movement_velocity: Vector2 = Vector2.ZERO
