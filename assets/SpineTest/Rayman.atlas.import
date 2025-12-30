@@ -1,0 +1,16 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+uid="uid://bgwb4i2rhtkuq"
+path="res://.godot/imported/Rayman.atlas-051592f450d144eac45c787de895bc39.spatlas"
+
+[deps]
+
+source_file="res://assets/SpineTest/Rayman.atlas"
+dest_files=["res://.godot/imported/Rayman.atlas-051592f450d144eac45c787de895bc39.spatlas"]
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

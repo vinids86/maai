@@ -1,0 +1,9 @@
+[gd_resource type="SpineSkeletonDataResource" load_steps=3 format=3 uid="uid://cshtjuij544ot"]
+
+[ext_resource type="SpineAtlasResource" uid="uid://bgwb4i2rhtkuq" path="res://assets/SpineTest/Rayman.atlas" id="1_df08o"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://bs6xjbpffkmue" path="res://assets/SpineTest/Rayman.skel" id="2_q7wnp"]
+
+[resource]
+atlas_res = ExtResource("1_df08o")
+skeleton_file_res = ExtResource("2_q7wnp")
+default_mix = 0.1

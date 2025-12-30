@@ -57,10 +57,51 @@ func _physics_process(delta: float):
 	
 	_update_facing_direction()
 	
-	velocity = state_machine.process_physics(delta, walk_direction, is_running)
+	var logic_velocity = state_machine.process_physics(delta, walk_direction, is_running)
+	
+	var root_motion_states = ["AttackState"]
+	
+	var current_state_name = ""
+	if state_machine.current_state:
+		current_state_name = state_machine.current_state.name
+	
+	if current_state_name in root_motion_states:
+		# Se for ataque/esquiva, o Root Motion assume o controle total
+		process_root_motion(delta)
+	else:
+		# Se for Andar/Pular/Cair, usamos a velocidade calculada pela lógica (física padrão)
+		velocity = logic_velocity
 
 	move_and_slide()
+
+func process_root_motion(delta: float):
+	var skeleton = spine_sprite.get_skeleton()
+	if not skeleton: return
 	
+	var root_bone = skeleton.find_bone("root")
+	var motion_x = root_bone.get_x()
+	var motion_y = root_bone.get_y()
+	
+	# Zera o osso visualmente para não "duplicar" o movimento
+	root_bone.set_x(0)
+	root_bone.set_y(0)
+	
+	if motion_x == 0 and motion_y == 0:
+		velocity.x = 0
+		return
+
+	# CORREÇÃO PRINCIPAL:
+	# Multiplicamos pela escala do Nó (se você diminuiu o boneco na cena)
+	# E pela escala do Esqueleto (se o boneco estiver espelhado/virado)
+	var final_scale_x = spine_sprite.scale.x * skeleton.get_scale_x()
+	var final_scale_y = spine_sprite.scale.y * skeleton.get_scale_y()
+	
+	# Aplica o movimento ajustado pela escala e pelo seu multiplicador manual
+	velocity.x = (motion_x * final_scale_x * 0.17) / delta
+	
+	# Para o Y, geralmente queremos manter a gravidade se o movimento da animação for pífio
+	if abs(motion_y) > 1.0: # Só aplica se mover mais que 1 pixel no Spine
+		velocity.y = (motion_y * final_scale_y * 0.17) / delta
 func _on_spine_event(_sprite: SpineSprite, _animation_state: SpineAnimationState, _track_entry: SpineTrackEntry, event: SpineEvent):
 	var event_name = event.get_data().get_event_name()
 	if event_name == "footstep":

@@ -43,7 +43,7 @@
 [ext_resource type="Script" uid="uid://b0lnh740qgaih" path="res://scripts/core/attack_executor.gd" id="22_605iw"]
 [ext_resource type="Script" uid="uid://cmjo1r3dy7y1a" path="res://scripts/listeners/animation_component.gd" id="22_sdxul"]
 [ext_resource type="Script" uid="uid://b31jt2qq4fmkr" path="res://scripts/components/poise_component.gd" id="23_78kod"]
-[ext_resource type="SpineSkeletonDataResource" uid="uid://cb6rn6vonqbx0" path="res://assets/player/Spine/spineboy-data-res.tres" id="23_by3os"]
+[ext_resource type="SpineSkeletonDataResource" uid="uid://cshtjuij544ot" path="res://resources/player/player.tres" id="23_ci0sa"]
 [ext_resource type="Shader" uid="uid://cnjkhh8kggb2q" path="res://shaders/hit_flash.gdshader" id="23_yb7ap"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="24_4c6tc"]
 [ext_resource type="Script" uid="uid://dmqafi2pyifje" path="res://scripts/components/skill_combo_component.gd" id="28_7v6cf"]
@@ -83,7 +83,7 @@ poise_shield_contribution = 30.0
 shield_bonus_on_success = 50.0
 sword_bonus_on_success = 25.0
 bonus_duration = 0.1
-animation_name = &"aim"
+animation_name = &"parry"
 active_sfx = ExtResource("11_1lc1m")
 success_sfx = ExtResource("13_1lc1m")
 metadata/_custom_type_script = "uid://vapdm40oww0x"
@@ -91,7 +91,7 @@ metadata/_custom_type_script = "uid://vapdm40oww0x"
 [sub_resource type="Resource" id="Resource_whoqb"]
 script = ExtResource("16_2qahx")
 duration = 0.2
-animation_name = &"aim"
+animation_name = &"block_stun"
 sfx = ExtResource("17_1lc1m")
 poise_shield_contribution = 0.0
 metadata/_custom_type_script = "uid://nsuhpbn3734f"
@@ -247,7 +247,7 @@ death_profile = ExtResource("20_4lt7r")
 neutral_dodge_profile = ExtResource("24_4c6tc")
 
 [node name="SpineSprite" type="SpineSprite" parent="Enemy"]
-skeleton_data_res = ExtResource("23_by3os")
+skeleton_data_res = ExtResource("23_ci0sa")
 normal_material = SubResource("ShaderMaterial_by3os")
 preview_skin = "Default"
 preview_animation = "-- Empty --"

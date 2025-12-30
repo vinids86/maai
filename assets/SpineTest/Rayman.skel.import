@@ -1,0 +1,14 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+uid="uid://bs6xjbpffkmue"
+path="res://.godot/imported/Rayman.skel-539c8f9233fd7b8b4f6e6dcf19d285ee.spskel"
+
+[deps]
+
+source_file="res://assets/SpineTest/Rayman.skel"
+dest_files=["res://.godot/imported/Rayman.skel-539c8f9233fd7b8b4f6e6dcf19d285ee.spskel"]
+
+[params]
+
