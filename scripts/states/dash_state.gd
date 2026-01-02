@@ -186,10 +186,11 @@ func get_poise_shield_contribution() -> float:
 
 func _change_phase(new_phase: Phases):
 	current_phase = new_phase
-	
+	var animation_to_play: String
 	var sfx_to_play: AudioStream
 	match current_phase:
 		Phases.ACTIVE:
+			animation_to_play = current_profile.animation_name
 			# Se for Grapple, o tempo é um timeout de segurança (ex: 1s),
 			# a saída real é por distância.
 			if _is_grapple_mode:
@@ -214,14 +215,14 @@ func _change_phase(new_phase: Phases):
 		"state_name": self.name,
 		"phase_name": Phases.keys()[current_phase],
 		"profile": current_profile,
-		"animation_to_play": current_profile.animation_name,
+		"animation_to_play": animation_to_play,
 		"sfx_to_play": sfx_to_play
 	}
 	
 	# Adiciona o target ao phase_data apenas se estiver no modo Grapple
 	if _is_grapple_mode and targeting_component and targeting_component.current_target:
 		phase_data["target_node"] = targeting_component.current_target
-
+		
 	state_machine.emit_phase_change(phase_data)
 
 func _start_dash_attack(profile: AttackProfile):

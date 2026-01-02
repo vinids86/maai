@@ -71,7 +71,7 @@ attack_state_name = "SimpleAttackState"
 recoil_state_name = "SimpleRecoilState"
 stagger_state_name = "SimpleStaggerState"
 immune_to_stagger = true
-parries_required_for_groggy = 5
+parries_required_for_groggy = 2
 
 [node name="SimpleChaseState" type="Node" parent="SimpleStateMachine" index="4"]
 script = ExtResource("3_6iwo7")

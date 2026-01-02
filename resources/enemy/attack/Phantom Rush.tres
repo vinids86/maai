@@ -1,23 +1,23 @@
-[gd_resource type="Resource" script_class="SequenceSkill" load_steps=12 format=3 uid="uid://dyb1h7belqw60"]
+[gd_resource type="Resource" script_class="SequenceSkill" load_steps=12 format=3 uid="uid://c23qnh3qcgkaa"]
 
-[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="1_ifqvd"]
-[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_t8hhk"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="3_m1w1k"]
-[ext_resource type="AudioStream" uid="uid://curr3hsosggk4" path="res://audio/attack_2.wav" id="4_f73uo"]
-[ext_resource type="AudioStream" uid="uid://bp66sw0k32ttq" path="res://audio/attack_3.wav" id="5_rfsv2"]
-[ext_resource type="AudioStream" uid="uid://dbm1xt5hw8dp0" path="res://audio/dodge.wav" id="5_t8hhk"]
-[ext_resource type="AudioStream" uid="uid://br3naex6ir5bb" path="res://audio/attack_5.wav" id="6_50mcg"]
+[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="1_ylll2"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_8jxvv"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="3_a3bmx"]
+[ext_resource type="AudioStream" uid="uid://curr3hsosggk4" path="res://audio/attack_2.wav" id="4_juo1a"]
+[ext_resource type="AudioStream" uid="uid://dbm1xt5hw8dp0" path="res://audio/dodge.wav" id="5_4bsl5"]
+[ext_resource type="AudioStream" uid="uid://bp66sw0k32ttq" path="res://audio/attack_3.wav" id="6_387ar"]
+[ext_resource type="AudioStream" uid="uid://br3naex6ir5bb" path="res://audio/attack_5.wav" id="7_0q2vd"]
 
 [sub_resource type="Resource" id="Resource_7w3jn"]
-script = ExtResource("3_m1w1k")
+script = ExtResource("3_a3bmx")
 startup_duration = 0.38
 active_duration = 0.1
 block_recoil_duration = 0.35
 recovery_duration = 0.12
 link_duration = 0.6
-animation_name = &"light_attack_1"
-startup_sfx = ExtResource("5_t8hhk")
-active_sfx = ExtResource("4_f73uo")
+animation_name = &"phantom_rush_1"
+startup_sfx = ExtResource("5_4bsl5")
+active_sfx = ExtResource("4_juo1a")
 hitbox_size = Vector2(160, 140)
 hitbox_position = Vector2(100, -30)
 damage = 30.0
@@ -32,7 +32,7 @@ knockback_vector = Vector2(1000, 0)
 defender_knockback_on_parry = 120.0
 parry_interaction = 0
 unparryable_type = 0
-movement_type = 0
+movement_type = 2
 startup_movement_velocity = Vector2(-150, 0)
 active_movement_velocity = Vector2(1600, 0)
 recovery_movement_velocity = Vector2(0, 0)
@@ -43,14 +43,14 @@ recovery_poise_shield = 300.0
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
 [sub_resource type="Resource" id="Resource_uiwvf"]
-script = ExtResource("3_m1w1k")
+script = ExtResource("3_a3bmx")
 startup_duration = 0.18
 active_duration = 0.1
 block_recoil_duration = 0.35
 recovery_duration = 0.1
 link_duration = 0.6
-animation_name = &"light_attack_2"
-active_sfx = ExtResource("5_rfsv2")
+animation_name = &"phantom_rush_2"
+active_sfx = ExtResource("6_387ar")
 hitbox_size = Vector2(160, 140)
 hitbox_position = Vector2(100, -30)
 damage = 30.0
@@ -65,7 +65,7 @@ knockback_vector = Vector2(1000, 0)
 defender_knockback_on_parry = 120.0
 parry_interaction = 0
 unparryable_type = 0
-movement_type = 0
+movement_type = 2
 startup_movement_velocity = Vector2(500, -100)
 active_movement_velocity = Vector2(0, 50)
 recovery_movement_velocity = Vector2(0, 50)
@@ -76,14 +76,14 @@ recovery_poise_shield = 300.0
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
 [sub_resource type="Resource" id="Resource_t8hhk"]
-script = ExtResource("3_m1w1k")
+script = ExtResource("3_a3bmx")
 startup_duration = 0.32
 active_duration = 0.14
 block_recoil_duration = 0.35
 recovery_duration = 0.24
 link_duration = 0.6
-animation_name = &"light_attack_3"
-active_sfx = ExtResource("6_50mcg")
+animation_name = &"phantom_rush_3"
+active_sfx = ExtResource("7_0q2vd")
 hitbox_size = Vector2(160, 140)
 hitbox_position = Vector2(100, -30)
 damage = 30.0
@@ -98,7 +98,7 @@ knockback_vector = Vector2(1000, 0)
 defender_knockback_on_parry = 300.0
 parry_interaction = 0
 unparryable_type = 0
-movement_type = 0
+movement_type = 2
 startup_movement_velocity = Vector2(200, 0)
 active_movement_velocity = Vector2(0, 0)
 recovery_movement_velocity = Vector2(0, 0)
@@ -109,12 +109,12 @@ recovery_poise_shield = 300.0
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
 [sub_resource type="Resource" id="Resource_b5geg"]
-script = ExtResource("2_t8hhk")
-attacks = Array[ExtResource("3_m1w1k")]([SubResource("Resource_7w3jn"), SubResource("Resource_uiwvf"), SubResource("Resource_t8hhk")])
+script = ExtResource("2_8jxvv")
+attacks = Array[ExtResource("3_a3bmx")]([SubResource("Resource_7w3jn"), SubResource("Resource_uiwvf"), SubResource("Resource_t8hhk")])
 metadata/_custom_type_script = "uid://bwq542vou2wu1"
 
 [resource]
-script = ExtResource("1_ifqvd")
-skill_phases = Array[ExtResource("2_t8hhk")]([SubResource("Resource_b5geg")])
+script = ExtResource("1_ylll2")
+skill_phases = Array[ExtResource("2_8jxvv")]([SubResource("Resource_b5geg")])
 skill_name = ""
 metadata/_custom_type_script = "uid://cyu224lucyda8"

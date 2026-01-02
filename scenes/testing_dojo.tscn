@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=4 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=31 format=4 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="2_7od0s"]
@@ -398,10 +398,32 @@ sources/1 = SubResource("TileSetAtlasSource_tuvrf")
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_m2w8e"]
 size = Vector2(5292, 1142)
 
+[sub_resource type="Environment" id="Environment_1woli"]
+background_mode = 3
+tonemap_mode = 1
+tonemap_exposure = 0.15
+tonemap_white = 0.36
+glow_enabled = true
+glow_blend_mode = 4
+glow_hdr_threshold = 1.17
+glow_hdr_scale = 1.5
+glow_hdr_luminance_cap = 22.75
+glow_map_strength = 0.47
+fog_enabled = true
+fog_light_energy = 6.62
+fog_sun_scatter = 0.07
+fog_density = 0.0749
+fog_sky_affect = 0.57
+fog_height = 4.75
+adjustment_enabled = true
+adjustment_brightness = 0.9
+adjustment_contrast = 1.09
+adjustment_saturation = 1.18
+
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(28821, 923)
+position = Vector2(33806, 1063)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -411,10 +433,6 @@ position = Vector2(-101, 149)
 
 [node name="SpineSprite" parent="PlayerEntity/Player" index="1"]
 preview_animation = "idle"
-
-[node name="SpineBoneNode" parent="PlayerEntity/Player/SpineSprite" index="52"]
-position = Vector2(-23.4412, -331.279)
-rotation = 0.380242
 
 [node name="Enemys" type="Node" parent="."]
 
@@ -704,6 +722,14 @@ rotation = 1.5708
 [node name="Spikes4" parent="Traps" instance=ExtResource("25_1woli")]
 position = Vector2(9175, -781)
 rotation = 3.14159
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1woli")
+
+[node name="DirectionalLight2D" type="DirectionalLight2D" parent="."]
+energy = 0.5
+shadow_enabled = true
+shadow_filter = 1
 
 [editable path="PlayerEntity"]
 [editable path="Enemys/FlyingEnemy"]

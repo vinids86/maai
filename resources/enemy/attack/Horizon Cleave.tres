@@ -1,19 +1,19 @@
-[gd_resource type="Resource" script_class="SequenceSkill" load_steps=7 format=3 uid="uid://c451g22rho0t0"]
+[gd_resource type="Resource" script_class="SequenceSkill" load_steps=7 format=3 uid="uid://cdnef4woxfwu4"]
 
-[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="1_lcm4h"]
-[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_p6me0"]
-[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="3_k8vox"]
-[ext_resource type="AudioStream" uid="uid://duggjplviepmn" path="res://audio/pre_sequence_skill.wav" id="4_14wye"]
+[ext_resource type="Script" uid="uid://cyu224lucyda8" path="res://scripts/components/sequence_skill.gd" id="1_qw88u"]
+[ext_resource type="Script" uid="uid://bwq542vou2wu1" path="res://scripts/profiles/attack_set.gd" id="2_lh80d"]
+[ext_resource type="Script" uid="uid://ci25w6pwsje4r" path="res://scripts/profiles/attack_profile.gd" id="3_vvlfi"]
+[ext_resource type="AudioStream" uid="uid://duggjplviepmn" path="res://audio/pre_sequence_skill.wav" id="4_nhfxc"]
 
 [sub_resource type="Resource" id="Resource_4c6tc"]
-script = ExtResource("3_k8vox")
+script = ExtResource("3_vvlfi")
 startup_duration = 0.5
 active_duration = 0.1
 block_recoil_duration = 0.55
 recovery_duration = 0.45
 link_duration = 0.6
-animation_name = &"light_attack_1"
-startup_sfx = ExtResource("4_14wye")
+animation_name = &"horizon_cleave_1"
+startup_sfx = ExtResource("4_nhfxc")
 hitbox_size = Vector2(360, 64)
 hitbox_position = Vector2(40, 0)
 damage = 1.0
@@ -28,7 +28,7 @@ knockback_vector = Vector2(1000, 0)
 defender_knockback_on_parry = 120.0
 parry_interaction = 0
 unparryable_type = 2
-movement_type = 0
+movement_type = 2
 startup_movement_velocity = Vector2(0, 0)
 active_movement_velocity = Vector2(0, 0)
 recovery_movement_velocity = Vector2(0, 0)
@@ -39,12 +39,12 @@ recovery_poise_shield = 300.0
 metadata/_custom_type_script = "uid://ci25w6pwsje4r"
 
 [sub_resource type="Resource" id="Resource_ci0sa"]
-script = ExtResource("2_p6me0")
-attacks = Array[ExtResource("3_k8vox")]([SubResource("Resource_4c6tc")])
+script = ExtResource("2_lh80d")
+attacks = Array[ExtResource("3_vvlfi")]([SubResource("Resource_4c6tc")])
 metadata/_custom_type_script = "uid://bwq542vou2wu1"
 
 [resource]
-script = ExtResource("1_lcm4h")
-skill_phases = Array[ExtResource("2_p6me0")]([SubResource("Resource_ci0sa")])
+script = ExtResource("1_qw88u")
+skill_phases = Array[ExtResource("2_lh80d")]([SubResource("Resource_ci0sa")])
 skill_name = ""
 metadata/_custom_type_script = "uid://cyu224lucyda8"

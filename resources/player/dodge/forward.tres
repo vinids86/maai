@@ -8,7 +8,7 @@
 
 [sub_resource type="Resource" id="Resource_gn7d4"]
 script = ExtResource("3_dx8x5")
-executor_animation = &""
+executor_animation = &"light_attack_1"
 execution_duration = 0.6
 executor_attack_profile = ExtResource("2_dx8x5")
 mikiri_sfx = ExtResource("2_w3lmw")
@@ -28,6 +28,6 @@ stamina_cost = 0.0
 focus_cost = 0.0
 poise_shield_contribution = 5.0
 counter_execution_profile = SubResource("Resource_gn7d4")
-animation_name = &"portal"
+animation_name = &"dodge_forward"
 active_sfx = ExtResource("1_f1poj")
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"

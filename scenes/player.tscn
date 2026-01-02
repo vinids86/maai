@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="2_g2els"]
 [ext_resource type="Resource" uid="uid://ckjc1cdhkvxg6" path="res://resources/player/attack/player_light_attacks.tres" id="2_oprun"]
-[ext_resource type="Resource" uid="uid://cv1eciw0nos2h" path="res://resources/player/skills/sequence/skill_x.tres" id="2_qjsmb"]
+[ext_resource type="Resource" uid="uid://c23qnh3qcgkaa" path="res://resources/enemy/attack/Phantom Rush.tres" id="2_qjsmb"]
 [ext_resource type="Resource" uid="uid://besl07w08l6s" path="res://resources/player/jump/default.tres" id="3_8svfe"]
 [ext_resource type="Script" uid="uid://beortrl7adiim" path="res://scripts/components/buffer_component.gd" id="3_f1ej7"]
 [ext_resource type="Resource" uid="uid://baj5x6gblv2ke" path="res://resources/player/skills/sequence/skill_y.tres" id="3_mwp2n"]
@@ -76,12 +76,12 @@
 [ext_resource type="Script" uid="uid://c4isdgib4nmf7" path="res://scripts/states/air_attack_state.gd" id="77_jlll7"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4gjji"]
-radius = 30.0
-height = 100.0
+radius = 50.0
+height = 125.0
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_mwp2n"]
-radius = 30.0
-height = 100.0
+radius = 50.0
+height = 125.0
 
 [sub_resource type="Resource" id="Resource_md1ol"]
 script = ExtResource("21_487ah")
@@ -179,6 +179,7 @@ trauma_att_none = 0.5
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
 position = Vector2(0, -50)
+rotation = 1.5708
 shape = SubResource("CapsuleShape2D_4gjji")
 
 [node name="Hurtbox" type="Area2D" parent="Player"]
@@ -188,6 +189,7 @@ script = ExtResource("24_l71n6")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player/Hurtbox"]
 position = Vector2(0, -50)
+rotation = 1.5708
 shape = SubResource("CapsuleShape2D_mwp2n")
 
 [node name="AttackHitbox" type="Area2D" parent="Player"]
@@ -282,8 +284,7 @@ metadata/_custom_type_script = "uid://dhdu4hixec0wa"
 script = ExtResource("44_51ujp")
 
 [node name="RayCast2D" type="RayCast2D" parent="Player/WallDetectorComponent"]
-visible = false
-target_position = Vector2(60, 0)
+target_position = Vector2(70, 0)
 
 [node name="AirMobilityComponent" type="Node" parent="Player"]
 script = ExtResource("55_0yhus")

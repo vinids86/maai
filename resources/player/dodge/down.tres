@@ -12,6 +12,6 @@ recovery_movement_velocity = Vector2(0, 0)
 stamina_cost = 15.0
 focus_cost = 0.0
 poise_shield_contribution = 5.0
-animation_name = &""
+animation_name = &"dodge_down"
 active_sfx = ExtResource("1_ts5f0")
 metadata/_custom_type_script = "uid://fxnxrf24bhpp"
