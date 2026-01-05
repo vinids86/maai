@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=4 uid="uid://gso5pxfd31n5"]
+[gd_scene load_steps=40 format=4 uid="uid://gso5pxfd31n5"]
 
 [ext_resource type="PackedScene" uid="uid://btbeu0xdkpisq" path="res://scenes/player.tscn" id="1_dhed4"]
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="2_7od0s"]
@@ -22,6 +22,7 @@
 [ext_resource type="PackedScene" uid="uid://by2iisxspfs2r" path="res://scripts/platform/flying_aggressive_enemy.tscn" id="19_lc6wr"]
 [ext_resource type="PackedScene" uid="uid://bs1683iw0jpyk" path="res://scripts/platform/ranged_enemy.tscn" id="21_wuj60"]
 [ext_resource type="PackedScene" uid="uid://bjmqhqe7drmvr" path="res://scenes/scenario.tscn" id="22_lyr1n"]
+[ext_resource type="Shader" uid="uid://cmipnwhd5tvpm" path="res://shaders/wind_sway.gdshader" id="23_21iic"]
 [ext_resource type="PackedScene" uid="uid://bx6f2vpef7lk4" path="res://scripts/platform/spikes.tscn" id="25_1woli"]
 [ext_resource type="Texture2D" uid="uid://cmxt1s1qfdmhl" path="res://assets/world/foregound/mushroom02.png" id="31_m83ls"]
 [ext_resource type="Texture2D" uid="uid://k8fj47p8brvp" path="res://assets/world/foregound/dry grass.png" id="32_n133k"]
@@ -398,6 +399,86 @@ sources/1 = SubResource("TileSetAtlasSource_tuvrf")
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_m2w8e"]
 size = Vector2(5292, 1142)
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ai0je"]
+shader = ExtResource("23_21iic")
+shader_parameter/minStrength = 0.05
+shader_parameter/maxStrength = 0.1
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_21iic"]
+shader = ExtResource("23_21iic")
+shader_parameter/minStrength = 0.05
+shader_parameter/maxStrength = 0.1
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4y57a"]
+shader = ExtResource("23_21iic")
+shader_parameter/minStrength = 0.05
+shader_parameter/maxStrength = 0.1
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7wfr8"]
+shader = ExtResource("23_21iic")
+shader_parameter/minStrength = 0.05
+shader_parameter/maxStrength = 0.1
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_aq8cb"]
+shader = ExtResource("23_21iic")
+shader_parameter/minStrength = 0.05
+shader_parameter/maxStrength = 0.1
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_m83ls"]
+shader = ExtResource("23_21iic")
+shader_parameter/minStrength = 0.05
+shader_parameter/maxStrength = 0.1
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_n133k"]
+shader = ExtResource("23_21iic")
+shader_parameter/minStrength = 0.05
+shader_parameter/maxStrength = 0.1
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mycjd"]
+shader = ExtResource("23_21iic")
+shader_parameter/minStrength = 0.05
+shader_parameter/maxStrength = 0.1
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
+
 [sub_resource type="Environment" id="Environment_1woli"]
 background_mode = 3
 tonemap_mode = 1
@@ -423,7 +504,7 @@ adjustment_saturation = 1.18
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(33806, 1063)
+position = Vector2(34750, 1709)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -501,7 +582,7 @@ point_b_node = NodePath("../../../../Markers/PatrolPointB")
 target_position = Vector2(45, 0)
 
 [node name="AggressiveEnemy" parent="Enemys" instance=ExtResource("18_eguil")]
-position = Vector2(3860, 1100)
+position = Vector2(-1205, 349)
 
 [node name="FlyingAggressiveEnemy" parent="Enemys" instance=ExtResource("19_lc6wr")]
 position = Vector2(15687, 770)
@@ -593,41 +674,49 @@ texture = ExtResource("31_m83ls")
 
 [node name="DryGrass" type="Sprite2D" parent="ScenarioObjects"]
 z_index = -1
+material = SubResource("ShaderMaterial_ai0je")
 position = Vector2(2775, 1191)
 texture = ExtResource("32_n133k")
 
 [node name="DryGrass2" type="Sprite2D" parent="ScenarioObjects"]
 z_index = -1
+material = SubResource("ShaderMaterial_21iic")
 position = Vector2(2775, 1191)
 texture = ExtResource("32_n133k")
 
 [node name="DryGrass3" type="Sprite2D" parent="ScenarioObjects"]
 z_index = -1
+material = SubResource("ShaderMaterial_4y57a")
 position = Vector2(3263, 1191)
 texture = ExtResource("32_n133k")
 
 [node name="DryGrass4" type="Sprite2D" parent="ScenarioObjects"]
 z_index = -1
+material = SubResource("ShaderMaterial_7wfr8")
 position = Vector2(2706, 1196)
 texture = ExtResource("32_n133k")
 
 [node name="DryGrass5" type="Sprite2D" parent="ScenarioObjects"]
 z_index = -1
+material = SubResource("ShaderMaterial_aq8cb")
 position = Vector2(3343, 1191)
 texture = ExtResource("32_n133k")
 
 [node name="DryGrass6" type="Sprite2D" parent="ScenarioObjects"]
 z_index = -1
+material = SubResource("ShaderMaterial_m83ls")
 position = Vector2(2857, 1192)
 texture = ExtResource("32_n133k")
 
 [node name="DryGrass7" type="Sprite2D" parent="ScenarioObjects"]
 z_index = -1
+material = SubResource("ShaderMaterial_n133k")
 position = Vector2(2936, 1191)
 texture = ExtResource("32_n133k")
 
 [node name="DryGrass8" type="Sprite2D" parent="ScenarioObjects"]
 z_index = -1
+material = SubResource("ShaderMaterial_mycjd")
 position = Vector2(3015, 1191)
 texture = ExtResource("32_n133k")
 

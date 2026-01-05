@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://bjmqhqe7drmvr"]
+[gd_scene load_steps=13 format=3 uid="uid://bjmqhqe7drmvr"]
 
 [ext_resource type="Texture2D" uid="uid://dg0gyl0i6ohsl" path="res://assets/world/11_background.png" id="1_erb6a"]
 [ext_resource type="Texture2D" uid="uid://cli73gksd0266" path="res://assets/world/10_distant_clouds.png" id="2_po40u"]
@@ -7,8 +7,29 @@
 [ext_resource type="Texture2D" uid="uid://i006p50t5agr" path="res://assets/world/06_hill2.png" id="5_jnf8s"]
 [ext_resource type="Texture2D" uid="uid://tcj3a1un38jk" path="res://assets/world/05_hill1.png" id="6_ssvir"]
 [ext_resource type="Texture2D" uid="uid://be81i1cjpxhuj" path="res://assets/world/03_distant_trees.png" id="7_ewb5q"]
+[ext_resource type="Shader" uid="uid://cmipnwhd5tvpm" path="res://shaders/wind_sway.gdshader" id="8_po40u"]
 [ext_resource type="Texture2D" uid="uid://hyrs4tb66pfn" path="res://assets/world/02_trees and bushes.png" id="8_vmu77"]
 [ext_resource type="Texture2D" uid="uid://ckr5k06fml5gs" path="res://assets/world/08_clouds.png" id="9_jx64g"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_po40u"]
+shader = ExtResource("8_po40u")
+shader_parameter/minStrength = 0.015
+shader_parameter/maxStrength = 0.01
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4vq4d"]
+shader = ExtResource("8_po40u")
+shader_parameter/minStrength = 0.015
+shader_parameter/maxStrength = 0.01
+shader_parameter/strengthScale = 100.0
+shader_parameter/interval = 3.5
+shader_parameter/detail = 1.0
+shader_parameter/distortion = 0.0
+shader_parameter/heightOffset = 0.0
 
 [node name="Scenario" type="Node"]
 
@@ -109,10 +130,12 @@ centered = false
 motion_mirroring = Vector2(4096, 0)
 
 [node name="Sprite2D" type="Sprite2D" parent="ParallaxBackground/TreeBushes"]
+material = SubResource("ShaderMaterial_po40u")
 texture = ExtResource("8_vmu77")
 centered = false
 
 [node name="Sprite2D2" type="Sprite2D" parent="ParallaxBackground/TreeBushes"]
+material = SubResource("ShaderMaterial_4vq4d")
 position = Vector2(2048, 0)
 texture = ExtResource("8_vmu77")
 centered = false

@@ -156,3 +156,14 @@ camera_look_down={
 
 renderer/rendering_method="mobile"
 viewport/hdr_2d=true
+
+[shader_globals]
+
+global_wind_speed={
+"type": "float",
+"value": 2.0
+}
+global_wind_strength={
+"type": "float",
+"value": 3.0
+}
