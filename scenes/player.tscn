@@ -1,4 +1,4 @@
-[gd_scene load_steps=79 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=80 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="2_g2els"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" uid="uid://mqtxcxisr6ph" path="res://scripts/states/dodge_state.gd" id="6_tuyoq"]
 [ext_resource type="Resource" uid="uid://cw10wx6p10d4y" path="res://resources/player/dodge/neutral.tres" id="7_fjrip"]
 [ext_resource type="Resource" uid="uid://bqjgtxke4um5v" path="res://resources/player/parried/default.tres" id="7_gl8cc"]
+[ext_resource type="Resource" uid="uid://cijq6auuhegw7" path="res://resources/player/locomotion/default_exploration.tres" id="7_mwp2n"]
 [ext_resource type="AudioStream" uid="uid://dbm1xt5hw8dp0" path="res://audio/dodge.wav" id="8_770dr"]
 [ext_resource type="Resource" uid="uid://brr4qpn5yk0mn" path="res://resources/player/dodge/forward.tres" id="8_d2wvv"]
 [ext_resource type="Resource" uid="uid://h5j4chnrxexj" path="res://resources/player/dodge/back.tres" id="9_3v2ag"]
@@ -137,6 +138,7 @@ buffer_component = NodePath("BufferComponent")
 surface_contact_component = NodePath("SurfaceContactComponent")
 wall_detector = NodePath("WallDetectorComponent")
 locomotion_profile = ExtResource("9_487ah")
+exploration_locomotion_profile = ExtResource("7_mwp2n")
 jump_profile = ExtResource("3_8svfe")
 wall_slide_profile = ExtResource("16_ua5cf")
 finisher_profile = ExtResource("29_gl8cc")

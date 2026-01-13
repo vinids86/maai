@@ -23,12 +23,16 @@ extends Actor
 @export var running_jump_profile: JumpProfile
 @export var dash_profile: DashProfile
 
+var is_sheathed: bool = true
+
 func _ready():
-	super() # Chama validações do Actor
+	super() 
 	
 	GameManager.player_node = self
 	
-	# Setup de componentes existentes
+	# Conexão para gerenciar a postura (sheathed/unsheathed)
+	state_machine.transitioned.connect(_on_state_machine_transitioned)
+	
 	animation_component.setup(state_machine, spine_sprite)
 	
 	action_cost_validator.setup(stamina_component, focus_component)
@@ -58,12 +62,6 @@ func _physics_process(delta: float):
 	
 	var logic_velocity = state_machine.process_physics(delta, walk_direction, is_running)
 	
-	var root_motion_states = ["AttackState"]
-	
-	var current_state_name = ""
-	if state_machine.current_state:
-		current_state_name = state_machine.current_state.name
-	
 	velocity = logic_velocity
 
 	move_and_slide()
@@ -76,7 +74,6 @@ func process_root_motion(delta: float):
 	var motion_x = root_bone.get_x()
 	var motion_y = root_bone.get_y()
 	
-	# Zera o osso visualmente para não "duplicar" o movimento
 	root_bone.set_x(0)
 	root_bone.set_y(0)
 	
@@ -84,17 +81,12 @@ func process_root_motion(delta: float):
 		velocity.x = 0
 		return
 
-	# CORREÇÃO PRINCIPAL:
-	# Multiplicamos pela escala do Nó (se você diminuiu o boneco na cena)
-	# E pela escala do Esqueleto (se o boneco estiver espelhado/virado)
 	var final_scale_x = spine_sprite.scale.x * skeleton.get_scale_x()
 	var final_scale_y = spine_sprite.scale.y * skeleton.get_scale_y()
 	
-	# Aplica o movimento ajustado pela escala e pelo seu multiplicador manual
 	velocity.x = (motion_x * final_scale_x * 0.3) / delta
 	
-	# Para o Y, geralmente queremos manter a gravidade se o movimento da animação for pífio
-	if abs(motion_y) > 1.0: # Só aplica se mover mais que 1 pixel no Spine
+	if abs(motion_y) > 1.0:
 		velocity.y = (motion_y * final_scale_y * 0.3) / delta
 
 func _build_skill_dictionary():
@@ -103,10 +95,24 @@ func _build_skill_dictionary():
 	if skill_a: _equipped_skills["skill_a"] = skill_a
 	if skill_b: _equipped_skills["skill_b"] = skill_b
 
-# --- GETTERS NECESSÁRIOS PARA O INPUT COMPONENT ---
+# --- GETTERS ---
 
 func get_dash_profile() -> DashProfile:
 	return dash_profile
 
 func get_equipped_skills() -> Dictionary:
 	return _equipped_skills
+
+# Lógica de seleção de perfil baseada na postura (sobrescreve Actor)
+func get_locomotion_profile() -> LocomotionProfile:
+	if is_sheathed and exploration_locomotion_profile:
+		return exploration_locomotion_profile
+	return locomotion_profile
+
+# Listener da StateMachine para atualizar a postura
+func _on_state_machine_transitioned(_from_state: State, to_state: State):
+	match to_state.name:
+		"DashState":
+			is_sheathed = true # Dash embainha
+		"AttackState", "ParryState", "AirAttackState":
+			is_sheathed = false # Combate desembainha

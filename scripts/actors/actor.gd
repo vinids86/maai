@@ -35,6 +35,7 @@ extends CharacterBody2D
 
 @export_group("Profiles - Movement")
 @export var locomotion_profile: LocomotionProfile
+@export var exploration_locomotion_profile: LocomotionProfile
 @export var jump_profile: JumpProfile
 @export var wall_slide_profile: WallSlideProfile
 # Nota: Player tem running_jump, Enemy não. Mantemos o básico aqui.

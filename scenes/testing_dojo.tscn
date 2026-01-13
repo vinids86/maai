@@ -504,7 +504,7 @@ adjustment_saturation = 1.18
 [node name="Node2D" type="Node2D"]
 
 [node name="PlayerEntity" parent="." instance=ExtResource("1_dhed4")]
-position = Vector2(34750, 1709)
+position = Vector2(28900, 1018)
 
 [node name="Player" parent="PlayerEntity" index="0"]
 position = Vector2(-28429, 163)
@@ -548,13 +548,13 @@ position = Vector2(7347, 1882)
 position = Vector2(-10825, 1054)
 
 [node name="SimpleEnemy2" parent="Enemys" instance=ExtResource("17_5ycas")]
-position = Vector2(-608, 405)
+position = Vector2(2050, 1094)
 
 [node name="SimpleEnemy3" parent="Enemys" instance=ExtResource("17_5ycas")]
-position = Vector2(-890, 610)
+position = Vector2(3484, 1172)
 
 [node name="SimpleEnemy4" parent="Enemys" instance=ExtResource("17_5ycas")]
-position = Vector2(2588, 766)
+position = Vector2(6726, 1007)
 
 [node name="EnemyJoke1" parent="Enemys" instance=ExtResource("15_m2w8e")]
 position = Vector2(-14709, 1010)
