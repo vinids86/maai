@@ -161,7 +161,6 @@ position_smoothing_enabled = true
 script = ExtResource("23_8f1cb")
 preset = 2
 exploration_zoom = Vector2(0.6, 0.6)
-combat_cooldown = 1.5
 
 [node name="SpineSprite" type="SpineSprite" parent="Player"]
 skeleton_data_res = ExtResource("24_mwp2n")

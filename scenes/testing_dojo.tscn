@@ -548,7 +548,7 @@ position = Vector2(7347, 1882)
 position = Vector2(-10825, 1054)
 
 [node name="SimpleEnemy2" parent="Enemys" instance=ExtResource("17_5ycas")]
-position = Vector2(2050, 1094)
+position = Vector2(1466, 1207)
 
 [node name="SimpleEnemy3" parent="Enemys" instance=ExtResource("17_5ycas")]
 position = Vector2(3484, 1172)
@@ -566,17 +566,13 @@ position = Vector2(-13794, 969)
 position = Vector2(-12806, 965)
 
 [node name="FlyingEnemy" parent="Enemys" instance=ExtResource("17_eguil")]
-position = Vector2(6637, 307)
+position = Vector2(2914, 1064)
 
 [node name="CollisionShape2D" parent="Enemys/FlyingEnemy" index="1"]
 visible = false
 
 [node name="SimpleStaggerState" parent="Enemys/FlyingEnemy/SimpleStateMachine" index="2"]
 knockback_multiplier = 0.5
-
-[node name="SimplePatrolFlyState" parent="Enemys/FlyingEnemy/SimpleStateMachine" index="4"]
-point_a_node = NodePath("../../../../Markers/PatrolPointA")
-point_b_node = NodePath("../../../../Markers/PatrolPointB")
 
 [node name="RayCast2D" parent="Enemys/FlyingEnemy/WallDetectorComponent" index="0"]
 target_position = Vector2(45, 0)
@@ -601,7 +597,7 @@ position = Vector2(40, 0)
 position = Vector2(8518, 221)
 
 [node name="FlyingEnemy2" parent="Enemys" instance=ExtResource("17_eguil")]
-position = Vector2(2589, 1041)
+position = Vector2(3565, 1054)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -650,12 +646,6 @@ position = Vector2(-2537, -33)
 position = Vector2(-1724, -20)
 
 [node name="Markers" type="Node" parent="."]
-
-[node name="PatrolPointA" type="Marker2D" parent="Markers"]
-position = Vector2(6634, 255)
-
-[node name="PatrolPointB" type="Marker2D" parent="Markers"]
-position = Vector2(7486, 255)
 
 [node name="AggressivePatrolPointA" type="Marker2D" parent="Markers"]
 position = Vector2(15027, 670)

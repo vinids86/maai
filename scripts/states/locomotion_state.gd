@@ -7,7 +7,13 @@ enum Phases { IDLE, WALK, RUN }
 var current_phase: Phases = Phases.IDLE
 
 func enter(args: Dictionary = {}):
-	self.current_profile = args.get("profile")
+	# Tenta pegar do argumento, senão pega o atual do ator
+	var arg_profile = args.get("profile")
+	if arg_profile:
+		self.current_profile = arg_profile
+	else:
+		self.current_profile = owner_node.get_locomotion_profile()
+		
 	if not current_profile:
 		push_warning("LocomotionState: Não recebeu um LocomotionProfile. A abortar.")
 		return	
@@ -17,6 +23,16 @@ func process_physics(delta: float, walk_direction: float, is_running: bool) -> V
 	if not owner_node.is_on_floor():
 		state_machine.on_current_state_finished({ "outcome": "FELL_OFF" })
 		return owner_node.velocity
+
+	# --- ATUALIZAÇÃO DINÂMICA DE PERFIL (POLLING) ---
+	# Verifica se o perfil que o ator quer usar mudou (ex: entrou/saiu de combate)
+	var desired_profile = owner_node.get_locomotion_profile()
+	if desired_profile != current_profile and desired_profile != null:
+		# Atualiza o perfil localmente
+		current_profile = desired_profile
+		# Força atualização da fase para refletir novas animações/velocidades imediatamente
+		_change_phase(current_phase) 
+	# -----------------------------------------------
 
 	var new_velocity = owner_node.velocity
 	new_velocity = physics_component.apply_gravity(new_velocity, delta)

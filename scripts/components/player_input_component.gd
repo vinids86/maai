@@ -142,6 +142,7 @@ func _handle_debug_vfx() -> void:
 func _on_hold_input_timer_timeout() -> void:
 	if Input.is_action_pressed("dodge"):
 		player.is_running = true
+		player.sheath_weapon()
 
 func _on_run_cancel_timer_timeout() -> void:
 	player.is_running = false

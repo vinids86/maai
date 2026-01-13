@@ -19,11 +19,8 @@ var _time_accum := 0.0
 @export var exploration_zoom: Vector2 = Vector2(0.65, 0.65)
 @export var combat_zoom: Vector2 = Vector2(1.0, 1.0)
 @export var zoom_speed: float = 2.0
-@export var combat_cooldown: float = 3.0
 
-var _combat_timer: float = 0.0
-var _is_in_combat_mode: bool = false : set = _set_combat_mode
-var _enemies_in_combat: Array[Node] = []
+var _is_in_combat_mode: bool = false
 
 var _override_zoom_target: Vector2
 var _override_timer: float = 0.0
@@ -51,6 +48,9 @@ func _ready():
 	zoom = exploration_zoom
 	
 	_setup_cinematic_bars()
+	
+	# Conexão com o GameManager para ouvir mudanças de estado
+	GameManager.combat_state_changed.connect(_on_combat_state_changed)
 
 func set_preset(value):
 	preset = value
@@ -75,7 +75,6 @@ func add_trauma(amount: float = 0.35) -> void:
 	trauma = clamp(trauma + amount, 0.0, 1.0)
 
 func _process(delta: float) -> void:    
-	_update_combat_state(delta)
 	_update_zoom(delta)
 	_process_manual_peek(delta)
 
@@ -114,20 +113,6 @@ func _process_manual_peek(delta: float) -> void:
 		var target_peek = input_vector.normalized() * max_peek_offset
 		_peek_offset = _peek_offset.lerp(target_peek, peek_smooth_speed * delta)
 
-func _update_combat_state(delta: float) -> void:
-	for i in range(_enemies_in_combat.size() - 1, -1, -1):
-		if not is_instance_valid(_enemies_in_combat[i]):
-			_enemies_in_combat.remove_at(i)
-
-	if _enemies_in_combat.size() > 0:
-		_is_in_combat_mode = true
-		_combat_timer = combat_cooldown
-	else:
-		if _combat_timer > 0:
-			_combat_timer -= delta
-		else:
-			_is_in_combat_mode = false
-
 func _update_zoom(delta: float) -> void:
 	var target_zoom: Vector2
 	var current_speed = zoom_speed
@@ -143,19 +128,7 @@ func _update_zoom(delta: float) -> void:
 		
 	zoom = zoom.lerp(target_zoom, current_speed * delta)
 
-func register_enemy_aggro(enemy: Node) -> void:
-	if not _enemies_in_combat.has(enemy):
-		_enemies_in_combat.append(enemy)
-		_is_in_combat_mode = true
-		_combat_timer = combat_cooldown
-
-func unregister_enemy_aggro(enemy: Node) -> void:
-	if _enemies_in_combat.has(enemy):
-		_enemies_in_combat.erase(enemy)
-
-func force_combat_mode(duration: float = 5.0) -> void:
-	_is_in_combat_mode = true
-	_combat_timer = max(_combat_timer, duration)
+# --- FUNÇÕES DE OVERRIDE ---
 
 func request_zoom_override(zoom_value: Vector2, duration: float) -> void:
 	_override_zoom_target = zoom_value
@@ -163,6 +136,8 @@ func request_zoom_override(zoom_value: Vector2, duration: float) -> void:
 
 func on_enemy_death_zoom_out(duration: float = 1.5) -> void:
 	request_zoom_override(exploration_zoom, duration)
+
+# --- CINEMATIC BARS ---
 
 func _setup_cinematic_bars() -> void:
 	_cinematic_layer = CanvasLayer.new()
@@ -183,12 +158,12 @@ func _setup_cinematic_bars() -> void:
 	_bottom_bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	_cinematic_layer.add_child(_bottom_bar)
 
-func _set_combat_mode(value: bool) -> void:
-	if _is_in_combat_mode == value:
-		return
-		
-	_is_in_combat_mode = value
-	
+# Callback conectado ao sinal do GameManager
+func _on_combat_state_changed(is_combat: bool) -> void:
+	_is_in_combat_mode = is_combat
+	_update_cinematic_bars()
+
+func _update_cinematic_bars() -> void:
 	if not is_inside_tree(): return
 
 	var vp_size = get_viewport_rect().size

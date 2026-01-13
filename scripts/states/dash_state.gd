@@ -129,7 +129,6 @@ func process_physics(delta: float, _walk_direction: float, _is_running: bool) ->
 
 # --- IMPACT RESOLVER CALLBACK ---
 func handle_attack_outcome(result: ContactResult) -> void:
-	print("handle_attack_outcome")
 	# Confirma que foi o ataque do Dash
 	if result.attack_profile == owner_node.get("dash_attack_profile"):
 		var target = result.defender_node
