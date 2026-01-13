@@ -23,6 +23,9 @@ extends Actor
 @export var running_jump_profile: JumpProfile
 @export var dash_profile: DashProfile
 
+# Sinais para ações visuais de postura (Spine Track 1)
+signal posture_action_triggered(action_name: String)
+
 var is_sheathed: bool = true
 
 func _ready():
@@ -69,6 +72,29 @@ func _physics_process(delta: float):
 
 	move_and_slide()
 
+func process_root_motion(delta: float):
+	var skeleton = spine_sprite.get_skeleton()
+	if not skeleton: return
+	
+	var root_bone = skeleton.find_bone("root")
+	var motion_x = root_bone.get_x()
+	var motion_y = root_bone.get_y()
+	
+	root_bone.set_x(0)
+	root_bone.set_y(0)
+	
+	if motion_x == 0 and motion_y == 0:
+		velocity.x = 0
+		return
+
+	var final_scale_x = spine_sprite.scale.x * skeleton.get_scale_x()
+	var final_scale_y = spine_sprite.scale.y * skeleton.get_scale_y()
+	
+	velocity.x = (motion_x * final_scale_x * 0.3) / delta
+	
+	if abs(motion_y) > 1.0:
+		velocity.y = (motion_y * final_scale_y * 0.3) / delta
+
 func _build_skill_dictionary():
 	if skill_x: _equipped_skills["skill_x"] = skill_x
 	if skill_y: _equipped_skills["skill_y"] = skill_y
@@ -93,16 +119,31 @@ func get_locomotion_profile() -> LocomotionProfile:
 func _on_state_machine_transitioned(_from_state: State, to_state: State):
 	match to_state.name:
 		"DashState":
-			is_sheathed = true 
+			# O Dash geralmente embainha para mobilidade, mas não força animação se já estiver em combate
+			pass 
 		"AttackState", "ParryState", "AirAttackState":
-			is_sheathed = false
+			if is_sheathed:
+				unsheath_weapon()
 
 # Callback global de mudança de tensão
 func _on_combat_state_changed(is_in_combat: bool) -> void:
 	if not is_in_combat:
+		# Se saiu do combate, embainha a arma automaticamente
 		sheath_weapon()
+	# Opcional: Se entrou em combate, poderíamos chamar unsheath_weapon() aqui
+	# Mas geralmente jogos deixam o jogador desembainhar ao atacar.
 
 func sheath_weapon() -> void:
 	if not is_sheathed:
 		is_sheathed = true
+		posture_action_triggered.emit("sheath_anim")
 		print("Player: Arma embainhada (Fim de Combate)")
+
+func unsheath_weapon() -> void:
+	if is_sheathed:
+		is_sheathed = false
+		# Nota: Muitas vezes a própria animação de ataque já inclui o sacar da arma,
+		# então talvez não precisemos de uma animação de transição aqui se for instantâneo.
+		# Mas se quiser ter uma animação de "entrar em postura de combate" sem atacar:
+		# posture_action_triggered.emit("unsheath_anim")
+		print("Player: Arma desembainhada (Início de Combate/Ação)")
