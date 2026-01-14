@@ -32,15 +32,10 @@ func _ready():
 	super() 
 	
 	GameManager.register_player(self)
-	
-	# Conexão para gerenciar a postura (sheathed/unsheathed) via State Machine
+	GameManager.combat_state_changed.connect(_on_combat_state_changed)
 	state_machine.transitioned.connect(_on_state_machine_transitioned)
 	
-	# Conexão Global de Tensão de Batalha (Novo Sistema)
-	GameManager.combat_state_changed.connect(_on_combat_state_changed)
-	
 	animation_component.setup(state_machine, spine_sprite)
-	
 	action_cost_validator.setup(stamina_component, focus_component)
 	state_machine.initialize(self)
 	
@@ -109,41 +104,30 @@ func get_dash_profile() -> DashProfile:
 func get_equipped_skills() -> Dictionary:
 	return _equipped_skills
 
-# Lógica de seleção de perfil baseada na postura (sobrescreve Actor)
 func get_locomotion_profile() -> LocomotionProfile:
 	if is_sheathed and exploration_locomotion_profile:
 		return exploration_locomotion_profile
 	return locomotion_profile
 
-# Listener da StateMachine para atualizar a postura (Ações diretas do jogador)
 func _on_state_machine_transitioned(_from_state: State, to_state: State):
 	match to_state.name:
 		"DashState":
-			# O Dash geralmente embainha para mobilidade, mas não força animação se já estiver em combate
-			pass 
+			pass
 		"AttackState", "ParryState", "AirAttackState":
 			if is_sheathed:
 				unsheath_weapon()
 
-# Callback global de mudança de tensão
 func _on_combat_state_changed(is_in_combat: bool) -> void:
 	if not is_in_combat:
-		# Se saiu do combate, embainha a arma automaticamente
 		sheath_weapon()
-	# Opcional: Se entrou em combate, poderíamos chamar unsheath_weapon() aqui
-	# Mas geralmente jogos deixam o jogador desembainhar ao atacar.
 
 func sheath_weapon() -> void:
 	if not is_sheathed:
 		is_sheathed = true
 		posture_action_triggered.emit("sheath_anim")
-		print("Player: Arma embainhada (Fim de Combate)")
 
 func unsheath_weapon() -> void:
 	if is_sheathed:
 		is_sheathed = false
-		# Nota: Muitas vezes a própria animação de ataque já inclui o sacar da arma,
-		# então talvez não precisemos de uma animação de transição aqui se for instantâneo.
-		# Mas se quiser ter uma animação de "entrar em postura de combate" sem atacar:
-		# posture_action_triggered.emit("unsheath_anim")
+		posture_action_triggered.emit("unsheath_anim")
 		print("Player: Arma desembainhada (Início de Combate/Ação)")

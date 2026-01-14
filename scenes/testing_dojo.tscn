@@ -578,7 +578,7 @@ knockback_multiplier = 0.5
 target_position = Vector2(45, 0)
 
 [node name="AggressiveEnemy" parent="Enemys" instance=ExtResource("18_eguil")]
-position = Vector2(-1205, 349)
+position = Vector2(2324, 1217)
 
 [node name="FlyingAggressiveEnemy" parent="Enemys" instance=ExtResource("19_lc6wr")]
 position = Vector2(15687, 770)
@@ -598,6 +598,12 @@ position = Vector2(8518, 221)
 
 [node name="FlyingEnemy2" parent="Enemys" instance=ExtResource("17_eguil")]
 position = Vector2(3565, 1054)
+
+[node name="FlyingEnemy3" parent="Enemys" instance=ExtResource("17_eguil")]
+position = Vector2(4023, 1050)
+
+[node name="FlyingEnemy4" parent="Enemys" instance=ExtResource("17_eguil")]
+position = Vector2(4409, 1087)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 

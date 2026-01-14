@@ -105,20 +105,15 @@ func _on_posture_action_triggered(action_name: String):
 	elif action_name == "unsheath_anim":
 		_clear_action_track()
 		
-		# --- CORREÇÃO CRÍTICA: Reaplicar animação base na Track 0 ---
-		# Quando limpamos a track 1, forçamos a Track 0 a se reafirmar visualmente.
-		# Isso resolve o problema de o Idle/Walk "sumir" ou travar.
 		var current_track_0 = animation_state.get_current(0)
 		if current_track_0:
 			var current_anim_name = current_track_0.get_animation().get_name()
-			# Reaplica a mesma animação para resetar qualquer interferência de mix
 			animation_state.set_animation(current_anim_name, _should_animation_loop(current_anim_name), 0)
 
 func _clear_action_track():
 	if not is_instance_valid(spine_sprite): return
 	var animation_state = spine_sprite.get_animation_state()
 	if animation_state:
-		# Limpeza absoluta da Track 1 com mix instantâneo (0.0)
 		animation_state.set_empty_animation(1, 0.0)
 
 func _enforce_sword_attachment_state(force: bool = false):
