@@ -1,4 +1,4 @@
-[gd_scene load_steps=86 format=3 uid="uid://c8w8nv36kjvjj"]
+[gd_scene load_steps=87 format=3 uid="uid://c8w8nv36kjvjj"]
 
 [ext_resource type="Script" uid="uid://b32n8s4pkaq3b" path="res://scripts/components/health_component.gd" id="1_7p1mj"]
 [ext_resource type="Script" uid="uid://tk10ftsl8y3a" path="res://scripts/actors/enemy.gd" id="1_md0e3"]
@@ -54,6 +54,7 @@
 [ext_resource type="Script" uid="uid://k7ywlbk605tf" path="res://scripts/components/air_combo_component.gd" id="34_5utat"]
 [ext_resource type="Script" uid="uid://7awh4v6bsojt" path="res://scripts/components/combo_component.gd" id="35_2sbpf"]
 [ext_resource type="Script" uid="uid://dhdu4hixec0wa" path="res://scripts/core/surface_contact_component.gd" id="35_5lniq"]
+[ext_resource type="Resource" uid="uid://b3vce87ik2lpk" path="res://resources/enemy/behaviors/boss_default.tres" id="36_2qahx"]
 [ext_resource type="Script" uid="uid://bcyyrvir8fm3w" path="res://scripts/components/wall_detector_component.gd" id="37_g0yyi"]
 [ext_resource type="Script" uid="uid://b72ucjj1gl7t2" path="res://scripts/states/sequence_state.gd" id="37_x6q4o"]
 [ext_resource type="Script" uid="uid://dtl5q4dyb0mxr" path="res://scripts/components/path_follower_component.gd" id="39_13roy"]
@@ -333,7 +334,7 @@ script = ExtResource("11_w8i8w")
 
 [node name="AIController" type="Node" parent="Enemy"]
 script = ExtResource("5_md484")
-behavior_id = 9
+behavior_profile = ExtResource("36_2qahx")
 default_attack_profile = ExtResource("40_2qahx")
 metadata/_custom_type_script = "uid://dewrlich57pgi"
 

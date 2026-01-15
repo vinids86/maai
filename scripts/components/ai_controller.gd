@@ -1,158 +1,26 @@
 class_name AIController
 extends Node
 
-enum BehaviorID {
-	ENEMY_INTRO_1,
-	ENEMY_INTRO_2,
-	ENEMY_INTRO_3,
-	ENEMY_MID_1,
-	ENEMY_MID_2,
-	ENEMY_ADV_1,
-	ENEMY_ADV_2,
-	ENEMY_ELITE_1,
-	ENEMY_ELITE_2,
-	BOSS_DEFAULT,
-	ENEMY_JOKE,
-}
-
-@export var behavior_id: BehaviorID = BehaviorID.ENEMY_INTRO_1
+# --- CONFIGURAÇÃO ---
+# Agora, a única fonte da verdade é o Resource.
+@export var behavior_profile: AIBehaviorProfile
 
 @export_group("Sequence Skill Counter")
 @export_range(0.0, 1.0) var sequence_parry_chance: float = 0.5
 
-const ALL_BEHAVIORS = {
-	BehaviorID.ENEMY_JOKE: {
-		"phase_1": [
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "block" }, { "defense": "block" }, { "defense": "block" },
-		],
-		"phase_2": [
-			{ "defense": "block" },
-		]
-	},
-	BehaviorID.ENEMY_INTRO_1: {
-		"phase_1": [
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_z" }, { "defense": "block" },
-			{ "defense": "parry" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "block" }
-		],
-		"phase_2": [
-			{ "defense": "block" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "block" },
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "block" }, { "defense": "parry" }
-		]
-	},
-	BehaviorID.ENEMY_INTRO_2: {
-		"phase_1": [
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "block" }, { "defense": "parry" },
-			{ "defense": "block" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
-		],
-		"phase_2": [
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" },
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
-		]
-	},
-	BehaviorID.ENEMY_INTRO_3: {
-		"phase_1": [
-			{ "defense": "block" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "parry" },
-			{ "defense": "block" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "parry" }
-		],
-		"phase_2": [
-			{ "defense": "parry" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "parry" },
-			{ "defense": "block" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "parry" },
-			{ "defense": "block" }, { "defense": "block" }
-		]
-	},
-	BehaviorID.ENEMY_MID_1: {
-		"phase_1": [
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" },
-			{ "defense": "block" }, { "defense": "parry", "riposte": "skill_x" }, { "defense": "block" }, { "defense": "parry" }
-		],
-		"phase_2": [
-			{ "defense": "block" }, { "defense": "parry", "riposte": "skill_x" }, { "defense": "block" }, { "defense": "parry" },
-			{ "defense": "block" }, { "defense": "parry", "riposte": "skill_x" }, { "defense": "block" }, { "defense": "parry" }
-		]
-	},
-	BehaviorID.ENEMY_MID_2: {
-		"phase_1": [
-			{ "defense": "block" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_x" },
-			{ "defense": "block" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
-		],
-		"phase_2": [
-			{ "defense": "parry", "riposte": "skill_x" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "parry", "riposte": "skill_x" },
-			{ "defense": "block" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
-		]
-	},
-	BehaviorID.ENEMY_ADV_1: {
-		"phase_1": [
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_y" }, { "defense": "block" },
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
-		],
-		"phase_2": [
-			{ "defense": "block" }, { "defense": "parry", "riposte": "skill_y" }, { "defense": "block" }, { "defense": "parry" },
-			{ "defense": "block" }, { "defense": "parry", "riposte": "skill_y" }, { "defense": "block" }, { "defense": "parry" }
-		]
-	},
-	BehaviorID.ENEMY_ADV_2: {
-		"phase_1": [
-			{ "defense": "block" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_y" },
-			{ "defense": "block" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "block" }
-		],
-		"phase_2": [
-			{ "defense": "parry", "riposte": "skill_y" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "parry", "riposte": "skill_y" },
-			{ "defense": "block" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
-		]
-	},
-	BehaviorID.ENEMY_ELITE_1: {
-		"phase_1": [
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_a" }, { "defense": "block" },
-			{ "defense": "block" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "parry" }
-		],
-		"phase_2": [
-			{ "defense": "block" }, { "defense": "parry", "riposte": "skill_a" }, { "defense": "block" }, { "defense": "parry" },
-			{ "defense": "block" }, { "defense": "parry", "riposte": "skill_a" }, { "defense": "block" }, { "defense": "parry" }
-		]
-	},
-	BehaviorID.ENEMY_ELITE_2: {
-		"phase_1": [
-			{ "defense": "block" }, { "defense": "parry" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_a" },
-			{ "defense": "block" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
-		],
-		"phase_2": [
-			{ "defense": "parry", "riposte": "skill_a" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_a" },
-			{ "defense": "parry", "riposte": "skill_a" }, { "defense": "block" }, { "defense": "block" }, { "defense": "parry" }, { "defense": "block" }
-		]
-	},
-	BehaviorID.BOSS_DEFAULT: {
-		"phase_1": [
-			{ "defense": "parry", "riposte": "normal_attack" }, { "defense": "block" }, { "defense": "block" },
-			{ "defense": "parry", "riposte": "normal_attack" }, { "defense": "block" }, { "defense": "parry", "riposte": "normal_attack" },
-			{ "defense": "block" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_x" }, { "defense": "block" },
-			{ "defense": "parry", "riposte": "normal_attack" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_y" },
-			{ "defense": "block" }, { "defense": "parry", "riposte": "normal_attack" }, { "defense": "parry", "riposte": "skill_a" },
-			{ "defense": "block" }, { "defense": "parry", "riposte": "skill_b" }, { "defense": "block" }
-		],
-		"phase_2": [
-			{ "defense": "parry" }, { "defense": "block" }, { "defense": "parry", "riposte": "normal_attack" }, { "defense": "block" },
-			{ "defense": "parry", "riposte": "skill_x" }, { "defense": "block" }, { "defense": "parry", "riposte": "normal_attack" },
-			{ "defense": "parry", "riposte": "skill_y" }, { "defense": "block" }, { "defense": "parry", "riposte": "normal_attack" },
-			{ "defense": "block" }, { "defense": "parry", "riposte": "skill_b" }, { "defense": "block" }, { "defense": "parry", "riposte": "skill_y" },
-			{ "defense": "parry", "riposte": "skill_a" }, { "defense": "block" }, { "defense": "parry", "riposte": "normal_attack" }
-		]
-	}
-}
-
+# --- REFERÊNCIAS ---
 var _rng: RandomNumberGenerator
 var _owner_actor: Node
 @onready var _state_machine: StateMachine = get_parent().find_child("StateMachine")
 @onready var _detection_area: Area2D = get_parent().find_child("DetectionArea")
 @onready var _facing_component: FacingComponent = get_parent().find_child("FacingComponent")
 @onready var _combo_chain_timer: Timer = find_child("ComboChainTimer")
-
 @onready var _vision_component: VisionComponent = get_parent().find_child("VisionComponent")
 
 var _health_component: HealthComponent
 
-var _selected_behavior_data: Dictionary = {}
-var _current_behavior_sequence: Array = []
-
+# --- CONTROLE DE ESTADO DA IA ---
+var _current_behavior_sequence: Array = [] # Array de Dicionários vindo do Resource
 var _current_phase: String = ""
 var _behavior_sequence_counter: int = 0
 var _pending_riposte_action: String = ""
@@ -185,10 +53,11 @@ func _ready():
 	_owner_actor = get_parent()
 	assert(_owner_actor != null, "AIController must be a child of an actor node.")
 	
-	if not ALL_BEHAVIORS.has(behavior_id):
-		push_error("AIController: BehaviorID '%s' selecionado não existe no banco de dados ALL_BEHAVIORS." % behavior_id)
+	# Validação estrita do Profile
+	if not behavior_profile:
+		push_error("AIController CRÍTICO: Nenhum BehaviorProfile (.tres) atribuído para " + _owner_actor.name)
+		set_physics_process(false) # Desativa a IA se não tiver cérebro
 		return
-	_selected_behavior_data = ALL_BEHAVIORS[behavior_id]
 	
 	assert(_state_machine != null, "AIController: StateMachine not found in Enemy.")
 	assert(_detection_area != null, "AIController: Node 'DetectionArea' not found in Enemy.")
@@ -216,6 +85,7 @@ func _ready():
 	assert(_health_component != null, "AIController: HealthComponent not found in Enemy.")
 	_health_component.health_changed.connect(_on_owner_health_changed)
 	
+	# Inicializa a fase correta com base na vida atual
 	_on_owner_health_changed(_health_component.current_health, _health_component.max_health)
 
 	if is_instance_valid(GameManager.player_node):
@@ -226,10 +96,8 @@ func _ready():
 
 		var player_state_machine = GameManager.player_node.find_child("StateMachine")
 		if player_state_machine:
-			player_state_machine.transitioned.connect(func(f, t): _debug_log_player_state(f, t))
 			player_state_machine.phase_changed.connect(_on_player_phase_changed)
 	
-	_state_machine.transitioned.connect(func(f, t): _debug_log_ai_state(f, t))
 	_combo_chain_timer.timeout.connect(_on_ComboChainTimer_timeout)
 
 func _exit_tree():
@@ -240,6 +108,7 @@ func _physics_process(delta: float):
 	if not is_instance_valid(_owner_actor):
 		return
 
+	# Lógica de detecção de alvos
 	if not is_instance_valid(_current_target) and not _potential_targets.is_empty():
 		for candidate in _potential_targets:
 			if is_instance_valid(candidate):
@@ -253,12 +122,14 @@ func _physics_process(delta: float):
 	if not is_instance_valid(_current_target):
 		return
 
+	# Timers
 	if _cooldown_timer > 0:
 		_cooldown_timer -= delta
 	
 	if _is_preparing_attack:
 		_reaction_timer -= delta
 
+	# Decisão de Engajamento
 	var distance_to_target = _owner_actor.global_position.distance_to(_current_target.global_position)
 	
 	if distance_to_target <= engage_range:
@@ -303,11 +174,7 @@ func _reset_cooldown():
 	_cooldown_timer = _rng.randf_range(min_attack_cooldown, max_attack_cooldown)
 	_is_preparing_attack = false
 
-func _debug_log_player_state(f: State, t: State):
-	pass
-
-func _debug_log_ai_state(f: State, t: State):
-	pass
+# --- NAVEGAÇÃO ---
 
 func get_walk_direction() -> float:
 	if not _current_target or not is_instance_valid(_current_target):
@@ -321,6 +188,7 @@ func get_walk_direction() -> float:
 	if distance_x > stop_distance:
 		direction = sign(target_pos_x - my_pos_x)
 	
+	# Checagem de borda (Ledge)
 	if _owner_actor.is_on_floor() and direction != 0:
 		var test_transform = _owner_actor.global_transform
 		test_transform.origin.x += ledge_check_distance * direction
@@ -339,6 +207,8 @@ func is_running() -> bool:
 		
 	var distance_x = abs(_current_target.global_position.x - _owner_actor.global_position.x)
 	return distance_x > run_distance
+
+# --- DETECÇÃO ---
 
 func _check_and_set_target(body: Node2D) -> bool:
 	var is_player = false
@@ -365,7 +235,7 @@ func _check_and_set_target(body: Node2D) -> bool:
 
 func _engage_target(body: Node2D):
 	if _current_target == body:
-		return # Já é o alvo
+		return 
 		
 	_current_target = body
 	_facing_component.enable(body)
@@ -389,6 +259,8 @@ func _on_player_exited_detection_area(body: Node2D):
 		
 		GameManager.unregister_aggro(_owner_actor)
 
+# --- SISTEMA DE RESPOSTA A ATAQUES (DEFESA / RIPOSTE) ---
+
 func on_incoming_attack(attacker: CharacterBody2D, _hitbox: Hitbox):
 	_is_preparing_attack = false
 	_reset_cooldown()
@@ -396,6 +268,7 @@ func on_incoming_attack(attacker: CharacterBody2D, _hitbox: Hitbox):
 	_defending_sequence = false
 	_is_last_sequence_hit = false
 	
+	# Lógica contra Skill Sequence do Player (Chance de Parry no final)
 	var attacker_state_machine = attacker.find_child("StateMachine")
 	if attacker_state_machine and attacker_state_machine.current_state.name == "SequenceState":
 		if attacker_state_machine.current_state.has_method("is_performing_last_attack"):
@@ -411,6 +284,7 @@ func on_incoming_attack(attacker: CharacterBody2D, _hitbox: Hitbox):
 			var original_defense = current_step_data.get("defense", "block")
 			
 			if original_defense == "parry":
+				# CORREÇÃO AQUI: Usar 'current_step_data' em vez de 'current_step'
 				_pending_riposte_action = current_step_data.get("riposte", "normal_attack")
 			else:
 				_pending_riposte_action = "normal_attack"
@@ -422,6 +296,7 @@ func on_incoming_attack(attacker: CharacterBody2D, _hitbox: Hitbox):
 		else:
 			return
 	
+	# Lógica Padrão baseada na Sequência de Comportamento
 	if _current_behavior_sequence.is_empty(): return
 	if _is_in_attack_loop: return
 
@@ -435,6 +310,7 @@ func on_incoming_attack(attacker: CharacterBody2D, _hitbox: Hitbox):
 			_pending_riposte_action = current_step.get("riposte", "normal_attack")
 			_state_machine.on_parry_pressed(profile)
 	else:
+		# Se defendeu (bloqueou ou tomou hit), avança a sequência
 		_advance_sequence()
 
 func _on_phase_changed(phase_data: Dictionary):
@@ -463,21 +339,12 @@ func _on_phase_changed(phase_data: Dictionary):
 		if _defending_sequence:
 			if _is_last_sequence_hit:
 				if not _pending_riposte_action.is_empty():
-					var action_to_take: String = _pending_riposte_action
-					_pending_riposte_action = ""
-					
-					var combo_comp = _owner_actor.find_child("ComboComponent")
-					if combo_comp and combo_comp.has_method("reset_combo"):
-							combo_comp.reset_combo()
-
-					_is_in_attack_loop = (action_to_take == "normal_attack")
-					_execute_riposte_action(action_to_take)
+					_execute_riposte_logic()
 				else:
 					_advance_sequence()
 				
 				_defending_sequence = false 
 				_is_last_sequence_hit = false
-				
 			else:
 				_pending_riposte_action = ""
 				_reset_cooldown()
@@ -485,17 +352,7 @@ func _on_phase_changed(phase_data: Dictionary):
 				
 		else:
 			if not _pending_riposte_action.is_empty():
-				var action_to_take: String = _pending_riposte_action
-				_pending_riposte_action = ""
-				
-				var combo_comp = _owner_actor.find_child("ComboComponent")
-				if combo_comp and combo_comp.has_method("reset_combo"):
-						combo_comp.reset_combo()
-
-				_is_in_attack_loop = (action_to_take == "normal_attack")
-
-				_execute_riposte_action(action_to_take)
-
+				_execute_riposte_logic()
 			elif _pending_riposte_action.is_empty():
 				_advance_sequence()
 
@@ -507,6 +364,16 @@ func _on_phase_changed(phase_data: Dictionary):
 			combo_comp.reset_combo()
 		_execute_normal_attack()
 
+func _execute_riposte_logic():
+	var action_to_take: String = _pending_riposte_action
+	_pending_riposte_action = ""
+	
+	var combo_comp = _owner_actor.find_child("ComboComponent")
+	if combo_comp and combo_comp.has_method("reset_combo"):
+			combo_comp.reset_combo()
+
+	_is_in_attack_loop = (action_to_take == "normal_attack")
+	_execute_riposte_action(action_to_take)
 
 func _on_player_phase_changed(phase_data: Dictionary):
 	var player_state_name = phase_data.get("state_name")
@@ -529,6 +396,7 @@ func _on_player_phase_changed(phase_data: Dictionary):
 func _on_owner_health_changed(current_health: float, max_health: float):
 	var health_percentage: float = current_health / max_health
 	var new_phase = "phase_1" if health_percentage > 0.5 else "phase_2"
+	
 	if new_phase != _current_phase:
 		_combo_chain_timer.stop()
 		_set_behavior_phase(new_phase)
@@ -542,12 +410,14 @@ func _on_player_health_changed(current_health: float, _max_health: float):
 		reset_behavior_sequence()
 	_player_last_health = current_health
 
+# --- GERENCIAMENTO DE SEQUÊNCIA (CORE) ---
+
 func _set_behavior_phase(phase_name: String):
-	if not _selected_behavior_data.has(phase_name):
-		push_error("AIController: Fase '%s' não encontrada no BehaviorID '%s'." % [phase_name, behavior_id])
-		_current_behavior_sequence = []
+	if behavior_profile:
+		# Pega a lista convertida do Resource
+		_current_behavior_sequence = behavior_profile.get_sequence(phase_name)
 	else:
-		_current_behavior_sequence = _selected_behavior_data.get(phase_name)
+		_current_behavior_sequence = []
 
 	_current_phase = phase_name
 	_combo_chain_timer.stop()
@@ -562,7 +432,6 @@ func reset_behavior_sequence():
 	if combo_comp and combo_comp.has_method("reset_combo"):
 		combo_comp.reset_combo()
 
-
 func _advance_sequence():
 	_combo_chain_timer.stop()
 	_is_in_attack_loop = false
@@ -574,6 +443,7 @@ func _advance_sequence():
 	if combo_comp and combo_comp.has_method("reset_combo"):
 		combo_comp.reset_combo()
 
+# --- EXECUÇÃO DE AÇÕES ---
 
 func _execute_riposte_action(action_to_execute: String):
 	if action_to_execute == "normal_attack":
@@ -584,13 +454,11 @@ func _execute_riposte_action(action_to_execute: String):
 		_execute_skill(action_to_execute)
 		_advance_sequence()
 
-
 func _execute_skill(action_name: String):
 	var skill_to_use: BaseSkill = _owner_actor.get_skill(action_name)
 	if not skill_to_use:
 		return
 	skill_to_use.execute(_owner_actor, _state_machine)
-
 
 func _execute_normal_attack():
 	var combo_component = _owner_actor.find_child("ComboComponent")
@@ -612,11 +480,9 @@ func _execute_normal_attack():
 			if _is_in_attack_loop:
 				_advance_sequence()
 
-
 func _on_ComboChainTimer_timeout():
 	if _is_in_attack_loop:
 		_execute_normal_attack()
-
 
 func _unhandled_input(event: InputEvent):
 	if event.is_action_pressed("debug_reset_ai"):

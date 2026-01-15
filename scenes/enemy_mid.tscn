@@ -12,6 +12,3 @@ max_health = 25.0
 
 [node name="StaminaComponent" parent="Enemy" index="12"]
 max_stamina = 50.0
-
-[node name="AIController" parent="Enemy" index="13"]
-behavior_id = 3

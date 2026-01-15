@@ -1,6 +1,62 @@
-[gd_scene load_steps=2 format=3 uid="uid://cmg87qv8bor8o"]
+[gd_scene load_steps=13 format=3 uid="uid://cmg87qv8bor8o"]
 
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_v5fsh"]
+[ext_resource type="Script" uid="uid://b4mhqbfim11yd" path="res://scripts/profiles/ai_action_step.gd" id="2_ns88u"]
+[ext_resource type="Script" uid="uid://vnw6qasl8d3t" path="res://scripts/profiles/ai_behavior_profile.gd" id="3_fe54e"]
+
+[sub_resource type="Resource" id="Resource_48236"]
+script = ExtResource("2_ns88u")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_1s7td"]
+script = ExtResource("2_ns88u")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_g02tx"]
+script = ExtResource("2_ns88u")
+defense = "parry"
+riposte = "skill_z"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_jicec"]
+script = ExtResource("2_ns88u")
+defense = "block"
+riposte = " skill_z"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_aeq1d"]
+script = ExtResource("2_ns88u")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_lu15d"]
+script = ExtResource("2_ns88u")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_ptaj5"]
+script = ExtResource("2_ns88u")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_83r84"]
+script = ExtResource("2_ns88u")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_1kvug"]
+script = ExtResource("3_fe54e")
+phase_1 = Array[ExtResource("2_ns88u")]([SubResource("Resource_48236"), SubResource("Resource_1s7td"), SubResource("Resource_g02tx"), SubResource("Resource_jicec"), SubResource("Resource_aeq1d"), SubResource("Resource_lu15d"), SubResource("Resource_ptaj5"), SubResource("Resource_83r84")])
+phase_2 = Array[ExtResource("2_ns88u")]([])
+metadata/_custom_type_script = "uid://vnw6qasl8d3t"
 
 [node name="EnemyEntity" instance=ExtResource("1_v5fsh")]
 
@@ -15,4 +71,4 @@ max_health = 25.0
 max_stamina = 16.0
 
 [node name="AIController" parent="Enemy" index="13"]
-behavior_id = 0
+behavior_profile = SubResource("Resource_1kvug")

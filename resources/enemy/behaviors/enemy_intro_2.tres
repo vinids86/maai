@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="AIBehaviorProfile" load_steps=11 format=3 uid="uid://cxgfese8kqudk"]
+
+[ext_resource type="Script" uid="uid://b4mhqbfim11yd" path="res://scripts/profiles/ai_action_step.gd" id="1_c01xj"]
+[ext_resource type="Script" uid="uid://vnw6qasl8d3t" path="res://scripts/profiles/ai_behavior_profile.gd" id="2_82cp3"]
+
+[sub_resource type="Resource" id="Resource_c01xj"]
+script = ExtResource("1_c01xj")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_82cp3"]
+script = ExtResource("1_c01xj")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_j0kqy"]
+script = ExtResource("1_c01xj")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_ym3fk"]
+script = ExtResource("1_c01xj")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_25yft"]
+script = ExtResource("1_c01xj")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_kncw4"]
+script = ExtResource("1_c01xj")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_5ts2c"]
+script = ExtResource("1_c01xj")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_4q37y"]
+script = ExtResource("1_c01xj")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[resource]
+script = ExtResource("2_82cp3")
+phase_1 = Array[ExtResource("1_c01xj")]([SubResource("Resource_c01xj"), SubResource("Resource_82cp3"), SubResource("Resource_j0kqy"), SubResource("Resource_ym3fk"), SubResource("Resource_25yft"), SubResource("Resource_kncw4"), SubResource("Resource_5ts2c"), SubResource("Resource_4q37y")])
+phase_2 = Array[ExtResource("1_c01xj")]([])
+metadata/_custom_type_script = "uid://vnw6qasl8d3t"

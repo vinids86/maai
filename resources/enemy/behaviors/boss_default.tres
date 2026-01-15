@@ -1,0 +1,226 @@
+[gd_resource type="Resource" script_class="AIBehaviorProfile" load_steps=39 format=3 uid="uid://b3vce87ik2lpk"]
+
+[ext_resource type="Script" uid="uid://b4mhqbfim11yd" path="res://scripts/profiles/ai_action_step.gd" id="1_k86n7"]
+[ext_resource type="Script" uid="uid://vnw6qasl8d3t" path="res://scripts/profiles/ai_behavior_profile.gd" id="2_myh2o"]
+
+[sub_resource type="Resource" id="Resource_k86n7"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_myh2o"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_n0q4s"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_iorcs"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_84gsc"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_t4rdi"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_ejvnp"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_6eloq"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_bkvu6"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "skill_x"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_nnrum"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_gi8v8"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_f027b"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_sakhb"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "skill_y"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_u0sfl"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_moa81"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_poiig"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "skill_a"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_gxd61"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_um7tn"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "skill_b"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_led38"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_ly4rs"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_rxh2n"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_ffc15"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_52btv"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_a51aa"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "skill_x"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_ske64"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_i0oor"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_jjrx6"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "skill_y"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_523y8"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_ajxdm"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_na1f3"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_spa4c"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "skill_b"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_ua8uv"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_8ag2y"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "skill_y"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_js13x"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "skill_a"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_jokh2"]
+script = ExtResource("1_k86n7")
+defense = "block"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[sub_resource type="Resource" id="Resource_8087s"]
+script = ExtResource("1_k86n7")
+defense = "parry"
+riposte = "normal_attack"
+metadata/_custom_type_script = "uid://b4mhqbfim11yd"
+
+[resource]
+script = ExtResource("2_myh2o")
+phase_1 = Array[ExtResource("1_k86n7")]([SubResource("Resource_k86n7"), SubResource("Resource_myh2o"), SubResource("Resource_n0q4s"), SubResource("Resource_iorcs"), SubResource("Resource_84gsc"), SubResource("Resource_t4rdi"), SubResource("Resource_ejvnp"), SubResource("Resource_6eloq"), SubResource("Resource_bkvu6"), SubResource("Resource_nnrum"), SubResource("Resource_gi8v8"), SubResource("Resource_f027b"), SubResource("Resource_sakhb"), SubResource("Resource_u0sfl"), SubResource("Resource_moa81"), SubResource("Resource_poiig"), SubResource("Resource_gxd61"), SubResource("Resource_um7tn"), SubResource("Resource_led38")])
+phase_2 = Array[ExtResource("1_k86n7")]([SubResource("Resource_ly4rs"), SubResource("Resource_rxh2n"), SubResource("Resource_ffc15"), SubResource("Resource_52btv"), SubResource("Resource_a51aa"), SubResource("Resource_ske64"), SubResource("Resource_i0oor"), SubResource("Resource_jjrx6"), SubResource("Resource_523y8"), SubResource("Resource_ajxdm"), SubResource("Resource_na1f3"), SubResource("Resource_spa4c"), SubResource("Resource_ua8uv"), SubResource("Resource_8ag2y"), SubResource("Resource_js13x"), SubResource("Resource_jokh2"), SubResource("Resource_8087s")])
+metadata/_custom_type_script = "uid://vnw6qasl8d3t"

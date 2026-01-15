@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://dojo2btvv2tj0"]
+[gd_scene load_steps=3 format=3 uid="uid://dojo2btvv2tj0"]
 
 [ext_resource type="PackedScene" uid="uid://c8w8nv36kjvjj" path="res://scenes/enemy.tscn" id="1_o8g13"]
+[ext_resource type="Resource" uid="uid://drrhl8pnh4iwv" path="res://resources/enemy/behaviors/enemy_elite_1.tres" id="2_d4y20"]
 
 [node name="EnemyEntity2" instance=ExtResource("1_o8g13")]
 
@@ -14,4 +15,4 @@ max_health = 25.0
 max_stamina = 50.0
 
 [node name="AIController" parent="Enemy" index="13"]
-behavior_id = 7
+behavior_profile = ExtResource("2_d4y20")
