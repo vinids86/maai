@@ -48,7 +48,11 @@ func _change_phase(new_phase: Phases):
 	match _current_internal_phase:
 		Phases.VULNERABLE:
 			time_left_in_phase = _current_profile.vulnerable_duration
-			animation_to_play = _current_profile.victim_vulnerable_animation
+			
+			if _current_profile is MikiriCounterProfile:
+				animation_to_play = (_current_profile as MikiriCounterProfile).victim_animation_name
+			else:
+				animation_to_play = _current_profile.victim_vulnerable_animation
 
 	var phase_data = {
 		"state_name": self.name,

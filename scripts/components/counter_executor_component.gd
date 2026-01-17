@@ -25,7 +25,7 @@ func execute_counter(profile: CounterExecutionProfile, target: Node):
 
 
 func _execute_mikiri(profile: MikiriCounterProfile, target: Node):
-	if not profile or not profile.executor_attack_profile or not target:
+	if not profile or not target:
 		return
 	
 	var phase_data = {
@@ -37,8 +37,43 @@ func _execute_mikiri(profile: MikiriCounterProfile, target: Node):
 	}
 	_state_machine.emit_phase_change(phase_data)
 	
-	_attack_executor.execute(profile.executor_attack_profile)
+	_snap_player_to_target_weapon(target, profile)
+	
+	var delay_timer = get_tree().create_timer(0.2)
+	delay_timer.timeout.connect(func():
+		if is_instance_valid(_attack_executor):
+			_attack_executor.execute(profile.executor_attack_profile)
+	)
 
+func _snap_player_to_target_weapon(target: Node, profile: MikiriCounterProfile):
+	var target_spine = target.find_child("SpineSprite") as SpineSprite
+	if not target_spine: return
+	
+	var skeleton = target_spine.get_skeleton()
+	if not skeleton: return
+	
+	var snap_bone = skeleton.find_bone(profile.snap_bone_name)
+	
+	if snap_bone:
+		var bone_world_pos = Vector2(snap_bone.get_world_x(), snap_bone.get_world_y())
+		
+		var enemy_scale_x = target.scale.x * target_spine.scale.x
+		var enemy_scale_y = target.scale.y * target_spine.scale.y
+		
+		if "facing_sign" in target:
+			enemy_scale_x *= target.facing_sign
+		
+		var final_snap_pos = target.global_position + Vector2(bone_world_pos.x * enemy_scale_x, -bone_world_pos.y * enemy_scale_y)
+		
+		var player_offset = profile.player_foot_offset
+		if "facing_sign" in _owner_node:
+			player_offset.x *= _owner_node.facing_sign
+			
+		_owner_node.global_position = final_snap_pos - player_offset
+		
+		if "facing_sign" in _owner_node:
+			var dir = sign(target.global_position.x - _owner_node.global_position.x)
+			if dir != 0: _owner_node.facing_sign = dir
 
 func _execute_push(profile: PushCounterProfile, target: Node):
 	if not profile or not profile.executor_attack_profile or not target:
