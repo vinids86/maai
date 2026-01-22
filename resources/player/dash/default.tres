@@ -7,12 +7,12 @@
 script = ExtResource("2_syah7")
 active_duration = 0.2
 recovery_duration = 0.1
-dash_distance = 250.0
+dash_distance = 500.0
 recovery_friction = 1000.0
-travel_speed = 1200.0
+travel_speed = 3000.0
 arrival_tolerance = 15.0
 auto_jump_force = -500.0
-max_distance = 700.0
+max_distance = 1200.0
 detection_cone = 0.5
 same_target_lockout = true
 animation_name = "dash_attack"

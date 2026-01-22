@@ -166,6 +166,7 @@ down_dodge_profile = ExtResource("11_f1ej7")
 position_smoothing_enabled = true
 script = ExtResource("23_8f1cb")
 preset = 2
+resting_offset = Vector2(250, -500)
 exploration_zoom = Vector2(0.6, 0.6)
 
 [node name="SpineSprite" type="SpineSprite" parent="Player"]
