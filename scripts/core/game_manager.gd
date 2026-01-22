@@ -43,7 +43,6 @@ func _check_combat_state() -> void:
 	
 	if _is_in_combat != should_be_in_combat:
 		_is_in_combat = should_be_in_combat
-		print("[GameManager] Combat State Changed: ", _is_in_combat)
 		combat_state_changed.emit(_is_in_combat)
 
 # Helper para forçar estado (útil para cutscenes ou eventos scriptados)

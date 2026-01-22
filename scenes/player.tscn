@@ -1,4 +1,4 @@
-[gd_scene load_steps=80 format=3 uid="uid://btbeu0xdkpisq"]
+[gd_scene load_steps=82 format=3 uid="uid://btbeu0xdkpisq"]
 
 [ext_resource type="Script" uid="uid://btnx0mtfnqeug" path="res://scripts/actors/player.gd" id="1_4flbx"]
 [ext_resource type="Script" uid="uid://bjvp3kd6bmkho" path="res://scripts/components/physics_component.gd" id="2_g2els"]
@@ -42,12 +42,13 @@
 [ext_resource type="Resource" uid="uid://hoyhnn4kdadc" path="res://resources/player/stagger/default.tres" id="23_ke2ow"]
 [ext_resource type="Script" uid="uid://b3auw1r8kc2yi" path="res://scripts/states/block_stun_state.gd" id="24_31cv2"]
 [ext_resource type="Script" uid="uid://bbrgs7ayus45u" path="res://scripts/components/hurtbox.gd" id="24_l71n6"]
-[ext_resource type="SpineSkeletonDataResource" uid="uid://cshtjuij544ot" path="res://resources/player/player.tres" id="24_mwp2n"]
 [ext_resource type="Script" uid="uid://bhlgct4dpnf5n" path="res://scripts/components/player_feedback_component.gd" id="24_vdulj"]
+[ext_resource type="SpineAtlasResource" uid="uid://dw3a4m7rrv6ax" path="res://assets/SpineTest/Hana.atlas" id="25_0yhus"]
 [ext_resource type="Script" uid="uid://b0lnh740qgaih" path="res://scripts/core/attack_executor.gd" id="25_hax0n"]
 [ext_resource type="Resource" uid="uid://c13fhm2w824s2" path="res://resources/player/block/default.tres" id="25_pf23h"]
 [ext_resource type="Script" uid="uid://bnsx7y061rnqe" path="res://scripts/states/guard_broken_state.gd" id="26_dt7fs"]
 [ext_resource type="Script" uid="uid://dmqafi2pyifje" path="res://scripts/components/skill_combo_component.gd" id="26_j2b1d"]
+[ext_resource type="SpineSkeletonFileResource" uid="uid://bkm7xgl4dx6kv" path="res://assets/SpineTest/Hana.skel" id="26_jlll7"]
 [ext_resource type="Resource" uid="uid://diorbol6o41cm" path="res://resources/player/guard_broken/default.tres" id="27_wqfne"]
 [ext_resource type="Script" uid="uid://bsk4xllkbirnu" path="res://scripts/states/finisher_ready_state.gd" id="28_wnwbv"]
 [ext_resource type="Resource" uid="uid://dlyjau1qwi2fq" path="res://resources/player/finisher/default.tres" id="29_gl8cc"]
@@ -75,6 +76,11 @@
 [ext_resource type="Script" uid="uid://bg4mwww8kngw6" path="res://scripts/components/player_input_component.gd" id="75_0yhus"]
 [ext_resource type="Script" uid="uid://d28fgt1kpvll5" path="res://scripts/components/counter_executor_component.gd" id="75_mwp2n"]
 [ext_resource type="Script" uid="uid://c4isdgib4nmf7" path="res://scripts/states/air_attack_state.gd" id="77_jlll7"]
+
+[sub_resource type="SpineSkeletonDataResource" id="SpineSkeletonDataResource_qk6i7"]
+atlas_res = ExtResource("25_0yhus")
+skeleton_file_res = ExtResource("26_jlll7")
+default_mix = 0.1
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4gjji"]
 radius = 50.0
@@ -163,13 +169,13 @@ preset = 2
 exploration_zoom = Vector2(0.6, 0.6)
 
 [node name="SpineSprite" type="SpineSprite" parent="Player"]
-skeleton_data_res = ExtResource("24_mwp2n")
+skeleton_data_res = SubResource("SpineSkeletonDataResource_qk6i7")
 update_mode = 1
 preview_skin = "Default"
 preview_animation = "-- Empty --"
 preview_frame = false
 preview_time = 0.0
-scale = Vector2(0.3, 0.3)
+scale = Vector2(0.2, 0.2)
 
 [node name="PlayerFeedbackComponent" type="Node2D" parent="Player"]
 script = ExtResource("24_vdulj")

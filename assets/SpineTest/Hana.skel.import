@@ -1,0 +1,14 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+uid="uid://bkm7xgl4dx6kv"
+path="res://.godot/imported/Hana.skel-c08d9be400fdec3b6aede3bfcd142242.spskel"
+
+[deps]
+
+source_file="res://assets/SpineTest/Hana.skel"
+dest_files=["res://.godot/imported/Hana.skel-c08d9be400fdec3b6aede3bfcd142242.spskel"]
+
+[params]
+

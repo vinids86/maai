@@ -1,0 +1,16 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+uid="uid://dw3a4m7rrv6ax"
+path="res://.godot/imported/Hana.atlas-2bbfcac4226b2a906c76b4a1673f046d.spatlas"
+
+[deps]
+
+source_file="res://assets/SpineTest/Hana.atlas"
+dest_files=["res://.godot/imported/Hana.atlas-2bbfcac4226b2a906c76b4a1673f046d.spatlas"]
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

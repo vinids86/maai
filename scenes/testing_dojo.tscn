@@ -507,7 +507,7 @@ adjustment_saturation = 1.18
 position = Vector2(28900, 1018)
 
 [node name="Player" parent="PlayerEntity" index="0"]
-position = Vector2(-28429, 163)
+position = Vector2(-18816, 8)
 
 [node name="Camera2D" parent="PlayerEntity/Player" index="0"]
 position = Vector2(-101, 149)
