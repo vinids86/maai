@@ -37,7 +37,7 @@ func _execute_mikiri(profile: MikiriCounterProfile, target: Node):
 	}
 	_state_machine.emit_phase_change(phase_data)
 	
-	_snap_player_to_target_weapon(target, profile)
+	#_snap_player_to_target_weapon(target, profile)
 	
 	var delay_timer = get_tree().create_timer(0.2)
 	delay_timer.timeout.connect(func():

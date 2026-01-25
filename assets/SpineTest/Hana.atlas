@@ -1,34 +1,36 @@
 Hana.png
-size:112,632
+size:285,523
 filter:Linear,Linear
 pma:true
 scale:0.17
 Layer 10 Copy 2
-bounds:2,275,75,158
+bounds:208,363,75,158
 Layer 13 Copy
-bounds:2,435,89,195
-Layer 13 Copy 2
-bounds:79,318,27,115
-Layer 14 Copy
-bounds:79,209,27,107
-Layer 17 Copy 2
-bounds:56,2,45,49
+bounds:2,56,89,195
 rotate:90
+Layer 13 Copy 2
+bounds:199,30,27,115
+Layer 14 Copy
+bounds:90,27,27,107
+rotate:90
+Layer 17 Copy 2
+bounds:228,101,45,49
 Layer 18 Copy
-bounds:78,115,29,37
+bounds:250,7,29,37
 Layer 19 Copy
-bounds:78,154,32,53
+bounds:228,46,32,53
 Layer 2 Copy
-bounds:2,119,74,154
+bounds:208,207,74,154
 Layer 22 Copy
-bounds:93,559,20,9
+bounds:274,185,20,9
 rotate:90
 Layer 23 Copy
-bounds:93,581,49,15
+bounds:199,13,49,15
 offsets:0,1,49,16
-rotate:90
 Layer 4 Copy 2
-bounds:56,49,64,53
-rotate:90
+bounds:208,152,64,53
+Paper
+bounds:2,147,204,374
 top Copy 2
-bounds:2,31,52,86
+bounds:2,2,52,86
+rotate:90
